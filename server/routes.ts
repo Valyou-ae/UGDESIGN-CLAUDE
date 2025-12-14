@@ -82,9 +82,11 @@ export async function registerRoutes(
         ...stats,
         timestamp: new Date().toISOString(),
         estimatedCapacity: {
-          standardTierRPM: stats.availableKeys * 360,
-          enterpriseTierRPM: stats.availableKeys * 1000,
-          customEnterpriseTierRPM: stats.availableKeys * 10000,
+          // Image generation is limited by IPM (images per minute), not RPM
+          paidTier1_IPM: stats.availableKeys * 10,      // ~10 images/min per key
+          paidTier1_RPM: stats.availableKeys * 1000,    // ~1000 requests/min per key
+          tier2_IPM: stats.availableKeys * 50,          // Estimated higher IPM
+          enterprise_IPM: stats.availableKeys * 500,    // Custom enterprise limits
         }
       });
     } catch (error) {

@@ -9,10 +9,16 @@ import { GoogleGenAI, Modality } from "@google/genai";
  * - GEMINI_API_KEY: Single API key fallback
  * - AI_INTEGRATIONS_GEMINI_API_KEY: Alternative single key fallback
  *
- * For 100,000 concurrent users:
- * - Standard tier (360 RPM): ~278 keys needed
- * - Enterprise tier (1000 RPM): ~100 keys needed
- * - Custom enterprise (10,000+ RPM): ~10 keys needed
+ * Gemini API Rate Limits (as of Dec 2025):
+ * - Free tier: 15 RPM, 2 IPM (images/min)
+ * - Paid Tier 1: ~1000 RPM, ~10 IPM (images/min)
+ * - Tier 2 ($250+ spend): ~2000 RPM, higher IPM
+ * - Enterprise: Custom limits negotiable
+ *
+ * For high-concurrency image generation, IPM is the bottleneck:
+ * - Paid Tier 1 (10 IPM): 1 key = ~10 images/min
+ * - For 100 concurrent image requests: ~10 keys minimum
+ * - For 1000 concurrent: ~100 keys or Tier 2/Enterprise
  */
 
 interface APIKeyState {
