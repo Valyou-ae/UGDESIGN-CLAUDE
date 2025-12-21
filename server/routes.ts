@@ -6,6 +6,7 @@ import { createServer, type Server } from "http";
 import sharp from "sharp";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { logger } from "./logger";
 import { 
   authRateLimiter, 
   passwordResetLimiter, 
@@ -95,7 +96,7 @@ export async function registerRoutes(
         }
       });
     } catch (error) {
-      console.error("Gemini stats error:", error);
+      logger.error("Gemini stats error", error, { source: "routes" });
       res.status(500).json({ message: "Failed to get Gemini stats" });
     }
   });
@@ -197,7 +198,7 @@ export async function registerRoutes(
     
     for (const pattern of sensitivePatterns) {
       if (pattern.test(message)) {
-        console.error("Sanitized error (sensitive pattern detected):", message);
+        logger.error("Sanitized error (sensitive pattern detected)", null, { source: "routes", message });
         return fallback;
       }
     }
