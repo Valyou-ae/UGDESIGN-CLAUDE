@@ -3,5 +3,6 @@ export { registerSuperAdminRoutes } from "./super-admin";
 export { registerAuthRoutes } from "./auth";
 export { registerGalleryRoutes } from "./gallery";
 export { registerUserRoutes } from "./user";
+export { registerImageRoutes } from "./images";
 export { createMiddleware, type Middleware } from "./middleware";
 export { parsePagination } from "./utils";
