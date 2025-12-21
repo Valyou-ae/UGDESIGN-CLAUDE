@@ -10,5 +10,7 @@ export { registerBackgroundRoutes } from "./background";
 export { registerMoodBoardRoutes } from "./moodboard";
 export { registerChatRoutes } from "./chat";
 export { registerBillingRoutes } from "./billing";
+export { registerAffiliateRoutes } from "./affiliate";
+export { registerInspirationRoutes } from "./inspiration";
 export { createMiddleware, type Middleware } from "./middleware";
 export { parsePagination } from "./utils";
