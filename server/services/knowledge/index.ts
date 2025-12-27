@@ -93,3 +93,92 @@ export {
   getPersonasByEthnicity,
   getRandomPersona
 } from './unifiedPersonas';
+
+// Enhanced Knowledge Base Modules
+export {
+  ATMOSPHERIC_EFFECTS,
+  CINEMATIC_LIGHTING,
+  COLOR_GRADES,
+  DEPTH_LAYERS,
+  getAtmosphericEffect,
+  getCinematicLighting,
+  getDepthLayerPrompts,
+  getColorGrade,
+  buildCinematicPrompt
+} from './cinematicDNA';
+
+export {
+  METAL_MATERIALS,
+  GLASS_MATERIALS,
+  FABRIC_MATERIALS,
+  ORGANIC_MATERIALS,
+  getMaterial,
+  getMaterialsByCategory,
+  getMaterialPromptKeywords,
+  buildMaterialPrompt
+} from './materialPhysics';
+
+export {
+  ARTISTIC_STYLES,
+  getArtisticStyle,
+  getStylesByCategory,
+  getStylePromptKeywords,
+  getAllStyleIds,
+  searchStyles
+} from './artisticStyles';
+
+export {
+  COLOR_EMOTIONS,
+  COLOR_PALETTES,
+  getColorEmotion,
+  getColorPalette,
+  getPalettesByCategory,
+  getMoodPalettes,
+  getCinematicPalettes,
+  buildColorPrompt
+} from './colorPsychology';
+
+export {
+  FILM_STOCKS,
+  GRAIN_PROFILES,
+  getFilmStock,
+  getFilmStocksByType,
+  getGrainProfile,
+  buildFilmStockPrompt,
+  getAllFilmStockIds
+} from './filmStocks';
+
+export {
+  SUBJECT_LIBRARIES,
+  getSubjectLibrary,
+  getSubjectLightingSetups,
+  getSubjectTechniques,
+  buildSubjectPrompt
+} from './subjectLibraries';
+
+export {
+  QUALITY_KEYWORDS,
+  UNIVERSAL_NEGATIVES,
+  PORTRAIT_NEGATIVES,
+  LANDSCAPE_NEGATIVES,
+  PRODUCT_NEGATIVES,
+  QUALITY_CHECKS,
+  getQualityKeywords,
+  getUniversalNegatives,
+  getNegativesForSubject,
+  buildQualityEnhancement,
+  getQualityCheck
+} from './qualityControl';
+
+export {
+  enhancePromptWithKnowledge,
+  getAvailableStyles,
+  getAvailablePalettes,
+  getAvailableFilmStocks,
+  getAvailableLighting,
+  getAvailableAtmosphericEffects,
+  getAvailableSubjects,
+  enhanceForMockup,
+  type KnowledgeConfig,
+  type EnhancedPrompt
+} from './knowledgeService';

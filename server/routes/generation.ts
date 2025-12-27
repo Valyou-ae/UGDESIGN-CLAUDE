@@ -6,6 +6,7 @@ import { generationRateLimiter, guestGenerationLimiter } from "../rateLimiter";
 import type { Middleware } from "./middleware";
 import type { AuthenticatedRequest } from "../types";
 import { logger } from "../logger";
+import { enhancePromptWithKnowledge, type KnowledgeConfig } from "../services/knowledge";
 
 const GUEST_GALLERY_USER_ID = "guest-gallery-user";
 
@@ -186,10 +187,13 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
   app.post("/api/generate/draft", requireAuth, async (req: Request, res: Response) => {
     try {
       const userId = getUserId(req as AuthenticatedRequest);
-      const { prompt, stylePreset = "auto", aspectRatio = "1:1", detail = "medium", speed = "quality", imageCount = 1, isPublic = false } = req.body;
+      const { prompt, stylePreset = "auto", aspectRatio = "1:1", detail = "medium", speed = "quality", imageCount = 1, isPublic = false, knowledgeConfig } = req.body;
       if (!prompt || typeof prompt !== "string") {
         return res.status(400).json({ message: "Prompt is required" });
       }
+      
+      // Parse knowledge config from request
+      const kbConfig: KnowledgeConfig = knowledgeConfig || {};
 
       const count = Math.min(Math.max(1, parseInt(imageCount) || 1), 4);
 
@@ -236,6 +240,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       let analysis: any;
       let enhancedPrompt: string;
       let negativePrompts: string[];
+      let appliedKnowledge: string[] = [];
 
       if (simple) {
         // Phase 3: Fast-track for simple prompts
@@ -250,8 +255,18 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
           hasTextRequest: false,
           complexity: 'low',
         };
-        enhancedPrompt = prompt;
-        negativePrompts = ["blurry", "low quality", "distorted"];
+        
+        // Apply knowledge enhancement even for simple prompts if config provided
+        if (Object.keys(kbConfig).length > 0) {
+          const kbResult = enhancePromptWithKnowledge(prompt, kbConfig);
+          enhancedPrompt = kbResult.enhancedPrompt;
+          negativePrompts = kbResult.negativePrompts;
+          appliedKnowledge = kbResult.appliedKnowledge;
+          sendEvent("knowledge", { applied: appliedKnowledge });
+        } else {
+          enhancedPrompt = prompt;
+          negativePrompts = ["blurry", "low quality", "distorted"];
+        }
         
         sendEvent("analysis", { analysis, cached: false, skipped: true });
         sendEvent("enhancement", { enhancedPrompt, negativePrompts, cached: false, skipped: true });
@@ -281,8 +296,9 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
         sendEvent("status", { agent: "Text Sentinel", status: "complete", message: analysisCached ? "Analysis complete (cached)" : "Analysis complete" });
         perfAnalysisEnd = Date.now();
         
-        // Enhancement with cache
-        const enhancementCacheKey = `enhance:${prompt}:${stylePreset}`;
+        // Enhancement with cache (includes knowledge config in cache key for uniqueness)
+        const kbConfigKey = Object.keys(kbConfig).length > 0 ? JSON.stringify(kbConfig) : '';
+        const enhancementCacheKey = `enhance:${prompt}:${stylePreset}:${kbConfigKey}`;
         let enhancementCached = false;
         const enhancementStart = Date.now();
         
@@ -291,7 +307,19 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
           1800 * 1000, // 30 minutes
           async () => {
             sendEvent("status", { agent: "Style Architect", status: "working", message: "Enhancing prompt..." });
-            return await enhancePrompt(prompt, analysis, "draft", stylePreset, "draft", detail);
+            const baseEnhancement = await enhancePrompt(prompt, analysis, "draft", stylePreset, "draft", detail);
+            
+            // Apply knowledge enhancement on top of base enhancement
+            if (Object.keys(kbConfig).length > 0) {
+              const kbResult = enhancePromptWithKnowledge(baseEnhancement.enhancedPrompt, kbConfig);
+              appliedKnowledge = kbResult.appliedKnowledge;
+              sendEvent("knowledge", { applied: appliedKnowledge });
+              return {
+                enhancedPrompt: kbResult.enhancedPrompt,
+                negativePrompts: [...new Set([...baseEnhancement.negativePrompts, ...kbResult.negativePrompts])]
+              };
+            }
+            return baseEnhancement;
           }
         );
         
