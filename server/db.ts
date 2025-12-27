@@ -1,6 +1,5 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
 import pg from "pg";
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 import { logger } from './logger';
 
@@ -11,13 +10,6 @@ if (!process.env.DATABASE_URL) {
     "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
-
-// Configure Neon for better connection handling
-neonConfig.fetchConnectionCache = true;
-
-// Use Neon serverless driver for better cloud database connectivity
-const sql = neon(process.env.DATABASE_URL);
-export const db = drizzle(sql, { schema });
 
 // Connection pool for session store and direct queries
 // Sized for production concurrent user load
@@ -34,3 +26,6 @@ export const pool = new Pool({
 pool.on("error", (err) => {
   logger.error("Unexpected error on idle database client", err, { source: 'database' });
 });
+
+// Create Drizzle ORM instance using the pool
+export const db = drizzle(pool, { schema });
