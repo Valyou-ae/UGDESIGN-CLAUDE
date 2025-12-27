@@ -97,12 +97,18 @@ export async function registerKnowledgeRoutes(app: Express, middleware: Middlewa
 
   app.get("/api/knowledge/all", async (_req: Request, res: Response) => {
     try {
+      const lighting = getAvailableLighting().map(l => ({
+        id: l.id,
+        name: l.name,
+        category: l.category,
+        description: `${l.category} lighting technique`
+      }));
+      
       res.json({
         styles: getAvailableStyles(),
         palettes: getAvailablePalettes(),
         filmStocks: getAvailableFilmStocks(),
-        lighting: getAvailableLighting(),
-        atmospheric: getAvailableAtmosphericEffects(),
+        lighting,
         subjects: getAvailableSubjects()
       });
     } catch (error) {

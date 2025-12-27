@@ -316,7 +316,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
               sendEvent("knowledge", { applied: appliedKnowledge });
               return {
                 enhancedPrompt: kbResult.enhancedPrompt,
-                negativePrompts: [...new Set([...baseEnhancement.negativePrompts, ...kbResult.negativePrompts])]
+                negativePrompts: Array.from(new Set([...baseEnhancement.negativePrompts, ...kbResult.negativePrompts]))
               };
             }
             return baseEnhancement;

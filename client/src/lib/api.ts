@@ -288,6 +288,19 @@ function parseSSEStream(
   });
 }
 
+// Knowledge Base Config Type - aligned with backend server/services/knowledge/knowledgeService.ts
+export interface KnowledgeConfig {
+  style?: string;
+  mood?: string;
+  colorPalette?: string;
+  filmStock?: string;
+  lighting?: string;
+  atmosphere?: string;
+  materials?: string[];
+  subject?: string;
+  qualityLevel?: 'basic' | 'standard' | 'premium';
+}
+
 // Generation API
 export const generateApi = {
   analyze: (prompt: string) =>
@@ -298,7 +311,7 @@ export const generateApi = {
 
   draft: async (
     prompt: string,
-    options: { stylePreset?: string; aspectRatio?: string; detail?: string; speed?: "fast" | "quality"; imageCount?: number; isPublic?: boolean } = {},
+    options: { stylePreset?: string; aspectRatio?: string; detail?: string; speed?: "fast" | "quality"; imageCount?: number; isPublic?: boolean; knowledgeConfig?: KnowledgeConfig } = {},
     onEvent: GenerationEventCallback
   ): Promise<void> => {
     try {
@@ -332,6 +345,7 @@ export const generateApi = {
       speed?: "fast" | "quality";
       imageCount?: number;
       isPublic?: boolean;
+      knowledgeConfig?: KnowledgeConfig;
     } = {},
     onEvent: GenerationEventCallback
   ): Promise<void> => {
@@ -1147,4 +1161,39 @@ export const foldersApi = {
       method: "PATCH",
       body: JSON.stringify({ folderId }),
     }),
+};
+
+// Knowledge Base API
+export interface KnowledgeOption {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  promptKeywords?: string[];
+}
+
+export const knowledgeApi = {
+  getArtisticStyles: () =>
+    fetchApi<{ styles: KnowledgeOption[] }>("/knowledge/styles"),
+
+  getColorPalettes: () =>
+    fetchApi<{ palettes: KnowledgeOption[] }>("/knowledge/palettes"),
+
+  getFilmStocks: () =>
+    fetchApi<{ filmStocks: KnowledgeOption[] }>("/knowledge/film-stocks"),
+
+  getLighting: () =>
+    fetchApi<{ lighting: KnowledgeOption[] }>("/knowledge/lighting"),
+
+  getSubjectTypes: () =>
+    fetchApi<{ subjects: KnowledgeOption[] }>("/knowledge/subjects"),
+
+  getAll: () =>
+    fetchApi<{
+      styles: KnowledgeOption[];
+      palettes: KnowledgeOption[];
+      filmStocks: KnowledgeOption[];
+      lighting: KnowledgeOption[];
+      subjects: KnowledgeOption[];
+    }>("/knowledge/all"),
 };

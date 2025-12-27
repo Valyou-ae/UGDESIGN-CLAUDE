@@ -121,6 +121,8 @@ import { useLocation } from "wouter";
 import { transferImageToTool } from "@/lib/image-transfer";
 import { TutorialOverlay, useTutorial } from "@/components/tutorial-overlay";
 import { useCredits } from "@/hooks/use-credits";
+import { KnowledgeSelector } from "@/components/knowledge-selector";
+import type { KnowledgeConfig } from "@/lib/api";
 
 // Import generated images for the gallery
 import cyberpunkCity from "@assets/generated_images/futuristic_cyberpunk_city_street_at_night_with_neon_lights_and_rain.png";
@@ -251,6 +253,7 @@ export default function ImageGenerator() {
   const [linkCopied, setLinkCopied] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [inspirationIndex, setInspirationIndex] = useState(0);
+  const [knowledgeConfig, setKnowledgeConfig] = useState<KnowledgeConfig>({});
   
   // Image editing state
   const [editPrompt, setEditPrompt] = useState("");
@@ -1275,7 +1278,8 @@ export default function ImageGenerator() {
             detail: settings.detail,
             speed: settings.speed,
             imageCount: parseInt(settings.variations),
-            isPublic: isPublicImage
+            isPublic: isPublicImage,
+            knowledgeConfig: Object.keys(knowledgeConfig).length > 0 ? knowledgeConfig : undefined
           },
           handleEvent
         );
@@ -1290,7 +1294,8 @@ export default function ImageGenerator() {
             detail: settings.detail,
             speed: settings.speed,
             imageCount: parseInt(settings.variations),
-            isPublic: isPublicImage
+            isPublic: isPublicImage,
+            knowledgeConfig: Object.keys(knowledgeConfig).length > 0 ? knowledgeConfig : undefined
           },
           handleEvent
         );
@@ -1952,6 +1957,16 @@ export default function ImageGenerator() {
                           ))}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                    </div>
+
+                    {/* AI Knowledge Enhancement */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block px-0.5">Enhance</label>
+                      <KnowledgeSelector
+                        value={knowledgeConfig}
+                        onChange={setKnowledgeConfig}
+                        compact={true}
+                      />
                     </div>
 
                     {/* More Options Dropdown - Count, Visibility */}

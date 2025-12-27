@@ -3,6 +3,7 @@ import type { Middleware } from "./middleware";
 import { logger } from "../logger";
 import { storage } from "../storage";
 import { generationRateLimiter } from "../rateLimiter";
+import { enhancePromptWithKnowledge, type KnowledgeConfig } from "../services/knowledge";
 
 // Credit costs for mockup generation
 const MOCKUP_CREDIT_COSTS = {
@@ -89,11 +90,15 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         angle = "front",
         style = "minimal",
         quality = "high",
+        knowledgeConfig,
       } = req.body;
 
       if (!designImage || typeof designImage !== "string") {
         return res.status(400).json({ message: "Design image is required" });
       }
+
+      // Parse knowledge config from request
+      const kbConfig: KnowledgeConfig = knowledgeConfig || {};
 
       // Determine credit cost based on quality
       const creditCost = MOCKUP_CREDIT_COSTS[quality as keyof typeof MOCKUP_CREDIT_COSTS] || MOCKUP_CREDIT_COSTS.high;
@@ -124,7 +129,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
 
       sendEvent("status", { stage: "prompting", message: "Creating mockup prompt..." });
 
-      const { prompt, negativePrompts } = await generateMockupPrompt(designAnalysis, {
+      let { prompt, negativePrompts } = await generateMockupPrompt(designAnalysis, {
         designBase64: base64Data,
         productType,
         productColor,
@@ -132,6 +137,19 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         angle,
         style,
       });
+      
+      // Apply knowledge enhancement if config provided
+      if (Object.keys(kbConfig).length > 0) {
+        const kbResult = enhancePromptWithKnowledge(prompt, kbConfig);
+        prompt = kbResult.enhancedPrompt;
+        negativePrompts = Array.from(new Set([...negativePrompts, ...kbResult.negativePrompts]));
+        sendEvent("knowledge", { applied: kbResult.appliedKnowledge });
+        logger.info("Knowledge enhancement applied to mockup", { 
+          source: "mockup", 
+          appliedKnowledge: kbResult.appliedKnowledge 
+        });
+      }
+      
       sendEvent("prompt", { prompt, negativePrompts });
 
       sendEvent("status", { stage: "generating", message: "Generating mockup image..." });
@@ -200,11 +218,15 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         isSeamlessPattern,
         outputQuality: rawOutputQuality = "high",
         modelCustomization,
+        knowledgeConfig,
       } = req.body;
 
       if (!designImage || typeof designImage !== "string") {
         return res.status(400).json({ message: "Design image is required" });
       }
+
+      // Parse knowledge config from request
+      const kbConfig: KnowledgeConfig = knowledgeConfig || {};
 
       // Calculate total mockups and enforce batch limit
       const totalMockups = productColors.length * angles.length;
@@ -530,9 +552,16 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
             progress: 10 + Math.round((completedJobs / totalJobs) * 80)
           });
 
-          const { prompt, negativePrompts } = await generateMockupPrompt(designAnalysis, {
+          let { prompt, negativePrompts } = await generateMockupPrompt(designAnalysis, {
             designBase64: base64Data, productType, productColor: color.name, scene, angle, style,
           });
+          
+          // Apply knowledge enhancement if config provided
+          if (Object.keys(kbConfig).length > 0) {
+            const kbResult = enhancePromptWithKnowledge(prompt, kbConfig);
+            prompt = kbResult.enhancedPrompt;
+            negativePrompts = Array.from(new Set([...negativePrompts, ...kbResult.negativePrompts]));
+          }
 
           const result = await generateMockup(base64Data, prompt, negativePrompts);
 
