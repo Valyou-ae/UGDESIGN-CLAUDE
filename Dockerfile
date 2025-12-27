@@ -40,6 +40,10 @@ FROM base
 # Copy built application
 COPY --from=build /app /app
 
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/ping', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
 CMD [ "npm", "run", "start" ]
