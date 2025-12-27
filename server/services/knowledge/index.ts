@@ -266,3 +266,223 @@ export {
   getProductLightingById,
   applyIndustryKnowledge
 } from './industryKnowledge';
+
+// ============================================================================
+// ENHANCED LIBRARIES (Batch 1) - +10-20% Quality Boost
+// ============================================================================
+
+// Material Physics Enhanced (100+ materials with IOR, roughness, BRDF)
+export {
+  METAL_MATERIALS as ENHANCED_METAL_MATERIALS,
+  SKIN_MATERIALS as ENHANCED_SKIN_MATERIALS,
+  FABRIC_MATERIALS as ENHANCED_FABRIC_MATERIALS,
+  GLASS_MATERIALS as ENHANCED_GLASS_MATERIALS,
+  getMaterial as getEnhancedMaterial,
+  getMaterialsByCategory as getEnhancedMaterialsByCategory,
+  generateMaterialPrompt,
+  generateMaterialNegativePrompt,
+  generateSkinSSSPrompt,
+  generateSceneMaterialPrompt
+} from './materialPhysicsEnhanced';
+
+// Optical Phenomena Enhanced (reflections, refractions, scattering)
+export {
+  REFLECTION_EFFECTS,
+  REFRACTION_EFFECTS,
+  SCATTERING_EFFECTS,
+  SPECIAL_EFFECTS as OPTICAL_SPECIAL_EFFECTS,
+  TIME_OF_DAY_TEMPERATURES,
+  getOpticalEffect,
+  getEffectsByCategory,
+  generateOpticalPrompt,
+  getTimeOfDayPrompt,
+  generateSceneOpticalPrompt
+} from './opticalPhenomenaEnhanced';
+
+// Color Psychology Enhanced (50+ colors with emotional palettes)
+export {
+  COLOR_PROFILES,
+  EMOTIONAL_PALETTES,
+  COLOR_HARMONIES,
+  getColorProfile,
+  getColorsByEmotion,
+  getColorsByTemperature,
+  generateColorPrompt,
+  generateEmotionalPalettePrompt,
+  generateHarmonyPrompt,
+  getPaletteForMood
+} from './colorPsychologyEnhanced';
+
+// Film Stocks Enhanced (20+ film stocks)
+export {
+  COLOR_NEGATIVE_FILMS,
+  COLOR_REVERSAL_FILMS,
+  BLACK_WHITE_FILMS,
+  CINEMA_FILMS,
+  PROCESSING_STYLES,
+  getFilmStock as getEnhancedFilmStock,
+  getFilmsByType,
+  generateFilmPrompt,
+  generateProcessingPrompt,
+  recommendFilmForUseCase
+} from './filmStocksEnhanced';
+
+// Subject-Specific Libraries Enhanced (Portrait, Architecture, Food, Fashion, Automotive, Landscape)
+export {
+  PORTRAIT_LIBRARY as ENHANCED_PORTRAIT_LIBRARY,
+  ARCHITECTURE_LIBRARY as ENHANCED_ARCHITECTURE_LIBRARY,
+  FOOD_LIBRARY as ENHANCED_FOOD_LIBRARY,
+  FASHION_LIBRARY as ENHANCED_FASHION_LIBRARY,
+  AUTOMOTIVE_LIBRARY as ENHANCED_AUTOMOTIVE_LIBRARY,
+  LANDSCAPE_LIBRARY as ENHANCED_LANDSCAPE_LIBRARY
+} from './subjectLibrariesEnhanced';
+
+// Meta-Prompting Patterns Enhanced
+export {
+  PROMPT_STRUCTURE,
+  PROMPT_TEMPLATES,
+  NEGATIVE_PROMPT_SETS,
+  ADVANCED_TECHNIQUES,
+  buildPrompt,
+  getNegativePrompt as getEnhancedNegativePrompt,
+  getPortraitNegativePrompt,
+  getLandscapeNegativePrompt,
+  validatePrompt,
+  generateFromTemplate
+} from './metaPromptingEnhanced';
+
+// Depth Systems Enhanced (DoF profiles, bokeh styles)
+export {
+  DEPTH_PROFILES,
+  BOKEH_STYLES,
+  LAYERING_STRATEGIES,
+  getDepthProfile,
+  getProfilesByCategory,
+  generateDepthPrompt,
+  generateBokehPrompt,
+  generateLayeringPrompt,
+  recommendDepthForUseCase,
+  estimateDepthOfField
+} from './depthSystemsEnhanced';
+
+// Weather & Atmospheric Effects Enhanced
+export {
+  WEATHER_CONDITIONS,
+  ATMOSPHERIC_EFFECTS as ENHANCED_ATMOSPHERIC_EFFECTS,
+  getWeatherCondition,
+  getConditionsByCategory,
+  generateWeatherPrompt,
+  generateAtmosphericPrompt,
+  getWeatherForMood,
+  combineWeatherAtmospheric
+} from './weatherEffectsEnhanced';
+
+// Typography Mastery
+export {
+  FONT_CATEGORIES,
+  TEXT_RENDERING_SPECS,
+  TYPOGRAPHIC_COMPOSITIONS,
+  getFontCategory,
+  getFontsForUseCase,
+  generateFontPrompt,
+  generateRenderingPrompt,
+  generateCompositionPrompt,
+  generateTypographyPrompt
+} from './typographyMastery';
+
+// Quality Control Enhanced (Checklists and Validation)
+export {
+  TECHNICAL_CHECKLIST,
+  ANATOMICAL_CHECKLIST,
+  CONSISTENCY_CHECKLIST,
+  COMPOSITION_CHECKLIST,
+  getChecklist,
+  getCriticalItems,
+  generateFixPrompt,
+  calculateScore,
+  getScoreRating,
+  validateAgainstChecklist,
+  getPortraitChecklist,
+  getLandscapeChecklist
+} from './qualityControlEnhanced';
+
+// ============================================================================
+// HYPER-REALISM LIBRARIES (Batch 2) - +25-30% Quality Boost
+// ============================================================================
+
+// Human Anatomy Perfection (eliminate uncanny valley)
+export {
+  EYE_RENDERING,
+  SKIN_TEXTURE,
+  HAND_ANATOMY,
+  ANATOMY_PROFILES,
+  getAnatomyProfile,
+  generateAnatomyPrompt,
+  getEyeRenderingPrompt,
+  getSkinTexturePrompt,
+  getHandAnatomyPrompt,
+  generateAnatomyNegativePrompt,
+  getCompletePortraitPrompt
+} from './humanAnatomyPerfection';
+
+// Photographic Lens Simulation
+export {
+  LENS_PROFILES,
+  APERTURE_EFFECTS,
+  calculateDepthOfField,
+  getLensProfile,
+  getLensesByCategory,
+  generateLensPrompt,
+  recommendLens,
+  generateCameraPrompt
+} from './lensSimulation';
+
+// Imperfection Library (authentic flaws)
+export * as ImperfectionLibrary from './imperfectionLibrary';
+
+// Advanced Lighting Physics
+export * as AdvancedLightingPhysics from './advancedLightingPhysics';
+
+// Surface Material Accuracy
+export * as SurfaceMaterialAccuracy from './surfaceMaterialAccuracy';
+
+// Environmental Context
+export * as EnvironmentalContext from './environmentalContext';
+
+// Micro-Detail Enhancement
+export * as MicroDetailEnhancement from './microDetailEnhancement';
+
+// Film Stock Emulation (Hyper-Realistic)
+export * as FilmStockEmulation from './filmStockEmulation';
+
+// Forensic Anti-AI Detection
+export {
+  AI_TELLS,
+  ANTI_DETECTION_TECHNIQUES,
+  ANTI_AI_NEGATIVE_PROMPTS,
+  getAITell,
+  getTechnique,
+  generateAntiDetectionPrompt,
+  generateAntiAINegativePrompt,
+  getNegativePromptsForCategory,
+  getPortraitCheckList,
+  generateAuthenticityPrompt
+} from './forensicAntiAI';
+
+// Skin Rendering Mastery
+export * as SkinRenderingMastery from './skinRenderingMastery';
+
+// Hyper-Resolution
+export * as HyperResolution from './hyperResolution';
+
+// Tonal Range
+export * as TonalRange from './tonalRange';
+
+// Behavioral Realism
+export * as BehavioralRealism from './behavioralRealism';
+
+// Subject-Specific Hyper-Realism
+export * as SubjectSpecificHyper from './subjectSpecificHyper';
+
+// Forensic Standards
+export * as ForensicStandards from './forensicStandards';
