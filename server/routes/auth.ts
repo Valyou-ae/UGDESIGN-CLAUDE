@@ -84,23 +84,31 @@ export function registerAuthRoutes(app: Express, middleware: Middleware) {
 
   app.post("/api/auth/google", authRateLimiter, async (req: Request, res: Response) => {
     try {
+      logger.info("Google auth attempt started", { source: "auth" });
+
       const { credential } = req.body;
 
       if (!credential) {
+        logger.warn("Missing credential in request", { source: "auth" });
         return res.status(400).json({ message: "Missing credential" });
       }
 
       const clientId = process.env.GOOGLE_CLIENT_ID;
       if (!clientId) {
+        logger.error("GOOGLE_CLIENT_ID not configured", { source: "auth" });
         return res.status(500).json({ message: "Google Sign-In not configured" });
       }
 
+      logger.info("Verifying Google token...", { source: "auth" });
       // Securely verify the JWT token with RSA-256 signature verification
       const payload = await verifyGoogleToken(credential, clientId);
 
       if (!payload) {
+        logger.warn("Google token verification failed", { source: "auth" });
         return res.status(401).json({ message: "Invalid or expired Google token" });
       }
+
+      logger.info(`Google token verified for email: ${payload.email}`, { source: "auth" });
 
       const { email, name, picture, sub: googleId } = payload;
 
@@ -132,10 +140,12 @@ export function registerAuthRoutes(app: Express, middleware: Middleware) {
       };
 
       // Check if user exists by email (with retry)
+      logger.info("Checking if user exists by email...", { source: "auth" });
       let user = await retryDbOperation(() => storage.getUserByEmail(email));
 
       if (!user) {
         // Create new user using upsertUser for full field support (with retry)
+        logger.info("User not found, creating new user...", { source: "auth" });
         const username = email.split('@')[0] + '_' + Math.random().toString(36).substring(2, 6);
         user = await retryDbOperation(() => storage.upsertUser({
           id: googleId,
@@ -199,13 +209,14 @@ export function registerAuthRoutes(app: Express, middleware: Middleware) {
         }
       });
     } catch (error: unknown) {
-      logger.error("Google auth error", error, { source: "auth" });
       const err = error as { message?: string; stack?: string };
       const errorMessage = err?.message || "Unknown error";
+      const errorStack = err?.stack || "No stack trace";
+      logger.error(`Google auth error: ${errorMessage}`, { source: "auth", stack: errorStack });
+      console.error("Full Google auth error:", error);
       res.status(500).json({
         message: "Authentication failed",
-        detail: errorMessage,
-        stack: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+        detail: errorMessage
       });
     }
   });
