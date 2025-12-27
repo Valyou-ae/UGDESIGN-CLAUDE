@@ -64,7 +64,7 @@ export function invalidateCache(key: string): void {
  * Invalidate all cache entries matching a prefix
  */
 export function invalidateCachePrefix(prefix: string): void {
-  for (const key of cache.keys()) {
+  for (const key of Array.from(cache.keys())) {
     if (key.startsWith(prefix)) {
       cache.delete(key);
     }
@@ -81,7 +81,7 @@ export function clearCache(): void {
 // Cleanup expired entries every 30 seconds
 const cleanupInterval = setInterval(() => {
   const now = Date.now();
-  for (const [key, entry] of cache.entries()) {
+  for (const [key, entry] of Array.from(cache.entries())) {
     if (entry.expires < now) {
       cache.delete(key);
     }
@@ -171,7 +171,7 @@ class ImageBufferCache {
   private evictLRU(): void {
     let oldest: { key: string; time: number } | null = null;
 
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       if (!oldest || entry.lastAccess < oldest.time) {
         oldest = { key, time: entry.lastAccess };
       }

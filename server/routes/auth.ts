@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { authRateLimiter } from "../rateLimiter";
 import { verifyGoogleToken } from "../googleAuth";
 import type { Middleware } from "./middleware";
-import type { AuthenticatedRequest } from "../types";
+import type { AuthenticatedRequest, AuthUser } from "../types";
 import { logger } from "../logger";
 import { pool } from "../db";
 
@@ -167,11 +167,11 @@ export function registerAuthRoutes(app: Express, middleware: Middleware) {
       }
 
       // Set up passport session using req.login()
-      const userSession = {
+      const userSession: AuthUser = {
         claims: {
           sub: user.id,
-          email: user.email,
-          name: user.displayName,
+          email: user.email || undefined,
+          first_name: user.displayName || undefined,
         },
         expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60), // 1 week
       };

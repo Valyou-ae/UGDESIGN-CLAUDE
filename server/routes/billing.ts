@@ -145,6 +145,10 @@ export async function registerBillingRoutes(app: Express, middleware: Middleware
       const { getUncachableStripeClient } = await import("../stripeClient");
       const stripe = await getUncachableStripeClient();
 
+      if (!stripe) {
+        return res.status(503).json({ message: "Payment service unavailable" });
+      }
+
       const subscriptions = await stripe.subscriptions.list({
         customer: user.stripeCustomerId,
         status: 'active',

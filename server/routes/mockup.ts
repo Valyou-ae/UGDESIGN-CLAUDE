@@ -246,11 +246,12 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       res.setHeader("Transfer-Encoding", "chunked");
       res.flushHeaders();
 
+      const resWithFlush = res as unknown as { flush?: () => void };
       const sendEvent = (event: string, data: unknown) => {
         try {
           res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-          if (typeof (res as { flush?: () => void }).flush === 'function') {
-            (res as { flush: () => void }).flush();
+          if (typeof resWithFlush.flush === 'function') {
+            resWithFlush.flush();
           }
         } catch (e) {
           logger.error("Error sending SSE event", e, { source: "mockup", event });
@@ -263,8 +264,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         if (connectionClosed) return;
         try {
           res.write(`:keepalive ${Date.now()}\n\n`);
-          if (typeof (res as { flush?: () => void }).flush === 'function') {
-            (res as { flush: () => void }).flush();
+          if (typeof resWithFlush.flush === 'function') {
+            resWithFlush.flush();
           }
         } catch (e) {
           connectionClosed = true;
@@ -426,13 +427,13 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
               isSeamlessPattern: isAopJourney ? (isSeamlessPattern ?? true) : undefined,
               product: product,
               colors: colors,
-              angles: angles as ("front" | "back" | "left" | "right")[],
+              angles: angles as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['angles'],
               modelDetails: { ...sizeModelDetails, customization: mergedCustomization } as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['modelDetails'],
               brandStyle: mappedStyle as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['brandStyle'],
               lightingPreset: 'three-point-classic',
               materialCondition: 'BRAND_NEW',
               environmentPrompt: scene,
-              existingPersonaLock: sharedPersonaLock,
+              existingPersonaLock: sharedPersonaLock as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['existingPersonaLock'],
               patternScale: isAopJourney ? patternScale : undefined,
               outputQuality: outputQuality
             }, (completed, _total, job) => {
@@ -642,10 +643,11 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       res.setHeader("X-Accel-Buffering", "no");
       res.flushHeaders();
 
+      const resWithFlush = res as unknown as { flush?: () => void };
       const sendEvent = (event: string, data: unknown) => {
         res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-        if (typeof (res as { flush?: () => void }).flush === 'function') {
-          (res as { flush: () => void }).flush();
+        if (typeof resWithFlush.flush === 'function') {
+          resWithFlush.flush();
         }
       };
 
@@ -851,11 +853,12 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       res.setHeader("Transfer-Encoding", "chunked");
       res.flushHeaders();
 
+      const resWithFlush = res as unknown as { flush?: () => void };
       const sendEvent = (event: string, data: unknown) => {
         try {
           res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-          if (typeof (res as { flush?: () => void }).flush === "function") {
-            (res as { flush: () => void }).flush();
+          if (typeof resWithFlush.flush === "function") {
+            resWithFlush.flush();
           }
         } catch (e) {
           logger.error("Error sending SSE event", e, { source: "mockup", event });
@@ -867,8 +870,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         if (connectionClosed) return;
         try {
           res.write(`:keepalive ${Date.now()}\n\n`);
-          if (typeof (res as { flush?: () => void }).flush === "function") {
-            (res as { flush: () => void }).flush();
+          if (typeof resWithFlush.flush === "function") {
+            resWithFlush.flush();
           }
         } catch (e) {
           connectionClosed = true;
@@ -974,7 +977,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Save a new version
   app.post("/api/mockup/versions", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1013,7 +1016,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Get versions for a session (optionally filtered by angle/color)
   app.get("/api/mockup/versions/:sessionId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1036,7 +1039,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Get a specific version
   app.get("/api/mockup/version/:versionId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1058,7 +1061,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Get user's mockup sessions with version counts
   app.get("/api/mockup/sessions", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1076,7 +1079,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Delete a version
   app.delete("/api/mockup/version/:versionId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const userId = req.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }

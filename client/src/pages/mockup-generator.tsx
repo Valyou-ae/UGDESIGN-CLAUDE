@@ -1557,7 +1557,7 @@ export default function MockupGenerator() {
           scene: scene,
           style: styleName,
           modelDetails: useModel ? modelDetails : undefined,
-          journey: journey || "DTG",
+          journey: journey === "TEXT_TO_MOCKUP" ? "DTG" : (journey || "DTG"),
           patternScale: isAopJourney ? patternScale : undefined,
           isSeamlessPattern: isAopJourney,
           outputQuality: outputQuality,

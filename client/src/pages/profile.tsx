@@ -58,7 +58,7 @@ export default function Profile() {
 
   const { data: imagesData, isLoading: imagesLoading } = useQuery({
     queryKey: ["images"],
-    queryFn: imagesApi.getAll,
+    queryFn: () => imagesApi.getAll(),
     enabled: isAuthenticated,
   });
 

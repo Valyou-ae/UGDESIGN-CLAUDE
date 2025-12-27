@@ -190,6 +190,9 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
 
     try {
       userId = getUserId(req as AuthenticatedRequest);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       const { prompt, stylePreset = "auto", aspectRatio = "1:1", detail = "medium", speed = "quality", imageCount = 1, isPublic = false } = req.body;
       if (!prompt || typeof prompt !== "string") {
         return res.status(400).json({ message: "Prompt is required" });
@@ -328,7 +331,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
             // Save image to database
             try {
               const savedImage = await storage.createImage({
-                userId,
+                userId: userId!,
                 imageUrl,
                 prompt,
                 style: stylePreset,
@@ -349,7 +352,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
                       sourceImageId: savedImage.id,
                       title: prompt.substring(0, 100),
                       imageUrl,
-                      creator: userId,
+                      creator: userId!,
                       category: stylePreset !== "auto" ? stylePreset : "General",
                       aspectRatio,
                       prompt,
@@ -457,6 +460,9 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
 
     try {
       userId = getUserId(req as AuthenticatedRequest);
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
       const {
         prompt,
         stylePreset = "auto",
@@ -501,8 +507,9 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
         const eventStr = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
         res.write(eventStr);
         // Force immediate send
-        if (typeof (res as { flush?: () => void }).flush === 'function') {
-          (res as { flush: () => void }).flush();
+        const resWithFlush = res as unknown as { flush?: () => void };
+        if (typeof resWithFlush.flush === 'function') {
+          resWithFlush.flush();
         }
       };
 
@@ -612,7 +619,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
 
             try {
               const savedImage = await storage.createImage({
-                userId,
+                userId: userId!,
                 imageUrl,
                 prompt,
                 style: stylePreset,
@@ -633,7 +640,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
                       sourceImageId: savedImage.id,
                       title: prompt.substring(0, 100),
                       imageUrl,
-                      creator: userId,
+                      creator: userId!,
                       category: stylePreset !== "auto" ? stylePreset : "General",
                       aspectRatio,
                       prompt,

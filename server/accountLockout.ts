@@ -45,7 +45,7 @@ export function recordFailedAttempt(identifier: string): void {
 
   if (entry.attempts >= MAX_FAILED_ATTEMPTS) {
     entry.lockedUntil = now + LOCKOUT_DURATION;
-    logger.warn('Account locked due to failed login attempts', undefined, {
+    logger.warn('Account locked due to failed login attempts', {
       source: 'security',
       identifier: identifier.includes('@') ? 'email' : 'ip',
       attempts: entry.attempts,
@@ -116,7 +116,7 @@ export function getLockoutStats() {
   let totalLocked = 0;
   let totalAttempts = 0;
 
-  for (const entry of lockoutStore.values()) {
+  for (const entry of Array.from(lockoutStore.values())) {
     if (entry.lockedUntil && now < entry.lockedUntil) {
       totalLocked++;
     }

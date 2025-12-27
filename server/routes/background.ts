@@ -89,8 +89,9 @@ export async function registerBackgroundRoutes(app: Express, middleware: Middlew
 
       const sendEvent = (event: string, data: unknown) => {
         res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-        if (typeof (res as { flush?: () => void }).flush === 'function') {
-          (res as { flush: () => void }).flush();
+        const resWithFlush = res as unknown as { flush?: () => void };
+        if (typeof resWithFlush.flush === 'function') {
+          resWithFlush.flush();
         }
       };
 

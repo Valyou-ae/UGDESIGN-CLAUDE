@@ -22,6 +22,13 @@ export interface AuthUser {
   expires_at?: number;
 }
 
+// Augment Express types to include our AuthUser
+declare global {
+  namespace Express {
+    interface User extends AuthUser {}
+  }
+}
+
 /**
  * Express Request with authenticated user
  */
