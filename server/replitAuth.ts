@@ -9,9 +9,16 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { pool } from "./db";
 import type { AuthUser, AuthClaims } from "./types";
+import { logger } from "./logger";
+
+// Check if we're running on Replit
+const isReplit = !!process.env.REPL_ID;
 
 const getOidcConfig = memoize(
   async () => {
+    if (!isReplit) {
+      throw new Error("Replit OIDC not available outside Replit environment");
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
       process.env.REPL_ID!
@@ -71,6 +78,28 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  passport.serializeUser((user: Express.User, cb) => cb(null, user));
+  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+
+  // Skip Replit OIDC setup if not on Replit - use Google OAuth instead
+  if (!isReplit) {
+    logger.info("Running outside Replit - skipping Replit OIDC, using Google OAuth", { source: "auth" });
+
+    // Provide basic /api/login that redirects to home (Google OAuth is handled client-side)
+    app.get("/api/login", (_req, res) => {
+      res.redirect("/");
+    });
+
+    app.get("/api/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect("/");
+      });
+    });
+
+    return;
+  }
+
+  // Replit OIDC setup (only runs on Replit)
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -104,9 +133,6 @@ export async function setupAuth(app: Express) {
       registeredStrategies.add(strategyName);
     }
   };
-
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
     ensureStrategy(req.hostname);
