@@ -184,8 +184,12 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
   });
 
   app.post("/api/generate/draft", requireAuth, async (req: Request, res: Response) => {
+    // Declare outside try block for catch block access
+    let userId: string | undefined;
+    let creditsDeducted = 0;
+
     try {
-      const userId = getUserId(req as AuthenticatedRequest);
+      userId = getUserId(req as AuthenticatedRequest);
       const { prompt, stylePreset = "auto", aspectRatio = "1:1", detail = "medium", speed = "quality", imageCount = 1, isPublic = false } = req.body;
       if (!prompt || typeof prompt !== "string") {
         return res.status(400).json({ message: "Prompt is required" });
@@ -196,9 +200,9 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       // Calculate and check credits before generation
       const creditCost = calculateCreditCost('draft', aspectRatio, count);
       const creditCheck = await checkAndDeductCredits(userId, creditCost, `draft generation (${count} image${count > 1 ? 's' : ''})`);
-      
+
       if (!creditCheck.success) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: creditCheck.error,
           credits: creditCheck.credits,
           required: creditCost
@@ -206,7 +210,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       }
 
       // Track credits deducted for potential refund
-      let creditsDeducted = creditCost;
+      creditsDeducted = creditCost;
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -436,8 +440,10 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
 
       res.end();
     } catch (error) {
-      // Full refund on catastrophic failure
-      await refundCredits(userId, creditsDeducted, "Draft generation failed completely");
+      // Full refund on catastrophic failure (only if we actually deducted credits)
+      if (userId && creditsDeducted > 0) {
+        await refundCredits(userId, creditsDeducted, "Draft generation failed completely");
+      }
       logger.error("Draft generation error", error, { source: "generation" });
       res.write(`event: error\ndata: ${JSON.stringify({ message: "Generation failed", creditsRefunded: creditsDeducted })}\n\n`);
       res.end();
@@ -445,8 +451,12 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
   });
 
   app.post("/api/generate/final", requireAuth, generationRateLimiter, async (req: Request, res: Response) => {
+    // Declare outside try block for catch block access
+    let userId: string | undefined;
+    let creditsDeducted = 0;
+
     try {
-      const userId = getUserId(req as AuthenticatedRequest);
+      userId = getUserId(req as AuthenticatedRequest);
       const {
         prompt,
         stylePreset = "auto",
@@ -467,9 +477,9 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       // Calculate and check credits before generation
       const creditCost = calculateCreditCost('premium', aspectRatio, count);
       const creditCheck = await checkAndDeductCredits(userId, creditCost, `premium generation (${count} image${count > 1 ? 's' : ''})`);
-      
+
       if (!creditCheck.success) {
-        return res.status(402).json({ 
+        return res.status(402).json({
           message: creditCheck.error,
           credits: creditCheck.credits,
           required: creditCost
@@ -477,7 +487,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       }
 
       // Track credits deducted for potential refund
-      let creditsDeducted = creditCost;
+      creditsDeducted = creditCost;
 
       // SSE headers with anti-buffering settings
       res.setHeader("Content-Type", "text/event-stream");
@@ -722,8 +732,10 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
 
       res.end();
     } catch (error) {
-      // Full refund on catastrophic failure
-      await refundCredits(userId, creditsDeducted, "Premium generation failed completely");
+      // Full refund on catastrophic failure (only if we actually deducted credits)
+      if (userId && creditsDeducted > 0) {
+        await refundCredits(userId, creditsDeducted, "Premium generation failed completely");
+      }
       logger.error("Final generation error", error, { source: "generation" });
       res.write(`event: error\ndata: ${JSON.stringify({ message: "Generation failed", creditsRefunded: creditsDeducted })}\n\n`);
       res.end();

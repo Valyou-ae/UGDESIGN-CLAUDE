@@ -73,10 +73,14 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   });
 
   app.post("/api/mockup/generate", requireAuth, generationRateLimiter, async (req: Request, res: Response) => {
+    // Declare outside try block for catch block access
+    let userId: string | undefined;
+    let creditCost = 0;
+
     try {
       const authReq = req as any;
-      const userId = authReq.user?.claims?.sub;
-      
+      userId = authReq.user?.claims?.sub;
+
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -96,7 +100,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       }
 
       // Determine credit cost based on quality
-      const creditCost = MOCKUP_CREDIT_COSTS[quality as keyof typeof MOCKUP_CREDIT_COSTS] || MOCKUP_CREDIT_COSTS.high;
+      creditCost = MOCKUP_CREDIT_COSTS[quality as keyof typeof MOCKUP_CREDIT_COSTS] || MOCKUP_CREDIT_COSTS.high;
       
       // Check and deduct credits
       const hasCredits = await checkAndDeductCredits(userId, creditCost);
@@ -161,14 +165,16 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
 
       res.end();
     } catch (error) {
-      // Refund credits on error
-      try {
-        await storage.addCredits(userId, creditCost);
-      } catch (refundError) {
-        logger.error("Failed to refund credits", refundError, { source: "mockup" });
+      // Refund credits on error (only if we actually deducted credits)
+      if (userId && creditCost > 0) {
+        try {
+          await storage.addCredits(userId, creditCost);
+        } catch (refundError) {
+          logger.error("Failed to refund credits", refundError, { source: "mockup" });
+        }
       }
       logger.error("Mockup generation error", error, { source: "mockup" });
-      const errorMessage = (error as Error).message === 'Generation timeout' 
+      const errorMessage = (error as Error).message === 'Generation timeout'
         ? "Mockup generation timed out after 60 seconds. Credits refunded."
         : "Mockup generation failed. Credits refunded.";
       res.write(`event: error\ndata: ${JSON.stringify({ message: errorMessage })}\n\n`);

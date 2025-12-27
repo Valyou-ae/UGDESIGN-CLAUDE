@@ -491,8 +491,11 @@ export function registerImageRoutes(app: Express, middleware: Middleware) {
 
   // Edit an image using AI - creates a new version
   app.post("/api/images/:id/edit", requireAuth, async (req: Request, res: Response) => {
+    // Declare outside try block for catch block access
+    let userId: string | undefined;
+
     try {
-      const userId = getUserId(req as AuthenticatedRequest);
+      userId = getUserId(req as AuthenticatedRequest);
       const { id } = req.params;
       const { editPrompt } = req.body;
 
@@ -578,10 +581,12 @@ export function registerImageRoutes(app: Express, middleware: Middleware) {
         }
       });
     } catch (error) {
-      // Refund credits on unexpected error
-      await refundCredits(userId, IMAGE_EDIT_CREDIT_COST, 'Image edit error');
+      // Refund credits on unexpected error (only if we actually deducted credits)
+      if (userId) {
+        await refundCredits(userId, IMAGE_EDIT_CREDIT_COST, 'Image edit error');
+      }
       logger.error("Image edit error", error, { source: "images" });
-      res.status(500).json({ message: "Failed to edit image. Please try again.", creditsRefunded: IMAGE_EDIT_CREDIT_COST });
+      res.status(500).json({ message: "Failed to edit image. Please try again.", creditsRefunded: userId ? IMAGE_EDIT_CREDIT_COST : 0 });
     }
   });
 
