@@ -27,8 +27,8 @@ primary_region = 'bom'
     port = 3000
     path = "/api/health"
     interval = "30s"
-    timeout = "5s"
-    grace_period = "30s"
+    timeout = "10s"
+    grace_period = "60s"
 
 [[vm]]
   memory = '1gb'
