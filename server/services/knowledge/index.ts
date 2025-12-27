@@ -182,3 +182,87 @@ export {
   type KnowledgeConfig,
   type EnhancedPrompt
 } from './knowledgeService';
+
+// New Knowledge Base Modules (02, 06, 07, 08, 09-10, Industry)
+export {
+  allOpticalEffects,
+  lightRays,
+  atmosphericScattering,
+  lensEffects,
+  reflections,
+  shadows,
+  caustics,
+  timeOfDayPresets,
+  getOpticalEffectById,
+  getOpticalEffectsByCategory,
+  getTimeOfDayById
+} from './opticalPhenomena';
+
+export {
+  promptStructure,
+  qualityKeywords,
+  universalNegatives as metaUniversalNegatives,
+  portraitNegatives,
+  landscapeNegatives,
+  productNegatives,
+  architectureNegatives,
+  negativePromptCategories,
+  getQualityEnhancers,
+  getNegativesForSubject as getMetaNegativesForSubject,
+  buildOptimizedPrompt
+} from './metaPrompting';
+
+export {
+  depthLayers,
+  atmosphericPerspective,
+  atmosphericKeywords,
+  bokehShapes,
+  apertureGuide,
+  getDepthLayerById,
+  getBokehShapeById,
+  getApertureByFStop,
+  applyDepthSystem
+} from './depthSystems';
+
+export {
+  rainEffects,
+  snowEffects,
+  fogTypes,
+  timeOfDay,
+  seasons,
+  allWeatherEffects,
+  getWeatherEffectById,
+  getTimeOfDayById as getWeatherTimeOfDayById,
+  getSeasonById,
+  applyWeatherAtmosphere
+} from './weatherEffects';
+
+export {
+  textQuality,
+  fontCategories,
+  legibilityRules,
+  technicalChecks,
+  anatomicalChecks,
+  consistencyChecks,
+  qualityScoring,
+  preGenerationChecklist,
+  postGenerationChecklist,
+  getFontCategoryById,
+  getQualityKeywords as getTextQualityKeywords,
+  getAllQualityFixes,
+  getAllNegativePrompts
+} from './typographyQuality';
+
+export {
+  interiorStyles,
+  interiorMoods,
+  fashionCategories,
+  productTechniques,
+  productLighting,
+  getInteriorStyleById,
+  getInteriorMoodById,
+  getFashionCategoryById,
+  getProductTechniqueById,
+  getProductLightingById,
+  applyIndustryKnowledge
+} from './industryKnowledge';

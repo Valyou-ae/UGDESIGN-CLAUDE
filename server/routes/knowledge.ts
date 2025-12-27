@@ -8,7 +8,19 @@ import {
   getAvailableAtmosphericEffects,
   getAvailableSubjects,
   enhancePromptWithKnowledge,
-  type KnowledgeConfig
+  type KnowledgeConfig,
+  allOpticalEffects,
+  timeOfDayPresets,
+  depthLayers,
+  bokehShapes,
+  apertureGuide,
+  allWeatherEffects,
+  timeOfDay,
+  seasons,
+  fontCategories,
+  interiorStyles,
+  fashionCategories,
+  productTechniques
 } from "../services/knowledge";
 import { logger } from "../logger";
 
@@ -109,7 +121,17 @@ export async function registerKnowledgeRoutes(app: Express, middleware: Middlewa
         palettes: getAvailablePalettes(),
         filmStocks: getAvailableFilmStocks(),
         lighting,
-        subjects: getAvailableSubjects()
+        subjects: getAvailableSubjects(),
+        opticalEffects: allOpticalEffects.map(e => ({ id: e.id, name: e.name, category: e.category })),
+        timeOfDay: timeOfDayPresets.map(t => ({ id: t.id, name: t.name })),
+        depthLayers: depthLayers.map(d => ({ id: d.id, name: d.name })),
+        bokehShapes: bokehShapes.map(b => ({ id: b.id, name: b.name })),
+        weather: allWeatherEffects.map(w => ({ id: w.id, name: w.name, category: w.category })),
+        seasons: seasons.map(s => ({ id: s.id, name: s.name })),
+        fonts: fontCategories.map(f => ({ id: f.id, name: f.name, mood: f.mood })),
+        interiorStyles: interiorStyles.map(i => ({ id: i.id, name: i.name })),
+        fashionStyles: fashionCategories.map(f => ({ id: f.id, name: f.name })),
+        productTechniques: productTechniques.map(p => ({ id: p.id, name: p.name, use: p.use }))
       });
     } catch (error) {
       logger.error("Failed to get all knowledge options", error, { source: "knowledge" });
