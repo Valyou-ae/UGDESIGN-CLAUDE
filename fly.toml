@@ -1,10 +1,10 @@
-# fly.toml app configuration file generated for uglidesign-production-21dec on 2025-12-21T14:08:44Z
+# fly.toml app configuration file generated for ugdesign-claude on 2025-12-27T06:13:22Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'uglidesign-production-21dec'
-primary_region = 'bom'
+app = 'ugdesign-claude'
+primary_region = 'sin'
 
 [build]
 
