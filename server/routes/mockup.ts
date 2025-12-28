@@ -451,7 +451,9 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
               existingPersonaLock: sharedPersonaLock,
               patternScale: isAopJourney ? patternScale : undefined,
               outputQuality: outputQuality
-            }, (completed, _total, job) => {
+            }, 
+            // onProgress callback
+            (completed, _total, job) => {
               const completedOverall = (sizeIndex * jobsPerSize) + completed;
               const progress = 10 + Math.round((completedOverall / totalJobs) * 85);
 
@@ -489,13 +491,23 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
               }
 
               sendEvent("status", { stage: "generating", message: `Generated ${completedOverall}/${totalJobs} mockups${sizeLabel}...`, progress });
-            }, (error) => {
+            }, 
+            // onError callback
+            (error) => {
               if (error.type === 'persona_lock_failed') {
                 personaLockFailed = true;
                 sendEvent("persona_lock_failed", { message: error.message, details: error.details, suggestion: "Try again or use a different model configuration" });
               } else {
                 sendEvent("batch_error", { type: error.type, message: error.message, details: error.details });
               }
+            },
+            // onStage callback for detailed progress updates
+            (stageUpdate) => {
+              sendEvent("status", { 
+                stage: stageUpdate.stage, 
+                message: stageUpdate.message, 
+                progress: stageUpdate.progress 
+              });
             });
 
             if (personaLockFailed) break;

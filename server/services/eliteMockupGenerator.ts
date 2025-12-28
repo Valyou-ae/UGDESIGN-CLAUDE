@@ -64,6 +64,32 @@ const GENERATION_CONFIG = {
 let currentJobCount = 0;
 let lastMinuteRequests: number[] = [];
 
+// Persona headshot cache - keyed by persona characteristics for reuse
+const personaHeadshotCache = new Map<string, { headshot: string; timestamp: number }>();
+const HEADSHOT_CACHE_TTL = 1000 * 60 * 60; // 1 hour cache
+
+function getPersonaCacheKey(persona: UnifiedPersona): string {
+  // Include persona ID and facial features for unique identification
+  // This prevents cross-persona/cross-user headshot reuse
+  return `${persona.id}_${persona.sex}_${persona.ethnicity}_${persona.age}_${persona.hairStyle}_${persona.hairColor}_${persona.eyeColor}_${persona.skinTone}_${persona.facialFeatures}`;
+}
+
+function getCachedHeadshot(persona: UnifiedPersona): string | null {
+  const key = getPersonaCacheKey(persona);
+  const cached = personaHeadshotCache.get(key);
+  if (cached && Date.now() - cached.timestamp < HEADSHOT_CACHE_TTL) {
+    logger.info("Using cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key });
+    return cached.headshot;
+  }
+  return null;
+}
+
+function cacheHeadshot(persona: UnifiedPersona, headshot: string): void {
+  const key = getPersonaCacheKey(persona);
+  personaHeadshotCache.set(key, { headshot, timestamp: Date.now() });
+  logger.info("Cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key, cacheSize: personaHeadshotCache.size });
+}
+
 interface LockData {
   type: string;
   locked: boolean;
@@ -1085,44 +1111,95 @@ export interface BatchGenerationError {
   details?: string;
 }
 
+export type GenerationStage = 'analyzing' | 'generating_headshot' | 'building_prompts' | 'generating' | 'complete';
+
+export interface StageUpdate {
+  stage: GenerationStage;
+  message: string;
+  progress: number;
+}
+
 export async function generateMockupBatch(
   request: MockupGenerationRequest,
   onProgress?: (completed: number, total: number, job: GenerationJob) => void,
-  onError?: (error: BatchGenerationError) => void
+  onError?: (error: BatchGenerationError) => void,
+  onStage?: (update: StageUpdate) => void
 ): Promise<MockupBatch> {
   const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  const designAnalysis = await analyzeDesignForMockup(request.designImage);
-
+  // Helper to report stage updates
+  const reportStage = (stage: GenerationStage, message: string, progress: number) => {
+    if (onStage) {
+      onStage({ stage, message, progress });
+    }
+  };
+  
+  // OPTIMIZATION: Run design analysis and persona preparation in parallel
+  reportStage('analyzing', 'Analyzing design and preparing model...', 5);
+  
+  let designAnalysis: DesignAnalysis;
   let personaLock: PersonaLock | undefined;
   let personaHeadshot: string | undefined;
 
   if (request.existingPersonaLock) {
+    // Reusing existing persona - just run design analysis
     personaLock = request.existingPersonaLock as PersonaLock;
     personaHeadshot = personaLock.headshot;
     logger.info("Reusing existing persona lock for consistent model appearance", { source: "eliteMockupGenerator" });
+    designAnalysis = await analyzeDesignForMockup(request.designImage);
   } else if (request.product.isWearable && request.modelDetails) {
-    try {
-      personaLock = await generatePersonaLock(request.modelDetails);
+    // PARALLEL: Run design analysis and persona lock generation simultaneously
+    const [analysisResult, personaResult] = await Promise.all([
+      analyzeDesignForMockup(request.designImage),
+      (async () => {
+        try {
+          const lock = await generatePersonaLock(request.modelDetails!);
+          return { success: true as const, lock };
+        } catch (error) {
+          logger.warn("Persona lock generation failed", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
+          return { success: false as const, error };
+        }
+      })()
+    ]);
+    
+    designAnalysis = analysisResult;
+    
+    if (personaResult.success) {
+      personaLock = personaResult.lock;
       
-      try {
-        personaHeadshot = await generatePersonaHeadshot(personaLock);
+      // Check headshot cache first
+      const cachedHeadshot = getCachedHeadshot(personaLock.persona);
+      if (cachedHeadshot) {
+        personaHeadshot = cachedHeadshot;
         personaLock.headshot = personaHeadshot;
-        logger.info("Persona headshot generated successfully", { source: "eliteMockupGenerator" });
-      } catch (headshotError) {
-        logger.warn("Persona headshot generation failed, proceeding without it", { source: "eliteMockupGenerator", error: headshotError instanceof Error ? headshotError.message : String(headshotError) });
-        if (onError) {
-          onError({
-            type: 'persona_lock_failed',
-            message: 'Headshot generation skipped - proceeding with text-based persona description',
-            details: headshotError instanceof Error ? headshotError.message : String(headshotError)
-          });
+        reportStage('generating_headshot', 'Using cached model reference...', 15);
+      } else {
+        // Generate new headshot
+        reportStage('generating_headshot', 'Creating model reference...', 12);
+        try {
+          personaHeadshot = await generatePersonaHeadshot(personaLock);
+          personaLock.headshot = personaHeadshot;
+          // Cache for future use
+          cacheHeadshot(personaLock.persona, personaHeadshot);
+          logger.info("Persona headshot generated and cached", { source: "eliteMockupGenerator" });
+        } catch (headshotError) {
+          logger.warn("Persona headshot generation failed, proceeding without it", { source: "eliteMockupGenerator", error: headshotError instanceof Error ? headshotError.message : String(headshotError) });
+          if (onError) {
+            onError({
+              type: 'persona_lock_failed',
+              message: 'Headshot generation skipped - proceeding with text-based persona description',
+              details: headshotError instanceof Error ? headshotError.message : String(headshotError)
+            });
+          }
         }
       }
-    } catch (error) {
-      logger.warn("Persona lock generation failed, proceeding without model", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
     }
+  } else {
+    // Non-wearable product - just design analysis
+    designAnalysis = await analyzeDesignForMockup(request.designImage);
   }
+  
+  reportStage('building_prompts', 'Building generation prompts...', 18);
 
   const jobs: GenerationJob[] = [];
   for (const color of request.colors) {
