@@ -11,7 +11,7 @@ Preferred communication style: Simple, everyday language.
 ## Frontend Architecture
 
 -   **Framework & Build System**: React 18+ with TypeScript, Vite, Wouter for routing, and TanStack Query for server state.
--   **UI Component System**: shadcn/ui built on Radix UI, Tailwind CSS v4 with CSS variables for theming, Framer Motion for animations, and Outfit font.
+-   **UI Component System**: shadcn/ui built on Radix UI, Tailwind CSS v4 with CSS variables for theming, Framer Motion for animations, and Helvetica Neue font (with Helvetica, Arial fallbacks).
 -   **UGLI Brand Colors**: Primary (Rust: #B94E30), Secondary (Gold: #E3B436), Text (Brown: #664D3F), and Neutrals.
 -   **State Management**: TanStack Query for server state, React useState/useReducer for local UI state, and session-based authentication.
 -   **Design System**: Two-panel layout (sidebar + main content), Bento grid for dashboard cards, consistent color system with semantic tokens, dark/light theme support, and mobile responsiveness.

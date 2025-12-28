@@ -72,7 +72,7 @@
   --color-charcoal-950: #252526;
   
   /* Font */
-  --font-sans: 'Outfit', sans-serif;
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   
   /* Animation */
   --animate-accordion-down: accordion-down 0.2s ease-out;
