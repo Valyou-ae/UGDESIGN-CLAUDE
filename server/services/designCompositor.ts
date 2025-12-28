@@ -30,28 +30,38 @@ const PLACEHOLDER_COLOR = "#00FF00"; // Bright green for easy detection
 
 export function getPlaceholderPromptAddition(): string {
   return `
-===== PRINT AREA PLACEHOLDER (CRITICAL) =====
+===== PRINT AREA PLACEHOLDER (CRITICAL - READ CAREFULLY) =====
 [MANDATORY - FOR POST-PROCESSING DESIGN OVERLAY]
 
-Instead of placing the design on the garment, create a SOLID BRIGHT GREEN (#00FF00) RECTANGLE in the exact print area location where the design should appear.
+CRITICAL INSTRUCTION: Instead of placing the design on the garment, you MUST create a SOLID BRIGHT GREEN (#00FF00) FILLED RECTANGLE in the print area. 
 
-PLACEHOLDER SPECIFICATIONS:
-- Color: EXACTLY #00FF00 (pure bright green)
-- Shape: Rectangle following the garment's 3D surface contours
-- Position: Centered on chest (for DTG) or covering full garment (for AOP)
-- The green rectangle should follow the natural curves and folds of the fabric
-- Apply perspective distortion to the rectangle as if it were printed on the fabric
-- The edges of the green area should align with the print area boundaries
-- Include fabric folds/wrinkles affecting the green area (it should look like green fabric, not flat)
+ABSOLUTE REQUIREMENTS:
+- Color: EXACTLY #00FF00 (pure bright green, RGB 0,255,0)
+- SOLID FILL ONLY: The green area must be 100% SOLID - NO TEXT, NO PATTERNS, NO WORDS
+- DO NOT write "DESIGN HERE" or any text whatsoever
+- DO NOT add any logos, icons, or graphics in the green area
+- The green must be a COMPLETELY SOLID, UNIFORM color rectangle
 
-DO NOT place any design, logo, or pattern - ONLY the solid green placeholder.
-This green area will be replaced with the actual design in post-processing.
+SHAPE REQUIREMENTS:
+- Rectangle shape following the garment's 3D surface contours
+- Position: Centered on chest area for t-shirts/tank tops
+- Size: Approximately 8-10 inches wide, 10-12 inches tall (standard print area)
+- Apply natural fabric perspective distortion
+- Include realistic fabric folds/wrinkles affecting the green area shape
 
-The green placeholder must:
-1. Follow all fabric contours and body curves
-2. Show proper perspective based on camera angle
-3. Include realistic fabric folds/shadows within the green area
-4. Have clean, detectable edges for automated replacement
+WHAT THE GREEN AREA SHOULD LOOK LIKE:
+Imagine a solid green rectangle of fabric sewn onto the shirt. It should:
+1. Be completely filled with solid #00FF00 green
+2. Follow the body curves and fabric drape
+3. Have NO text, labels, or markings of any kind
+4. Have clean edges that can be detected by color
+
+FORBIDDEN (DO NOT DO ANY OF THESE):
+- Writing "DESIGN HERE" or similar text
+- Adding placeholder text of any kind
+- Adding any graphics or patterns
+- Any color other than #00FF00 in the print area
+
 ===== END PLACEHOLDER =====`;
 }
 
@@ -220,10 +230,7 @@ export async function compositeDesignOntoMockup(
   options: CompositeOptions = {}
 ): Promise<Buffer> {
   const {
-    blendMode = 'multiply',
-    opacity = 0.95,
-    shadowIntensity = 0.15,
-    fabricTextureBlend = 0.1
+    opacity = 0.95
   } = options;
 
   try {
@@ -246,6 +253,8 @@ export async function compositeDesignOntoMockup(
       .resize(Math.round(width), Math.round(height), { fit: 'fill' })
       .toBuffer();
 
+    const greenMask = await createGreenMask(mockupBuffer);
+
     const perspectiveDesign = await applyPerspectiveTransform(
       resizedDesign,
       corners,
@@ -253,27 +262,17 @@ export async function compositeDesignOntoMockup(
       mockupHeight
     );
 
-    const greenMask = await createGreenMask(mockupBuffer);
-
-    let result = await sharp(mockupBuffer)
-      .composite([
-        {
-          input: perspectiveDesign,
-          blend: blendMode as any,
-          left: 0,
-          top: 0
-        }
-      ])
-      .toBuffer();
-
-    if (shadowIntensity > 0) {
-      result = await applyShadowFromOriginal(result, mockupBuffer, greenMask, shadowIntensity);
-    }
+    const result = await replaceGreenWithDesign(
+      mockupBuffer,
+      perspectiveDesign,
+      greenMask,
+      mockupWidth,
+      mockupHeight
+    );
 
     logger.info("Design composited successfully", { 
       source: "designCompositor",
       designSize: `${width}x${height}`,
-      blendMode,
       opacity
     });
 
@@ -284,38 +283,175 @@ export async function compositeDesignOntoMockup(
   }
 }
 
+async function replaceGreenWithDesign(
+  mockupBuffer: Buffer,
+  designBuffer: Buffer,
+  maskBuffer: Buffer,
+  canvasWidth: number,
+  canvasHeight: number
+): Promise<Buffer> {
+  const mockupRaw = await sharp(mockupBuffer).raw().toBuffer({ resolveWithObject: true });
+  const designRaw = await sharp(designBuffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const maskRaw = await sharp(maskBuffer).raw().toBuffer({ resolveWithObject: true });
+
+  const outputData = Buffer.from(mockupRaw.data);
+
+  for (let y = 0; y < canvasHeight; y++) {
+    for (let x = 0; x < canvasWidth; x++) {
+      const mockupIdx = (y * canvasWidth + x) * mockupRaw.info.channels;
+      const designIdx = (y * canvasWidth + x) * designRaw.info.channels;
+      const maskIdx = y * canvasWidth + x;
+
+      if (maskRaw.data[maskIdx] > 128) {
+        const designAlpha = designRaw.info.channels === 4 ? designRaw.data[designIdx + 3] / 255 : 1;
+        
+        if (designAlpha > 0.1) {
+          outputData[mockupIdx] = designRaw.data[designIdx];
+          outputData[mockupIdx + 1] = designRaw.data[designIdx + 1];
+          outputData[mockupIdx + 2] = designRaw.data[designIdx + 2];
+        }
+      }
+    }
+  }
+
+  return sharp(outputData, {
+    raw: {
+      width: canvasWidth,
+      height: canvasHeight,
+      channels: mockupRaw.info.channels
+    }
+  })
+    .jpeg({ quality: 90 })
+    .toBuffer();
+}
+
 async function applyPerspectiveTransform(
   designBuffer: Buffer,
   corners: PrintAreaCorners,
   canvasWidth: number,
   canvasHeight: number
 ): Promise<Buffer> {
-  const designMeta = await sharp(designBuffer).metadata();
-  const designWidth = designMeta.width || 100;
-  const designHeight = designMeta.height || 100;
+  const designRaw = await sharp(designBuffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const srcWidth = designRaw.info.width;
+  const srcHeight = designRaw.info.height;
+  const srcChannels = designRaw.info.channels;
 
-  const minX = Math.min(corners.topLeft.x, corners.bottomLeft.x);
-  const minY = Math.min(corners.topLeft.y, corners.topRight.y);
+  const outputData = Buffer.alloc(canvasWidth * canvasHeight * 4);
 
-  const canvas = await sharp({
-    create: {
-      width: canvasWidth,
-      height: canvasHeight,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 }
-    }
-  })
-    .composite([
-      {
-        input: designBuffer,
-        left: Math.max(0, Math.round(minX)),
-        top: Math.max(0, Math.round(minY))
+  const H = computeHomography(
+    { x: 0, y: 0 }, { x: srcWidth, y: 0 },
+    { x: 0, y: srcHeight }, { x: srcWidth, y: srcHeight },
+    corners.topLeft, corners.topRight,
+    corners.bottomLeft, corners.bottomRight
+  );
+
+  const Hinv = invertHomography(H);
+
+  const minX = Math.max(0, Math.floor(Math.min(corners.topLeft.x, corners.bottomLeft.x)) - 2);
+  const maxX = Math.min(canvasWidth, Math.ceil(Math.max(corners.topRight.x, corners.bottomRight.x)) + 2);
+  const minY = Math.max(0, Math.floor(Math.min(corners.topLeft.y, corners.topRight.y)) - 2);
+  const maxY = Math.min(canvasHeight, Math.ceil(Math.max(corners.bottomLeft.y, corners.bottomRight.y)) + 2);
+
+  for (let y = minY; y < maxY; y++) {
+    for (let x = minX; x < maxX; x++) {
+      const src = applyHomography(Hinv, x, y);
+      
+      if (src.x >= 0 && src.x < srcWidth && src.y >= 0 && src.y < srcHeight) {
+        const sx = Math.floor(src.x);
+        const sy = Math.floor(src.y);
+        const srcIdx = (sy * srcWidth + sx) * srcChannels;
+        const dstIdx = (y * canvasWidth + x) * 4;
+
+        outputData[dstIdx] = designRaw.data[srcIdx];
+        outputData[dstIdx + 1] = designRaw.data[srcIdx + 1];
+        outputData[dstIdx + 2] = designRaw.data[srcIdx + 2];
+        outputData[dstIdx + 3] = designRaw.data[srcIdx + 3];
       }
-    ])
+    }
+  }
+
+  return sharp(outputData, {
+    raw: { width: canvasWidth, height: canvasHeight, channels: 4 }
+  })
     .png()
     .toBuffer();
+}
 
-  return canvas;
+function computeHomography(
+  s0: {x:number,y:number}, s1: {x:number,y:number},
+  s2: {x:number,y:number}, s3: {x:number,y:number},
+  d0: {x:number,y:number}, d1: {x:number,y:number},
+  d2: {x:number,y:number}, d3: {x:number,y:number}
+): number[] {
+  const A = [
+    [s0.x, s0.y, 1, 0, 0, 0, -d0.x*s0.x, -d0.x*s0.y],
+    [0, 0, 0, s0.x, s0.y, 1, -d0.y*s0.x, -d0.y*s0.y],
+    [s1.x, s1.y, 1, 0, 0, 0, -d1.x*s1.x, -d1.x*s1.y],
+    [0, 0, 0, s1.x, s1.y, 1, -d1.y*s1.x, -d1.y*s1.y],
+    [s2.x, s2.y, 1, 0, 0, 0, -d2.x*s2.x, -d2.x*s2.y],
+    [0, 0, 0, s2.x, s2.y, 1, -d2.y*s2.x, -d2.y*s2.y],
+    [s3.x, s3.y, 1, 0, 0, 0, -d3.x*s3.x, -d3.x*s3.y],
+    [0, 0, 0, s3.x, s3.y, 1, -d3.y*s3.x, -d3.y*s3.y]
+  ];
+  const b = [d0.x, d0.y, d1.x, d1.y, d2.x, d2.y, d3.x, d3.y];
+  
+  const h = solveLinear(A, b);
+  return [...h, 1];
+}
+
+function solveLinear(A: number[][], b: number[]): number[] {
+  const n = A.length;
+  const aug = A.map((row, i) => [...row, b[i]]);
+
+  for (let col = 0; col < n; col++) {
+    let maxRow = col;
+    for (let row = col + 1; row < n; row++) {
+      if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) maxRow = row;
+    }
+    [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+    
+    if (Math.abs(aug[col][col]) < 1e-10) continue;
+    
+    for (let row = col + 1; row < n; row++) {
+      const f = aug[row][col] / aug[col][col];
+      for (let j = col; j <= n; j++) aug[row][j] -= f * aug[col][j];
+    }
+  }
+
+  const x = new Array(n).fill(0);
+  for (let i = n - 1; i >= 0; i--) {
+    let sum = aug[i][n];
+    for (let j = i + 1; j < n; j++) sum -= aug[i][j] * x[j];
+    x[i] = Math.abs(aug[i][i]) > 1e-10 ? sum / aug[i][i] : 0;
+  }
+  return x;
+}
+
+function invertHomography(H: number[]): number[] {
+  const [a,b,c,d,e,f,g,h] = H;
+  const det = a*(e-f*h) - b*(d-f*g) + c*(d*h-e*g);
+  if (Math.abs(det) < 1e-10) return [1,0,0,0,1,0,0,0,1];
+  
+  return [
+    (e - f*h) / det,
+    (c*h - b) / det,
+    (b*f - c*e) / det,
+    (f*g - d) / det,
+    (a - c*g) / det,
+    (c*d - a*f) / det,
+    (d*h - e*g) / det,
+    (b*g - a*h) / det,
+    (a*e - b*d) / det
+  ];
+}
+
+function applyHomography(H: number[], x: number, y: number): {x: number, y: number} {
+  const w = H[6]*x + H[7]*y + H[8];
+  if (Math.abs(w) < 1e-10) return { x: -1, y: -1 };
+  return {
+    x: (H[0]*x + H[1]*y + H[2]) / w,
+    y: (H[3]*x + H[4]*y + H[5]) / w
+  };
 }
 
 async function createGreenMask(mockupBuffer: Buffer): Promise<Buffer> {
