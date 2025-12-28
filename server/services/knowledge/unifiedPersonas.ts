@@ -2,11 +2,19 @@ import { UnifiedPersona, AgeGroup, Sex, Ethnicity, Size } from '@shared/mockupTy
 import { ADULT_PERSONAS } from './adultPersonas';
 import { TEEN_PERSONAS } from './teenPersonas';
 import { YOUNG_ADULT_PERSONAS } from './youngAdultPersonas';
+import { BABY_PERSONAS } from './babyPersonas';
+import { TODDLER_PERSONAS } from './toddlerPersonas';
+import { KIDS_PERSONAS } from './kidsPersonas';
+import { SENIOR_PERSONAS } from './seniorPersonas';
 
 export const ALL_PERSONAS: UnifiedPersona[] = [
-  ...ADULT_PERSONAS,
+  ...BABY_PERSONAS,
+  ...TODDLER_PERSONAS,
+  ...KIDS_PERSONAS,
   ...TEEN_PERSONAS,
-  ...YOUNG_ADULT_PERSONAS
+  ...YOUNG_ADULT_PERSONAS,
+  ...ADULT_PERSONAS,
+  ...SENIOR_PERSONAS
 ];
 
 export function getPersona(id: string): UnifiedPersona | undefined {
@@ -60,27 +68,18 @@ export function getRandomPersona(filters?: PersonaFilters): UnifiedPersona {
 
   if (filters) {
     if (filters.ageGroup) {
-      personas = personas.filter(p => {
-        const age = parseInt(p.age, 10);
-        if (isNaN(age)) {
-          const ageStr = p.age.toLowerCase();
-          if (filters.ageGroup === 'Teen' && ageStr.includes('teen')) return true;
-          if (filters.ageGroup === 'Young Adult' && ageStr.includes('young adult')) return true;
-          if (filters.ageGroup === 'Adult' && ageStr.includes('adult') && !ageStr.includes('young')) return true;
-          return false;
-        }
-        const ranges: Record<AgeGroup, { min: number; max: number }> = {
-          'Baby': { min: 0, max: 1 },
-          'Toddler': { min: 1, max: 4 },
-          'Kids': { min: 4, max: 12 },
-          'Teen': { min: 13, max: 17 },
-          'Young Adult': { min: 18, max: 24 },
-          'Adult': { min: 25, max: 55 },
-          'Senior': { min: 56, max: 120 }
-        };
-        const range = ranges[filters.ageGroup!];
-        return range && age >= range.min && age <= range.max;
-      });
+      const ageGroupIdPrefix: Record<AgeGroup, string> = {
+        'Baby': 'baby-',
+        'Toddler': 'toddler-',
+        'Kids': 'kids-',
+        'Teen': 'teen-',
+        'Young Adult': 'young-adult-',
+        'Adult': 'adult-',
+        'Senior': 'senior-'
+      };
+      
+      const prefix = ageGroupIdPrefix[filters.ageGroup];
+      personas = personas.filter(p => p.id.startsWith(prefix));
     }
 
     if (filters.sex) {

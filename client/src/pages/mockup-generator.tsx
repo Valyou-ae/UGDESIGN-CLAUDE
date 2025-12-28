@@ -2818,13 +2818,13 @@ export default function MockupGenerator() {
                                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Age Group</label>
                                       <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                                         {[
-                                          { value: "Baby", label: "Baby", description: "0-1 yr", icon: "👶", available: false },
-                                          { value: "Toddler", label: "Toddler", description: "1-4 yrs", icon: "💒", available: false },
-                                          { value: "Kids", label: "Kids", description: "4-12 yrs", icon: "💧", available: false },
-                                          { value: "Teen", label: "Teen", description: "13-17 yrs", icon: "🧒", available: true },
-                                          { value: "Young Adult", label: "Young Adult", description: "18-24 yrs", icon: "🧑", available: true },
-                                          { value: "Adult", label: "Adult", description: "25-55 yrs", icon: "👨", available: true },
-                                          { value: "Senior", label: "Senior", description: "56+ yrs", icon: "👴", available: false },
+                                          { value: "Baby", label: "Baby", description: "0-1 yr", icon: "👶", available: true },
+                                          { value: "Toddler", label: "Toddler", description: "1-4 yrs", icon: "🧒", available: true },
+                                          { value: "Kids", label: "Kids", description: "4-12 yrs", icon: "👦", available: true },
+                                          { value: "Teen", label: "Teen", description: "13-17 yrs", icon: "🧑", available: true },
+                                          { value: "Young Adult", label: "Young Adult", description: "18-24 yrs", icon: "👨", available: true },
+                                          { value: "Adult", label: "Adult", description: "25-55 yrs", icon: "🧔", available: true },
+                                          { value: "Senior", label: "Senior", description: "56+ yrs", icon: "👴", available: true },
                                         ].map((option) => (
                                           <button
                                             key={option.value}
