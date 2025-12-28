@@ -192,6 +192,7 @@ Respond with JSON:
 
 export async function generatePersonaLock(modelDetails: ModelDetails): Promise<PersonaLock> {
   const persona = getRandomPersona({
+    ageGroup: modelDetails.age,
     sex: modelDetails.sex,
     ethnicity: modelDetails.ethnicity,
     size: modelDetails.modelSize

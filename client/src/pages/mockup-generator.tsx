@@ -169,10 +169,20 @@ type WizardStep =
   | "customize" // Sizes + Colors + Model + Scene
   | "output";   // Angles + Quality + Generate
 
-type AgeGroup = "ADULT" | "YOUNG_ADULT" | "TEEN";
+type AgeGroup = "Baby" | "Toddler" | "Kids" | "Teen" | "Young Adult" | "Adult" | "Senior";
 type Sex = "MALE" | "FEMALE";
 type Ethnicity = "White" | "Black" | "Hispanic" | "Asian" | "Indian" | "Southeast Asian" | "Middle Eastern" | "Indigenous" | "Diverse";
-type ModelSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
+type ModelSize = "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL";
+
+const AGE_GROUP_OPTIONS = [
+  { value: "Baby", label: "Baby", ageRange: "0-2", icon: Baby },
+  { value: "Toddler", label: "Toddler", ageRange: "2-5", icon: Baby },
+  { value: "Kids", label: "Kids", ageRange: "6-12", icon: Smile },
+  { value: "Teen", label: "Teen", ageRange: "13-17", icon: PersonStanding },
+  { value: "Young Adult", label: "Young Adult", ageRange: "18-29", icon: User },
+  { value: "Adult", label: "Adult", ageRange: "30-50", icon: UserCheck },
+  { value: "Senior", label: "Senior", ageRange: "50+", icon: Users },
+];
 type OutputQuality = "standard" | "high" | "ultra";
 type HairStyle = "Short" | "Medium" | "Long" | "Bald";
 type Expression = "Neutral" | "Smiling" | "Serious" | "Candid";
@@ -835,6 +845,15 @@ const getGenderFromCategory = (category: string): Sex | null => {
   return null;
 };
 
+const getAgeGroupFromCategory = (category: string): AgeGroup | null => {
+  const lower = category.toLowerCase();
+  if (lower.includes("baby") || lower.includes("bodysuits")) return "Baby";
+  if (lower.includes("toddler")) return "Toddler";
+  if (lower.includes("kids'") || lower.includes("kids") || lower.includes("children")) return "Kids";
+  if (lower.includes("teen")) return "Teen";
+  return null; // Default to user selection for adult categories
+};
+
 const isNonWearableCategory = (category: string): boolean => {
   const nonWearable = ["accessories", "home & living"];
   return nonWearable.some(nw => category.toLowerCase().includes(nw));
@@ -852,7 +871,7 @@ export default function MockupGenerator() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["M"]);
   const [selectedAngles, setSelectedAngles] = useState<string[]>(["front"]);
   const [modelDetails, setModelDetails] = useState<ModelDetails>({
-    age: "ADULT",
+    age: "Adult",
     sex: "MALE",
     ethnicity: "White",
     modelSize: "M"
@@ -2533,8 +2552,13 @@ export default function MockupGenerator() {
                                           } else {
                                             setUseModel(true);
                                             const autoGender = getGenderFromCategory(item.category);
+                                            const autoAgeGroup = getAgeGroupFromCategory(item.category);
+                                            setModelDetails(prev => ({
+                                              ...prev,
+                                              ...(autoGender && { sex: autoGender }),
+                                              ...(autoAgeGroup && { age: autoAgeGroup })
+                                            }));
                                             if (autoGender) {
-                                              setModelDetails(prev => ({...prev, sex: autoGender}));
                                               setGenderAutoSelected(true);
                                             }
                                           }
@@ -2802,8 +2826,36 @@ export default function MockupGenerator() {
                                       </div>
                                     </div>
                                     
+                                    {/* Age Group Section */}
+                                    <div className="mt-3">
+                                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Age Group</label>
+                                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                                        {AGE_GROUP_OPTIONS.map((option) => {
+                                          const IconComponent = option.icon;
+                                          const isSelected = modelDetails.age === option.value;
+                                          return (
+                                            <button
+                                              key={option.value}
+                                              onClick={() => setModelDetails({...modelDetails, age: option.value as AgeGroup})}
+                                              className={cn(
+                                                "flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg border transition-all",
+                                                isSelected
+                                                  ? "bg-primary/10 border-primary text-primary"
+                                                  : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"
+                                              )}
+                                              data-testid={`age-group-${option.value.toLowerCase().replace(' ', '-')}`}
+                                            >
+                                              <IconComponent className="h-4 w-4" />
+                                              <span className="text-xs font-medium">{option.label}</span>
+                                              <span className="text-[10px] text-muted-foreground">{option.ageRange}</span>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    </div>
+                                    
                                     {/* Ethnicity Section */}
-                                    <div className="mt-2">
+                                    <div className="mt-3">
                                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Ethnicity</label>
                                       <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 w-full">
                                         {[

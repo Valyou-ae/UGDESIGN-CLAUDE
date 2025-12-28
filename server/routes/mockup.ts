@@ -335,7 +335,11 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         };
 
         const ageMap: Record<string, string> = {
-          "ADULT": "Adult", "YOUNG_ADULT": "Young Adult", "TEEN": "Teen"
+          // Legacy uppercase format
+          "ADULT": "Adult", "YOUNG_ADULT": "Young Adult", "TEEN": "Teen",
+          // New expanded age groups (pass through as-is)
+          "Baby": "Baby", "Toddler": "Toddler", "Kids": "Kids", "Teen": "Teen",
+          "Young Adult": "Young Adult", "Adult": "Adult", "Senior": "Senior"
         };
 
         const sexMap: Record<string, string> = {
