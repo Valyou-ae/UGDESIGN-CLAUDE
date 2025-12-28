@@ -1333,12 +1333,40 @@ export async function generateMockupBatch(
     ? request.sizes 
     : [request.modelDetails?.modelSize || 'M'];
 
-  // Pre-generate persona locks for each size
+  // Handle existing persona lock (for cross-batch face/headshot consistency)
+  // When reusing a persona, apply it to ALL sizes for consistent facial appearance
+  // The render spec will use somatic fallback for body proportions when size doesn't match
+  if (request.existingPersonaLock && request.product.isWearable) {
+    const existingLock = request.existingPersonaLock as PersonaLock;
+    const existingSize = existingLock.persona.size || 'M';
+    
+    // Apply existing persona to ALL requested sizes for face/headshot consistency
+    for (const size of sizesToGenerate) {
+      personaLocksBySize.set(size, existingLock);
+      if (existingLock.headshot) {
+        headshotsBySize.set(size, existingLock.headshot);
+      }
+    }
+    
+    logger.info("Existing persona lock applied to all sizes for face consistency", { 
+      source: "eliteMockupGenerator",
+      existingPersonaSize: existingSize,
+      appliedToSizes: sizesToGenerate,
+      note: "Body proportions will use somatic fallback for non-matching sizes"
+    });
+  }
+
+  // Pre-generate persona locks for each size that doesn't have one yet
   if (request.product.isWearable && request.modelDetails) {
     const fsPromises = await import('fs/promises');
     const pathModule = await import('path');
     
     for (const size of sizesToGenerate) {
+      // Skip if we already have a persona for this size from existingPersonaLock
+      if (personaLocksBySize.has(size)) {
+        continue;
+      }
+      
       try {
         // Create size-specific model details to get matching persona
         const sizeModelDetails: ModelDetails = { 
@@ -1376,11 +1404,12 @@ export async function generateMockupBatch(
         
         personaLocksBySize.set(size, sizePersonaLock);
       } catch (error) {
-        logger.warn("Persona lock generation failed for size, proceeding without model", { 
+        logger.warn("Persona lock generation failed for size, job will use somatic fallback", { 
           source: "eliteMockupGenerator", 
           size,
           error: error instanceof Error ? error.message : String(error) 
         });
+        // Don't add to map - job will have undefined personaLock and use somatic fallback
       }
     }
     
@@ -1516,7 +1545,8 @@ export async function generateMockupBatch(
     job.startedAt = Date.now();
 
     // Use job-specific persona lock for size-accurate body representation
-    const jobPersonaLock = job.personaLock as PersonaLock | undefined;
+    // If undefined, buildRenderSpecification will use somatic profile fallback
+    const jobPersonaLock = job.personaLock ? (job.personaLock as unknown as PersonaLock) : undefined;
     const jobHeadshot = job.personaLockImage;
 
     const renderSpec = buildRenderSpecification(
