@@ -41,6 +41,7 @@ import {
   getProduct,
   getFullHumanRealismPrompt,
   getRandomPersona,
+  getExactPersona,
   getEthnicFeatures,
   getRandomName,
   getGarmentBlueprintPrompt
@@ -187,29 +188,46 @@ export async function generatePersonaLock(modelDetails: ModelDetails): Promise<P
     size: modelDetails.modelSize 
   });
   
-  const persona = getRandomPersona({
-    ageGroup,
-    sex: modelDetails.sex,
-    ethnicity: modelDetails.ethnicity,
-    size: modelDetails.modelSize
-  });
+  let persona = getExactPersona(
+    modelDetails.ethnicity,
+    modelDetails.sex,
+    modelDetails.modelSize,
+    ageGroup
+  );
+
+  if (!persona) {
+    logger.info("No exact persona match, falling back to random", { source: "eliteMockupGenerator" });
+    persona = getRandomPersona({
+      ageGroup,
+      sex: modelDetails.sex,
+      ethnicity: modelDetails.ethnicity,
+      size: modelDetails.modelSize
+    });
+  }
 
   if (!persona) {
     throw new Error("No matching persona found");
   }
+
+  const isExactMatch = persona.ethnicity === modelDetails.ethnicity && 
+                       persona.sex === modelDetails.sex && 
+                       persona.size === modelDetails.modelSize &&
+                       persona.ageGroup === ageGroup;
 
   logger.info("Persona selected for mockup generation", { 
     source: "eliteMockupGenerator", 
     personaId: persona.id,
     personaName: persona.name,
     personaAge: persona.age,
+    personaAgeGroup: persona.ageGroup,
     personaSex: persona.sex,
     personaEthnicity: persona.ethnicity,
     personaSize: persona.size,
     requestedAge: modelDetails.age,
     requestedSex: modelDetails.sex,
     requestedEthnicity: modelDetails.ethnicity,
-    requestedSize: modelDetails.modelSize
+    requestedSize: modelDetails.modelSize,
+    isExactMatch
   });
 
   const somaticProfile = getSomaticProfile(

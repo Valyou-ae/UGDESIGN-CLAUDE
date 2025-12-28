@@ -84,14 +84,21 @@ export {
 
 export {
   ALL_PERSONAS,
+  CORE_PERSONAS,
   ADULT_PERSONAS,
   TEEN_PERSONAS,
   YOUNG_ADULT_PERSONAS,
   getPersona,
+  getPersonaByFilters,
   getPersonasByAgeGroup,
   getPersonasBySex,
   getPersonasByEthnicity,
-  getRandomPersona
+  getPersonasBySize,
+  getRandomPersona,
+  getExactPersona,
+  generatePersonaId,
+  parsePersonaId,
+  getPersonaStats
 } from './unifiedPersonas';
 
 // Enhanced Knowledge Base Modules
