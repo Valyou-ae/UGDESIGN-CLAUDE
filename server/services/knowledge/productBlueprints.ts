@@ -3164,6 +3164,17 @@ export function getGarmentBlueprint(product: Product): GarmentBlueprint {
     };
   }
 
+  if (name.includes('knitwear') || name.includes('sweater') || name.includes('pullover')) {
+    return {
+      fit: 'Relaxed comfortable fit, slightly oversized',
+      hem: 'Ribbed waistband with visible knit texture',
+      collarType: 'Ribbed crewneck collar with visible knit ribbing',
+      sleeveType: 'Long sleeves with ribbed cuffs, visible knit texture throughout',
+      extraFeatures: 'CRITICAL: This is a KNIT SWEATER/PULLOVER with visible cable knit or ribbed texture, NOT a thin cotton t-shirt. Thick cozy knit fabric with visible yarn texture. The garment should appear warm and substantial.',
+      aopConstruction: isAop ? 'Pattern printed on knit fabric, maintaining knit texture appearance' : undefined
+    };
+  }
+
   if (name.includes('swimsuit') || name.includes('swimwear')) {
     return {
       fit: 'Form-fitting, athletic cut',

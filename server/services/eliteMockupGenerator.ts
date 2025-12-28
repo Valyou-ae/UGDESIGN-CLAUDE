@@ -386,11 +386,18 @@ ${sizeSpecificProfile ? `
 ===== CRITICAL IDENTITY ENFORCEMENT =====
 [MANDATORY - FAILURE TO MATCH THESE IS NOT ACCEPTABLE]
 
-1. SEX ENFORCEMENT:
+1. AGE ENFORCEMENT (CRITICAL):
+   - The model MUST appear to be ${personaLock.persona.age} years old
+   - DO NOT show an older or younger person
+   - If age is 13-17, the model MUST look like a TEENAGER, not an adult
+   - If age is 18-24, the model MUST look like a YOUNG ADULT, not middle-aged
+   - Facial features, skin texture, and body proportions must match the specified age
+
+2. SEX ENFORCEMENT:
    - The model MUST be ${personaLock.persona.sex.toLowerCase()}
    - Do NOT show a ${personaLock.persona.sex === 'Male' ? 'female' : 'male'} under any circumstances
 
-2. ETHNICITY ENFORCEMENT (HIGHEST PRIORITY):
+3. ETHNICITY ENFORCEMENT (HIGHEST PRIORITY):
    - Ethnicity: ${personaLock.persona.ethnicity}
    - Skin tone: ${personaLock.persona.skinTone} (EXACT MATCH REQUIRED)
    - Facial features: ${personaLock.persona.facialFeatures}
@@ -399,7 +406,7 @@ ${sizeSpecificProfile ? `
    - DO NOT substitute one ethnicity for another (e.g., do not show Asian when Middle Eastern is specified)
    - DO NOT blend ethnic features incorrectly
 
-3. BODY SIZE ENFORCEMENT (SIZE: ${sizeForBody}):
+4. BODY SIZE ENFORCEMENT (SIZE: ${sizeForBody}):
 ${sizeSpecificProfile ? `   - Build: ${sizeSpecificProfile.build}
    - Weight: ${sizeSpecificProfile.weight}
    - Height: ${sizeSpecificProfile.height}
@@ -408,7 +415,7 @@ ${sizeSpecificProfile ? `   - Build: ${sizeSpecificProfile.build}
    - Weight: ${personaLock.persona.weight}
    - The body MUST match these specifications exactly`}
 
-4. CROSS-SHOT CONSISTENCY:
+5. CROSS-SHOT CONSISTENCY:
    - This EXACT same person must appear in ALL angle shots
    - Same face, same body, same features across front, side, three-quarter, and close-up views
    - If a reference headshot image is provided, match that EXACT person in every shot
@@ -644,6 +651,23 @@ FABRIC PHYSICS DETAILS:
 - Fold characteristics: ${fabricPhysics.foldCharacteristics}` : ''}
 ===== END AOP LOCKS =====` : "";
 
+  const productKeywords = product.promptKeywords?.length ? product.promptKeywords.join(', ') : product.name;
+  const productTypeReinforcement = `
+===== PRODUCT TYPE (CRITICAL - DO NOT IGNORE) =====
+[MANDATORY - THE GARMENT TYPE MUST MATCH]
+- Product: ${product.name} (${product.frontendName || product.name})
+- Subcategory: ${product.subcategory || product.category}
+- Keywords: ${productKeywords}
+${product.printSpec?.notes ? `- Notes: ${product.printSpec.notes}` : ''}
+
+CRITICAL PRODUCT ENFORCEMENT:
+- The garment must be a ${product.name.toUpperCase()}, not a different type of clothing
+- If this is "Knitwear" or "Sweater", the model must wear a KNIT SWEATER with visible yarn/knit texture, NOT a thin T-shirt
+- If this is "Hoodie", the model must wear a hoodie with a hood, NOT a t-shirt
+- If this is "Long Sleeve", the model must wear a long-sleeved garment, NOT short sleeves
+- DO NOT substitute the product type for a simpler garment (like a basic t-shirt)
+===== END PRODUCT TYPE =====`;
+
   const garmentConstructionBlock = product.isWearable && garmentBlueprint ? `
 ===== GARMENT CONSTRUCTION DETAILS =====
 ${garmentBlueprint}
@@ -680,6 +704,8 @@ CONSISTENCY REQUIREMENT:
 
   const fullPrompt = `ELITE MOCKUP GENERATION - RENDER SPECIFICATION
 ================================================================
+
+${productTypeReinforcement}
 
 ${personaLockBlock}
 
