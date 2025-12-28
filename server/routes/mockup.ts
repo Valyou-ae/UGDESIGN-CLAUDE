@@ -222,11 +222,26 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       // Parse knowledge config from request
       const kbConfig: KnowledgeConfig = knowledgeConfig || {};
 
-      // Calculate total mockups including sizes and enforce batch limit
-      const sizesArray = Array.isArray(productSizes) && productSizes.length > 0 ? productSizes : ['M'];
-      const colorsArray = Array.isArray(productColors) ? productColors : [productColors];
-      const anglesArray = Array.isArray(angles) ? angles : [angles];
-      const totalMockups = colorsArray.length * anglesArray.length * sizesArray.length;
+      // SINGLE SOURCE OF TRUTH: Size normalization computed once and used for both billing and generation
+      const sizeNormMap: Record<string, string> = {
+        "XS": "XS", "S": "S", "M": "M", "L": "L", "XL": "XL",
+        "2XL": "XXL", "XXL": "XXL", "3XL": "XXXL", "XXXL": "XXXL", 
+        "4XL": "4XL", "5XL": "5XL"
+      };
+
+      // Compute normalized sizes - same logic used for BOTH billing AND generation
+      const defaultSize = modelDetails?.modelSize || 'M';
+      const rawSizeList = Array.isArray(productSizes) && productSizes.length > 0 
+        ? productSizes 
+        : [defaultSize];
+      const normalizedSizeList: string[] = rawSizeList.map((s: string) => sizeNormMap[s] || s);
+      
+      // Normalize arrays for consistent counting
+      const colorList = Array.isArray(productColors) ? productColors : [productColors];
+      const angleList = Array.isArray(angles) ? angles : [angles];
+      
+      // Calculate totals using normalized lists
+      const totalMockups = colorList.length * angleList.length * normalizedSizeList.length;
       const MAX_BATCH_SIZE = 27; // 3 sizes × 3 colors × 3 angles max
       
       if (totalMockups > MAX_BATCH_SIZE) {
@@ -244,11 +259,12 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       const creditCostPerMockup = MOCKUP_CREDIT_COSTS[outputQuality];
       const totalCreditCost = creditCostPerMockup * totalMockups;
       
-      logger.info("Batch credit calculation", { 
+      logger.info("Batch billing (single source of truth)", { 
         source: "mockup", 
-        sizes: sizesArray.length, 
-        colors: colorsArray.length, 
-        angles: anglesArray.length, 
+        rawSizes: rawSizeList,
+        normalizedSizes: normalizedSizeList,
+        colors: colorList.length, 
+        angles: angleList.length, 
         totalMockups, 
         creditCostPerMockup, 
         totalCreditCost 
@@ -420,22 +436,13 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
           }
         }
 
-        const sizeMap: Record<string, string> = {
-          "XS": "XS", "S": "S", "M": "M", "L": "L", "XL": "XL",
-          "2XL": "XXL", "XXL": "XXL", "3XL": "XXXL", "XXXL": "XXXL", 
-          "4XL": "4XL", "5XL": "5XL"
-        };
-
-        const rawSizes: string[] = Array.isArray(productSizes) && productSizes.length > 0
-          ? productSizes
-          : [mappedModelDetails.modelSize || 'M'];
-
-        const sizesToGenerate: string[] = rawSizes.map(s => sizeMap[s] || s);
+        // Use pre-computed normalizedSizeList from billing calculation (single source of truth)
+        const sizesToGenerate = normalizedSizeList;
 
         let personaLockFailed = false;
         let batchCompleted = false;
         let totalGeneratedCount = 0;
-        const totalJobs = sizesToGenerate.length * angles.length * colors.length;
+        const totalJobs = sizesToGenerate.length * angleList.length * colors.length;
 
         sendEvent("status", { stage: "preparing", message: "Preparing model reference...", progress: 8 });
 
