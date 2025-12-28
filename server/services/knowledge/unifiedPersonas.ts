@@ -22,30 +22,20 @@ export function getPersona(id: string): UnifiedPersona | undefined {
 }
 
 export function getPersonasByAgeGroup(ageGroup: AgeGroup): UnifiedPersona[] {
-  const ageRanges: Record<AgeGroup, { min: number; max: number }> = {
-    'Baby': { min: 0, max: 1 },
-    'Toddler': { min: 1, max: 4 },
-    'Kids': { min: 4, max: 12 },
-    'Teen': { min: 13, max: 17 },
-    'Young Adult': { min: 18, max: 24 },
-    'Adult': { min: 25, max: 55 },
-    'Senior': { min: 56, max: 120 }
+  const ageGroupIdPrefix: Record<AgeGroup, string> = {
+    'Baby': 'baby-',
+    'Toddler': 'toddler-',
+    'Kids': 'kids-',
+    'Teen': 'teen-',
+    'Young Adult': 'young-adult-',
+    'Adult': 'adult-',
+    'Senior': 'senior-'
   };
 
-  const range = ageRanges[ageGroup];
-  if (!range) return [];
+  const prefix = ageGroupIdPrefix[ageGroup];
+  if (!prefix) return [];
 
-  return ALL_PERSONAS.filter(persona => {
-    const age = parseInt(persona.age, 10);
-    if (isNaN(age)) {
-      const ageStr = persona.age.toLowerCase();
-      if (ageGroup === 'Teen' && ageStr.includes('teen')) return true;
-      if (ageGroup === 'Young Adult' && ageStr.includes('young adult')) return true;
-      if (ageGroup === 'Adult' && ageStr.includes('adult') && !ageStr.includes('young')) return true;
-      return false;
-    }
-    return age >= range.min && age <= range.max;
-  });
+  return ALL_PERSONAS.filter(persona => persona.id.startsWith(prefix));
 }
 
 export function getPersonasBySex(sex: Sex): UnifiedPersona[] {
