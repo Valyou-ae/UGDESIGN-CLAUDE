@@ -1427,9 +1427,9 @@ export async function generateMockupBatch(
     );
 
     // Use both headshot AND first successful mockup as references for better consistency
-    // When compositing, we don't send the design image - the AI generates with a placeholder
+    // When compositing, we still send the design for AI reference but prompt instructs green placeholder generation
     const result = await generateMockupWithRetry(
-      useCompositing ? "" : request.designImage,
+      request.designImage,
       renderSpec,
       personaHeadshot,
       referenceImage
