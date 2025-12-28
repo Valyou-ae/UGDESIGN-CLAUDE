@@ -79,7 +79,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Poised 34-year-old woman with soft features and natural beauty. Her auburn shoulder-length hair has gentle layers, framing bright blue eyes and light freckles.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-white-m-01_sarah_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_white_female_m_headshot.png'
   },
   {
     id: 'adult-female-black-m-01',
@@ -99,7 +99,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Elegant 31-year-old woman with striking high cheekbones and full lips. Her beautiful natural curls frame her face, highlighting deep brown eyes that radiate warmth.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-black-m-01_jasmine_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_black_female_m_headshot.png'
   },
   {
     id: 'adult-female-asian-m-01',
@@ -119,7 +119,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Graceful 29-year-old woman with delicate features and beautiful almond-shaped eyes. Her long straight black hair cascades down her back, complementing her light golden complexion.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-asian-m-01_mei_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_asian_female_m_headshot.png'
   },
   {
     id: 'adult-male-asian-l-01',
@@ -179,7 +179,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Radiant 36-year-old woman with curves and confidence. Her long wavy dark brown hair frames expressive eyes and a warm smile that lights up her face.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-indian-l-01_priya_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_indian_female_l_headshot.png'
   },
   {
     id: 'adult-female-hispanic-l-01',
@@ -299,7 +299,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Confident 39-year-old woman with a full-figured build and warm features. Her long layered blonde hair frames bright green eyes and a welcoming smile.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-white-xl-01_jennifer_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_white_female_xl_headshot.png'
   },
   {
     id: 'adult-female-black-xl-01',
@@ -319,7 +319,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Radiant 35-year-old woman with beautiful curves and confident presence. Her elegant braided updo showcases defined cheekbones, with warm dark brown eyes.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-black-xl-01_keisha_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_black_female_xl_headshot.png'
   },
   {
     id: 'adult-male-indigenous-xl-01',
@@ -359,7 +359,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Nurturing 40-year-old woman with a full-figured build and serene presence. Her long straight black hair frames a round face with gentle dark brown eyes.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-female-indigenous-xl-01_maya_headshot.png'
+    headshotUrl: 'attached_assets/personas/adult_indigenous_female_xl_headshot.png'
   },
   {
     id: 'adult-male-hispanic-xl-01',
