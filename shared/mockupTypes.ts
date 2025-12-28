@@ -22,7 +22,7 @@ export type Ethnicity =
   | 'Indigenous' 
   | 'Diverse';
 
-export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | '4XL' | '5XL';
+export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | '2XL' | 'XXXL' | '4XL' | '5XL';
 
 // ============================================================================
 // OUTPUT QUALITY
@@ -98,6 +98,8 @@ export interface UnifiedPersona {
   id: string;
   name: string;
   age: string;
+  ageGroup?: AgeGroup;
+  ageRange?: string;
   sex: Sex;
   ethnicity: Ethnicity;
   size: string;
@@ -114,6 +116,42 @@ export interface UnifiedPersona {
   createdDate: string;
   headshotUrl?: string;
 }
+
+export const ETHNICITY_CODES: Record<string, string> = {
+  'White': 'WHT',
+  'Black': 'BLK',
+  'Hispanic': 'HSP',
+  'Asian': 'ASN',
+  'Indian': 'IND',
+  'Southeast Asian': 'SEA',
+  'Indigenous': 'IDG',
+  'Middle Eastern': 'MDE'
+};
+
+export const AGE_CODES: Record<string, string> = {
+  'Teen': 'TN',
+  'Young Adult': 'YA',
+  'Adult': 'AD'
+};
+
+export const AGE_RANGES: Record<string, string> = {
+  'Teen': '13-17',
+  'Young Adult': '18-24',
+  'Adult': '25-45'
+};
+
+export const PERSONA_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+
+export const PERSONA_ETHNICITIES: Ethnicity[] = [
+  'White',
+  'Black',
+  'Hispanic',
+  'Asian',
+  'Indian',
+  'Southeast Asian',
+  'Indigenous',
+  'Middle Eastern'
+];
 
 export interface SomaticProfile {
   height: string;
