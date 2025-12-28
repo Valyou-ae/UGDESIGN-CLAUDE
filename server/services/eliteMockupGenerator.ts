@@ -46,6 +46,7 @@ import {
   getRandomName,
   getGarmentBlueprintPrompt
 } from "./knowledge";
+import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -214,6 +215,22 @@ export async function generatePersonaLock(modelDetails: ModelDetails): Promise<P
                        persona.size === modelDetails.modelSize &&
                        persona.ageGroup === ageGroup;
 
+  // Use headshot mapping to find pre-stored headshot for this persona
+  const headshotPath = getHeadshotPath(persona.id);
+  if (headshotPath) {
+    persona.headshotUrl = headshotPath;
+    logger.info("Headshot found for persona via mapping", { 
+      source: "eliteMockupGenerator", 
+      personaId: persona.id,
+      headshotPath 
+    });
+  } else {
+    logger.warn("No headshot found for persona", { 
+      source: "eliteMockupGenerator", 
+      personaId: persona.id 
+    });
+  }
+
   logger.info("Persona selected for mockup generation", { 
     source: "eliteMockupGenerator", 
     personaId: persona.id,
@@ -227,7 +244,8 @@ export async function generatePersonaLock(modelDetails: ModelDetails): Promise<P
     requestedSex: modelDetails.sex,
     requestedEthnicity: modelDetails.ethnicity,
     requestedSize: modelDetails.modelSize,
-    isExactMatch
+    isExactMatch,
+    hasHeadshot: !!headshotPath
   });
 
   const somaticProfile = getSomaticProfile(
@@ -246,8 +264,12 @@ export async function generatePersonaLock(modelDetails: ModelDetails): Promise<P
 
   const somaticDescription = `${persona.fullDescription} ${somaticProfile.description} Height: ${somaticProfile.height}, weight: ${somaticProfile.weight}, ${somaticProfile.build} build. ${somaticPrompt}`;
 
+  // Pre-load headshot base64 if available
+  const headshot = headshotPath ? getHeadshotBase64(persona.id) : undefined;
+
   return {
     persona,
+    headshot: headshot || undefined,
     somaticDescription
   };
 }
@@ -1376,9 +1398,6 @@ export async function generateMockupBatch(
 
   // Pre-generate persona locks for each size that doesn't have one yet
   if (request.product.isWearable && request.modelDetails) {
-    const fsPromises = await import('fs/promises');
-    const pathModule = await import('path');
-    
     for (const size of sizesToGenerate) {
       // Skip if we already have a persona for this size from existingPersonaLock
       if (personaLocksBySize.has(size)) {
@@ -1400,24 +1419,13 @@ export async function generateMockupBatch(
           personaId: sizePersonaLock.persona.id,
           personaName: sizePersonaLock.persona.name,
           personaSize: sizePersonaLock.persona.size,
-          personaBuild: sizePersonaLock.persona.build
+          personaBuild: sizePersonaLock.persona.build,
+          hasHeadshot: !!sizePersonaLock.headshot
         });
         
-        // Load headshot for this size's persona
-        if (sizePersonaLock.persona.headshotUrl) {
-          try {
-            const headshotPath = pathModule.join(process.cwd(), sizePersonaLock.persona.headshotUrl);
-            const headshotBuffer = await fsPromises.readFile(headshotPath);
-            const headshot = headshotBuffer.toString('base64');
-            sizePersonaLock.headshot = headshot;
-            headshotsBySize.set(size, headshot);
-          } catch (fileError) {
-            logger.warn("Pre-stored headshot file not found for size", { 
-              source: "eliteMockupGenerator", 
-              size,
-              headshotUrl: sizePersonaLock.persona.headshotUrl 
-            });
-          }
+        // Use pre-loaded headshot from generatePersonaLock (already loaded via mapping)
+        if (sizePersonaLock.headshot) {
+          headshotsBySize.set(size, sizePersonaLock.headshot);
         }
         
         personaLocksBySize.set(size, sizePersonaLock);
