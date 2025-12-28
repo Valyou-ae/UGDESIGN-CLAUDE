@@ -1092,21 +1092,48 @@ If the answer is "no" or "maybe", regenerate with closer matching.
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
       parts.push({
-        text: `===== CROSS-ANGLE CONSISTENCY REFERENCE =====
-[MANDATORY - MATCH THIS PREVIOUS SHOT]
+        text: `===== CROSS-BATCH CONSISTENCY REFERENCE (CRITICAL) =====
+[MANDATORY - MATCH THIS REFERENCE SHOT EXACTLY]
 
-This is a mockup from a PREVIOUS ANGLE of the SAME photoshoot.
+This is a mockup from the SAME batch/photoshoot. Your output MUST match this reference in ALL aspects EXCEPT the camera angle and body size.
 
-CONSISTENCY REQUIREMENTS:
-1. SAME MODEL: This is the SAME PERSON - match their face, hair, and body EXACTLY
-2. SAME PRODUCT: Same garment with same pattern/design coverage
-3. SAME ENVIRONMENT: Same background, lighting conditions, and studio setup
-4. SAME STYLE: Same photography style, color grading, and mood
+MANDATORY CONSISTENCY REQUIREMENTS:
 
-The person in your output must be IMMEDIATELY RECOGNIZABLE as the same individual from this reference.
-Only the CAMERA ANGLE should change - everything else stays consistent.
+1. EXACT SAME BACKGROUND:
+   - If reference shows gray studio backdrop, use IDENTICAL gray studio backdrop
+   - If reference shows urban street, use IDENTICAL urban setting
+   - DO NOT change environment type (studio to outdoor = VIOLATION)
+   - Background elements must be PIXEL-FOR-PIXEL identical where possible
 
-===== END CROSS-ANGLE REFERENCE =====`
+2. EXACT SAME DESIGN ON GARMENT:
+   - The printed design must be IDENTICAL to the reference
+   - Same colors, same art style, same borders/outlines
+   - DO NOT reinterpret or modify the design
+
+3. SAME MODEL IDENTITY (for wearables):
+   - This is the SAME PERSON - match their face, hair, skin tone EXACTLY
+   - Same facial features, same hair style, same expression type
+
+4. SAME LIGHTING CONDITIONS:
+   - Same lighting setup (if studio lighting in reference, use studio lighting)
+   - Same color temperature and shadow direction
+
+5. SAME PHOTOGRAPHY STYLE:
+   - Same color grading, mood, and visual treatment
+   - Same level of realism and quality
+
+WHAT MAY DIFFER:
+- Camera angle (as specified in the prompt)
+- Body size (if rendering a different size, adjust body proportionally)
+- Garment fit (adjust for size, but same garment type)
+
+WHAT MUST NOT DIFFER:
+- Background/environment
+- Design artwork on garment
+- Model's identity/face
+- Lighting style
+
+===== END CROSS-BATCH REFERENCE =====`
       });
     }
 
@@ -1358,11 +1385,46 @@ export async function generateMockupBatch(
     }
   } else {
     // Parallel processing for all products with pre-stored headshots (optimized path) and non-wearables
+    // KEY FIX: Use first successful mockup as reference for subsequent batches to ensure consistency
     const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
     logger.info(`Processing ${jobs.length} jobs in parallel batches of ${batchSize}`, { source: "eliteMockupGenerator", hasPreStoredHeadshot: !!hasPreStoredHeadshot });
+    
+    let batchReferenceImage: string | undefined;
+    
     for (let i = 0; i < jobs.length; i += batchSize) {
       const batchJobs = jobs.slice(i, i + batchSize);
-      await Promise.all(batchJobs.map(job => processJobWithReference(job, undefined)));
+      const batchIndex = Math.floor(i / batchSize);
+      
+      // Process this batch with the reference from previous batch (if available)
+      await Promise.all(batchJobs.map(job => processJobWithReference(job, batchReferenceImage)));
+      
+      // After each batch, capture a successful result to use as reference for next batches
+      // Always update reference from any successful job - handles case where first batch fails but later succeeds
+      const successfulJob = batchJobs.find(j => j.result?.imageData);
+      if (successfulJob?.result?.imageData) {
+        const isFirstReference = !batchReferenceImage;
+        batchReferenceImage = successfulJob.result.imageData;
+        
+        if (isFirstReference) {
+          logger.info("First successful mockup captured for cross-batch consistency reference", { 
+            source: "eliteMockupGenerator",
+            batchIndex,
+            referenceJobId: successfulJob.id
+          });
+        } else {
+          logger.debug("Reference image updated from batch", { 
+            source: "eliteMockupGenerator",
+            batchIndex,
+            referenceJobId: successfulJob.id
+          });
+        }
+      } else {
+        logger.warn("No successful mockups in batch, reference unchanged", { 
+          source: "eliteMockupGenerator",
+          batchIndex,
+          hasExistingReference: !!batchReferenceImage
+        });
+      }
     }
   }
   
