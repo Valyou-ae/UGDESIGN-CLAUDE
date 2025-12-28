@@ -490,11 +490,17 @@ async function applyShadowFromOriginal(
   return composited;
 }
 
+export interface CompositeResult {
+  success: boolean;
+  imageData: string;
+  reason?: string;
+}
+
 export async function processDesignOverlay(
   mockupBase64: string,
   designBase64: string,
   options: CompositeOptions = {}
-): Promise<string> {
+): Promise<CompositeResult> {
   const mockupBuffer = Buffer.from(mockupBase64, 'base64');
 
   let corners = await detectPrintAreaWithColorSampling(mockupBuffer);
@@ -512,7 +518,11 @@ export async function processDesignOverlay(
     logger.warn("Could not detect print area, returning original mockup", {
       source: "designCompositor"
     });
-    return mockupBase64;
+    return {
+      success: false,
+      imageData: mockupBase64,
+      reason: 'green_not_detected'
+    };
   }
 
   const result = await compositeDesignOntoMockup(
@@ -522,5 +532,8 @@ export async function processDesignOverlay(
     options
   );
 
-  return result.toString('base64');
+  return {
+    success: true,
+    imageData: result.toString('base64')
+  };
 }

@@ -45,7 +45,7 @@ import {
   getGarmentBlueprintPrompt
 } from "./knowledge";
 import { cacheHeadshotToR2, getHeadshotFromR2, isR2Configured } from "../objectStorage";
-import { getPlaceholderPromptAddition, processDesignOverlay } from "./designCompositor";
+import { getPlaceholderPromptAddition, processDesignOverlay, CompositeResult } from "./designCompositor";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -1436,21 +1436,55 @@ export async function generateMockupBatch(
 
     if (result) {
       let finalImageData = result.imageData;
+      const MAX_COMPOSITING_RETRIES = 2;
 
       if (useCompositing && result.imageData && request.originalDesignBase64) {
-        try {
-          logger.info("Applying design compositing post-process", { source: "eliteMockupGenerator" });
-          finalImageData = await processDesignOverlay(
-            result.imageData,
-            request.originalDesignBase64,
-            { blendMode: 'multiply', opacity: 0.95 }
-          );
-          logger.info("Design compositing completed successfully", { source: "eliteMockupGenerator" });
-        } catch (compositeError) {
-          logger.warn("Design compositing failed, using original AI output", { 
-            source: "eliteMockupGenerator", 
-            error: compositeError instanceof Error ? compositeError.message : String(compositeError)
-          });
+        let compositingSuccess = false;
+        let currentMockup = result.imageData;
+        
+        for (let compositeAttempt = 0; compositeAttempt <= MAX_COMPOSITING_RETRIES && !compositingSuccess; compositeAttempt++) {
+          try {
+            logger.info(`Applying design compositing (attempt ${compositeAttempt + 1}/${MAX_COMPOSITING_RETRIES + 1})`, { source: "eliteMockupGenerator" });
+            
+            const compositeResult: CompositeResult = await processDesignOverlay(
+              currentMockup,
+              request.originalDesignBase64,
+              { blendMode: 'multiply', opacity: 0.95 }
+            );
+            
+            if (compositeResult.success) {
+              finalImageData = compositeResult.imageData;
+              compositingSuccess = true;
+              logger.info("Design compositing completed successfully", { source: "eliteMockupGenerator" });
+            } else {
+              logger.warn(`Compositing failed: ${compositeResult.reason}`, { source: "eliteMockupGenerator" });
+              
+              if (compositeAttempt < MAX_COMPOSITING_RETRIES) {
+                logger.info("Regenerating mockup with green placeholder...", { source: "eliteMockupGenerator" });
+                const retryResult = await generateMockupWithRetry(
+                  request.designImage,
+                  renderSpec,
+                  personaHeadshot,
+                  referenceImage,
+                  1
+                );
+                if (retryResult?.imageData) {
+                  currentMockup = retryResult.imageData;
+                } else {
+                  break;
+                }
+              } else {
+                logger.warn("Max compositing retries reached, using original AI output", { source: "eliteMockupGenerator" });
+                finalImageData = currentMockup;
+              }
+            }
+          } catch (compositeError) {
+            logger.warn("Design compositing error", { 
+              source: "eliteMockupGenerator", 
+              error: compositeError instanceof Error ? compositeError.message : String(compositeError)
+            });
+            break;
+          }
         }
       } else if (useCompositing && !request.originalDesignBase64) {
         logger.warn("Design compositing enabled but originalDesignBase64 not provided, using AI output", { source: "eliteMockupGenerator" });
