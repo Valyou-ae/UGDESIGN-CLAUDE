@@ -757,26 +757,48 @@ ${getContourDistortionPrompt()}
   // Normalize scene/environment to explicit description
   const normalizedEnvironment = (() => {
     const scene = (environmentPrompt || style.preferredEnvironment || '').toLowerCase();
-    if (scene.includes('studio') || scene === 'minimal' || scene === 'clean' || scene === 'white') {
+    if (scene.includes('studio') || scene === 'minimal' || scene === 'clean' || scene === 'white' || scene.includes('gray') || scene.includes('grey')) {
       return {
         setting: 'PROFESSIONAL STUDIO',
         description: 'Clean, neutral gray or white studio backdrop. Professional photography studio setting with seamless backdrop paper.',
-        forbidden: 'NO outdoor scenes, NO urban streets, NO graffiti walls, NO brick alleys, NO coffee shops, NO lifestyle settings, NO nature backgrounds',
+        forbidden: 'NO outdoor scenes, NO urban streets, NO graffiti walls, NO brick alleys, NO coffee shops, NO lifestyle settings, NO nature backgrounds, NO beach scenes',
         lighting: 'Studio lighting only - softboxes, key light, fill light'
       };
-    } else if (scene.includes('urban') || scene.includes('street') || scene.includes('city')) {
+    } else if (scene.includes('beach') || scene.includes('ocean') || scene.includes('tropical') || scene.includes('sand') || scene.includes('sunny') || scene.includes('summer')) {
+      return {
+        setting: 'BEACH / TROPICAL',
+        description: `Sunny beach setting with golden sand, turquoise ocean waves, palm trees, and bright summery daylight. ${environmentPrompt || 'Tropical paradise vibes with clear blue sky.'}`,
+        forbidden: 'NO studio backdrops, NO urban scenes, NO indoor settings, NO gray backgrounds, NO winter scenes',
+        lighting: 'Bright natural sunlight, warm golden tones, summery atmosphere'
+      };
+    } else if (scene.includes('urban') || scene.includes('street') || scene.includes('city') || scene.includes('graffiti')) {
       return {
         setting: 'URBAN STREET',
         description: 'Urban city street with buildings, possibly graffiti or street art in background. Consistent urban environment.',
         forbidden: 'NO studio backdrops, NO nature scenes, NO indoor settings, NO beach or park settings',
         lighting: 'Natural outdoor daylight, consistent throughout batch'
       };
-    } else if (scene.includes('outdoor') || scene.includes('nature') || scene.includes('lifestyle')) {
+    } else if (scene.includes('outdoor') || scene.includes('nature') || scene.includes('lifestyle') || scene.includes('park') || scene.includes('garden')) {
       return {
         setting: 'OUTDOOR LIFESTYLE',
         description: 'Natural outdoor setting with soft natural light. Park, garden, or natural environment.',
         forbidden: 'NO studio backdrops, NO urban/city scenes, NO indoor settings',
         lighting: 'Soft natural daylight, golden hour or overcast lighting'
+      };
+    } else if (scene.includes('cafe') || scene.includes('coffee') || scene.includes('indoor') || scene.includes('restaurant') || scene.includes('home')) {
+      return {
+        setting: 'INDOOR LIFESTYLE',
+        description: `Cozy indoor setting with warm ambient lighting. ${environmentPrompt || 'Modern interior with tasteful decor.'}`,
+        forbidden: 'NO outdoor scenes, NO studio backdrops, NO urban streets',
+        lighting: 'Warm indoor ambient lighting, natural window light mixing with interior lights'
+      };
+    } else if (environmentPrompt && environmentPrompt.length > 20) {
+      // If a custom detailed prompt was provided, use it directly
+      return {
+        setting: 'CUSTOM SCENE',
+        description: environmentPrompt,
+        forbidden: 'Maintain consistency - do not change the scene between shots',
+        lighting: 'Appropriate lighting for the described scene'
       };
     } else {
       return {

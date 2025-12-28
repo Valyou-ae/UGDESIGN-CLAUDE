@@ -237,12 +237,26 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         "Youth": "M", "OS": "M"
       };
 
-      // Compute normalized sizes - same logic used for BOTH billing AND generation
+      // Compute sizes - deduplicate based on normalized equivalents while preserving original labels
       const defaultSize = modelDetails?.modelSize || 'M';
-      const rawSizeList = Array.isArray(productSizes) && productSizes.length > 0 
+      const rawSizeList: string[] = Array.isArray(productSizes) && productSizes.length > 0 
         ? productSizes 
         : [defaultSize];
-      const normalizedSizeList: string[] = rawSizeList.map((s: string) => sizeNormMap[s] || s);
+      
+      // Deduplicate: Keep first occurrence of each normalized size (preserves original label)
+      // This ensures billing and generation counts always match
+      const seenNormalizedSizes = new Set<string>();
+      const deduplicatedSizeList: string[] = [];
+      for (const size of rawSizeList) {
+        const normalizedSize = sizeNormMap[size] || size;
+        if (!seenNormalizedSizes.has(normalizedSize)) {
+          seenNormalizedSizes.add(normalizedSize);
+          deduplicatedSizeList.push(size); // Keep original label
+        }
+      }
+      
+      // For backward compatibility, also keep normalized list
+      const normalizedSizeList: string[] = deduplicatedSizeList.map((s: string) => sizeNormMap[s] || s);
       
       // Normalize arrays for consistent counting
       const colorList = Array.isArray(productColors) ? productColors : [productColors];
@@ -270,6 +284,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       logger.info("Batch billing (single source of truth)", { 
         source: "mockup", 
         rawSizes: rawSizeList,
+        deduplicatedSizes: deduplicatedSizeList,
         normalizedSizes: normalizedSizeList,
         colors: colorList.length, 
         angles: angleList.length, 
@@ -444,8 +459,10 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
           }
         }
 
-        // Use pre-computed normalizedSizeList from billing calculation (single source of truth)
-        const sizesToGenerate = normalizedSizeList;
+        // Use deduplicatedSizeList for generation to preserve original size labels
+        // while ensuring billing and generation counts match
+        // Body type calculations use size normalization internally in buildRenderSpecification
+        const sizesToGenerate = deduplicatedSizeList;
 
         let personaLockFailed = false;
         let batchCompleted = false;

@@ -100,10 +100,24 @@ function calculateWeight(heightInches: number, sex: Sex, sizeMultiplier: { min: 
   };
 }
 
+// Normalize size aliases to canonical sizes used in our maps
+function normalizeSize(size: string): Size {
+  const sizeNormMap: Record<string, Size> = {
+    '2XL': 'XXL', '2xl': 'XXL',
+    '3XL': 'XXXL', '3xl': 'XXXL',
+    'xs': 'XS', 's': 'S', 'm': 'M', 'l': 'L', 'xl': 'XL',
+    'xxl': 'XXL', 'xxxl': 'XXXL', '4xl': '4XL', '5xl': '5XL'
+  };
+  return sizeNormMap[size] || (size as Size);
+}
+
 export function getSomaticProfile(age: AgeGroup, sex: Sex, ethnicity: Ethnicity, size: Size): SomaticProfile {
+  // Normalize size to handle aliases like 2XL → XXL
+  const normalizedSize = normalizeSize(size);
+  
   const ageMod = AGE_MODIFIERS[age];
   const baseHeight = HEIGHT_BASE[sex][ethnicity];
-  const sizeHeightMod = SIZE_HEIGHT_MODIFIER[size];
+  const sizeHeightMod = SIZE_HEIGHT_MODIFIER[normalizedSize] ?? SIZE_HEIGHT_MODIFIER['M'];
   
   const heightInches = baseHeight + sizeHeightMod + ageMod.heightMod;
   const heightRange = {
@@ -115,7 +129,7 @@ export function getSomaticProfile(age: AgeGroup, sex: Sex, ethnicity: Ethnicity,
     ? `${Math.round(heightInches * 2.54)}cm (${Math.round(heightInches)}")`
     : `${inchesToFeetString(heightRange.min)}–${inchesToFeetString(heightRange.max)}`;
   
-  const sizeWeightMult = SIZE_WEIGHT_MULTIPLIER[size];
+  const sizeWeightMult = SIZE_WEIGHT_MULTIPLIER[normalizedSize] ?? SIZE_WEIGHT_MULTIPLIER['M'];
   const adjustedWeightMult = {
     min: sizeWeightMult.min * ageMod.weightMod,
     max: sizeWeightMult.max * ageMod.weightMod
@@ -130,7 +144,7 @@ export function getSomaticProfile(age: AgeGroup, sex: Sex, ethnicity: Ethnicity,
   if (age === 'Baby' || age === 'Toddler' || age === 'Kids') {
     buildDescription = ageMod.buildNote;
   } else {
-    buildDescription = `${SIZE_BUILD[size]}, ${ageMod.buildNote}`;
+    buildDescription = `${SIZE_BUILD[normalizedSize] ?? SIZE_BUILD['M']}, ${ageMod.buildNote}`;
   }
   
   const ethnicDesc = ETHNICITY_DESCRIPTIONS[ethnicity];
