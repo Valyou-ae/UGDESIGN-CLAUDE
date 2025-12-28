@@ -112,6 +112,7 @@ export interface UnifiedPersona {
   fullDescription: string;
   version: string;
   createdDate: string;
+  headshotUrl?: string;
 }
 
 export interface SomaticProfile {

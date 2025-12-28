@@ -1105,19 +1105,20 @@ export async function generateMockupBatch(
     try {
       personaLock = await generatePersonaLock(request.modelDetails);
       
-      try {
-        personaHeadshot = await generatePersonaHeadshot(personaLock);
-        personaLock.headshot = personaHeadshot;
-        logger.info("Persona headshot generated successfully", { source: "eliteMockupGenerator" });
-      } catch (headshotError) {
-        logger.warn("Persona headshot generation failed, proceeding without it", { source: "eliteMockupGenerator", error: headshotError instanceof Error ? headshotError.message : String(headshotError) });
-        if (onError) {
-          onError({
-            type: 'persona_lock_failed',
-            message: 'Headshot generation skipped - proceeding with text-based persona description',
-            details: headshotError instanceof Error ? headshotError.message : String(headshotError)
-          });
+      if (personaLock.persona.headshotUrl) {
+        try {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          const headshotPath = path.join(process.cwd(), personaLock.persona.headshotUrl);
+          const headshotBuffer = await fs.readFile(headshotPath);
+          personaHeadshot = headshotBuffer.toString('base64');
+          personaLock.headshot = personaHeadshot;
+          logger.info("Pre-stored persona headshot loaded successfully", { source: "eliteMockupGenerator", personaId: personaLock.persona.id });
+        } catch (fileError) {
+          logger.warn("Pre-stored headshot file not found, proceeding without headshot", { source: "eliteMockupGenerator", headshotUrl: personaLock.persona.headshotUrl, error: fileError instanceof Error ? fileError.message : String(fileError) });
         }
+      } else {
+        logger.info("No pre-stored headshot for persona, using text description only", { source: "eliteMockupGenerator", personaId: personaLock.persona.id });
       }
     } catch (error) {
       logger.warn("Persona lock generation failed, proceeding without model", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
@@ -1168,12 +1169,13 @@ export async function generateMockupBatch(
   let completedCount = 0;
   const totalJobs = jobs.length;
 
-  // For wearable products with persona lock, process SEQUENTIALLY to use first result as reference
-  // This improves model consistency by passing the first generated image to subsequent generations
-  let firstSuccessfulMockup: string | undefined;
+  // With pre-stored headshots, we can process all jobs in parallel since consistency is ensured by the headshot image
+  // Fall back to sequential only if no headshot is available (rare edge case)
+  const hasPreStoredHeadshot = personaHeadshot && personaLock?.persona.headshotUrl;
   
-  if (request.product.isWearable && personaLock) {
-    // Sequential processing for consistency
+  if (request.product.isWearable && personaLock && !hasPreStoredHeadshot) {
+    // Sequential processing only for wearables WITHOUT pre-stored headshot (fallback)
+    let firstSuccessfulMockup: string | undefined;
     for (const job of jobs) {
       await processJobWithReference(job, firstSuccessfulMockup);
       
@@ -1184,8 +1186,9 @@ export async function generateMockupBatch(
       }
     }
   } else {
-    // Parallel processing for non-wearable products
+    // Parallel processing for all products with pre-stored headshots (optimized path) and non-wearables
     const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
+    logger.info(`Processing ${jobs.length} jobs in parallel batches of ${batchSize}`, { source: "eliteMockupGenerator", hasPreStoredHeadshot: !!hasPreStoredHeadshot });
     for (let i = 0; i < jobs.length; i += batchSize) {
       const batchJobs = jobs.slice(i, i + batchSize);
       await Promise.all(batchJobs.map(job => processJobWithReference(job, undefined)));
