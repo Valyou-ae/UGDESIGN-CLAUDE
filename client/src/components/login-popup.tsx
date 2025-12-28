@@ -11,7 +11,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Mail } from "lucide-react";
-import ugliLogo from "@assets/Ugli_Logo_(1)_1766145410500.png";
+import ugliLogo from "@assets/UGLI_LOGO_orange_1766925981790.png";
 import {
   initializeGoogleAuth,
   setPriorityCallback,

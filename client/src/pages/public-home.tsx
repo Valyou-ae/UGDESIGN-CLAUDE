@@ -18,7 +18,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest } from "@/lib/queryClient";
 import { DailyInspirationFeed } from "@/components/daily-inspiration";
-import ugliLogo from "@assets/Ugli_Logo_(1)_1766145410500.png";
+import ugliLogo from "@assets/UGLI_LOGO_orange_1766925981790.png";
 
 interface InspirationItem {
   id: string;
@@ -455,7 +455,7 @@ function BrandingHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
         <div className="flex items-center justify-center gap-3">
           <img src={ugliLogo} alt="UGLI" className="h-14 object-contain" data-testid="img-ugli-logo" />
           <span className="text-white/40 mx-2">|</span>
-          <span className="text-sm text-white/60" data-testid="text-tagline">AI-Powered Creative Studio</span>
+          <span className="text-sm text-white/60" data-testid="text-tagline"><strong className="font-bold">U</strong> <strong className="font-bold">G</strong>onna <strong className="font-bold">L</strong>ove <strong className="font-bold">I</strong>t!!</span>
         </div>
       </motion.div>
     );
@@ -471,7 +471,7 @@ function BrandingHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
       <div className="flex items-center justify-center gap-3">
         <img src={ugliLogo} alt="UGLI" className="h-14 object-contain" data-testid="img-ugli-logo" />
         <span className="text-white/40 mx-2">|</span>
-        <span className="text-sm text-white/60" data-testid="text-tagline">AI-Powered Creative Studio</span>
+        <span className="text-sm text-white/60" data-testid="text-tagline"><strong className="font-bold">U</strong> <strong className="font-bold">G</strong>onna <strong className="font-bold">L</strong>ove <strong className="font-bold">I</strong>t!!</span>
         <Button 
           onClick={() => openLoginPopup()}
           className="ml-4 bg-gradient-to-r from-[#ed5387] to-[#9C27B0] hover:from-[#C2185B] hover:to-[#7B1FA2] text-white font-medium px-4 py-1.5 text-sm rounded-full shadow-lg shadow-[#ed5387]/30 transition-all hover:scale-105"

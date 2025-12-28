@@ -270,7 +270,7 @@ export function BentoGrid() {
           <div className="max-w-xl">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="h-5 w-5 text-white/80" />
-              <span className="text-sm font-medium text-white/80">AI-Powered Creative Studio</span>
+              <span className="text-sm font-medium text-white/80"><strong className="font-bold">U</strong> <strong className="font-bold">G</strong>onna <strong className="font-bold">L</strong>ove <strong className="font-bold">I</strong>t!!</span>
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
               Start Creating
