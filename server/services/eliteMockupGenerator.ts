@@ -405,7 +405,7 @@ FACIAL IDENTITY (KEEP CONSISTENT ACROSS ALL SIZES):
 ${customizationBlock}
 
 ===== SIZE-SPECIFIC BODY TYPE (SIZE: ${sizeForBody}) =====
-[CRITICAL - BODY MUST MATCH THE GARMENT SIZE]
+[CRITICAL - BODY MUST MATCH THE GARMENT SIZE - THIS IS MANDATORY]
 ${sizeSpecificProfile ? `
 - Height: ${sizeSpecificProfile.height}
 - Weight: ${sizeSpecificProfile.weight}
@@ -416,6 +416,22 @@ ${sizeSpecificProfile ? `
 - Weight: ${personaLock.persona.weight}
 - Build: ${personaLock.persona.build}
 `}
+===== SIZE-TO-BODY MATCHING RULES (MANDATORY) =====
+${sizeForBody === 'XS' ? `XS BODY REQUIREMENT: Very slim/petite person. Narrow shoulders, thin frame. Weight 100-120 lbs. DO NOT show average or large body.` :
+sizeForBody === 'S' ? `S BODY REQUIREMENT: Slim/lean person. Smaller frame, lean build. Weight 120-140 lbs. DO NOT show average or large body.` :
+sizeForBody === 'M' ? `M BODY REQUIREMENT: Average/athletic person. Standard proportions. Weight 140-170 lbs. DO NOT show very thin or heavy body.` :
+sizeForBody === 'L' ? `L BODY REQUIREMENT: Solid/sturdy person. Slightly larger frame. Weight 170-200 lbs. DO NOT show thin or very heavy body.` :
+sizeForBody === 'XL' ? `XL BODY REQUIREMENT: Larger/stocky person. Fuller build, broader shoulders. Weight 200-230 lbs. DO NOT show thin or average body.` :
+sizeForBody === 'XXL' ? `XXL BODY REQUIREMENT: Heavyset person. Broad frame, larger belly visible. Weight 230-270 lbs. DO NOT show thin, average, or only slightly large body.` :
+sizeForBody === 'XXXL' ? `XXXL BODY REQUIREMENT: Plus-size person. Very broad frame, visible larger body mass. Weight 270-310 lbs. DO NOT show thin or average body - MUST be clearly plus-size.` :
+sizeForBody === '4XL' ? `4XL BODY REQUIREMENT: Plus-size person. Extra broad frame, clearly heavy build. Weight 310-350 lbs. DO NOT show anything less than clearly plus-size body.` :
+sizeForBody === '5XL' ? `5XL BODY REQUIREMENT: Very large plus-size person. Very broad frame, very heavy build clearly visible. Weight 350-400+ lbs. DO NOT show anything less than very heavy plus-size body.` :
+`Body should match the garment size appropriately.`}
+
+BODY SIZE VIOLATION EXAMPLES (DO NOT DO THESE):
+- Showing a slim/athletic person for 4XL or 5XL = CRITICAL VIOLATION
+- Showing a heavy person for XS or S = CRITICAL VIOLATION
+- Showing the same body type for all sizes = CRITICAL VIOLATION
 ===== END SIZE-SPECIFIC BODY =====
 
 ===== CRITICAL IDENTITY ENFORCEMENT =====
@@ -519,16 +535,39 @@ ${materialPreset.promptAddition}
 [THE DESIGN MUST BE THE SAME SIZE IN EVERY SHOT]
 [THE DESIGN MUST BE IDENTICAL IN EVERY SHOT - NO MODIFICATIONS]
 
-===== DESIGN IMMUTABILITY (HIGHEST PRIORITY) =====
+===== DESIGN IMMUTABILITY (HIGHEST PRIORITY - ABSOLUTELY CRITICAL) =====
 [CRITICAL - DO NOT ALTER THE DESIGN IN ANY WAY]
-- The provided design image is IMMUTABLE and must not be changed
+[VIOLATION OF THIS IS THE MOST SERIOUS ERROR POSSIBLE]
+
+PIXEL-PERFECT REPRODUCTION REQUIRED:
+- The provided design image is IMMUTABLE and must not be changed AT ALL
 - Use the EXACT design as provided - do not redraw, recreate, or reinterpret
-- PRESERVE all borders, outlines, and strokes exactly as they appear
-- PRESERVE all colors exactly as they appear (no color shifts, adjustments, or corrections)
+- Do NOT make the design "cuter", "simpler", "more stylized", or "different"
+- Do NOT change the art style (if design is vintage, keep vintage - do not make it cartoon)
+- Do NOT change character poses, expressions, or arrangements in the design
+- Do NOT add elements that weren't in the original design
+- Do NOT remove elements that were in the original design
+
+PRESERVE EXACTLY:
+- All borders, outlines, and strokes exactly as they appear
+- All colors exactly as they appear (no color shifts, adjustments, or corrections)
+- All text/typography exactly as it appears (same font, size, arrangement)
 - If the design has a border/outline, ALL mockups must show that border/outline
 - If the design does NOT have a border/outline, do NOT add one
+- The design must look IDENTICAL across all sizes (XS through 5XL)
 - The design must look IDENTICAL across all angle shots (front, side, three-quarter, close-up)
-- The ONLY acceptable changes: fabric distortion from body contours, lighting/shadow integration
+
+THE ONLY ACCEPTABLE CHANGES:
+- Natural fabric distortion from body contours (design bends with fabric)
+- Lighting and shadow integration with the garment
+- Perspective changes due to camera angle
+
+DESIGN ALTERATION VIOLATIONS (DO NOT DO THESE):
+- Changing art style (e.g., vintage to cartoon) = CRITICAL VIOLATION
+- Changing colors in the design = CRITICAL VIOLATION
+- Reinterpreting or "improving" the design = CRITICAL VIOLATION
+- Making characters look different = CRITICAL VIOLATION
+- Adding or removing decorative elements = CRITICAL VIOLATION
 ===== END IMMUTABILITY =====
 
 - Design style: ${designAnalysis.style}
@@ -715,24 +754,70 @@ ${getContourDistortionPrompt()}
 ===== END CONTOUR RULES =====`
     : "";
 
-  const environmentBlock = `
-===== ENVIRONMENT LOCK =====
-[LOCKED - IDENTICAL ENVIRONMENT ACROSS ALL ANGLES]
-CRITICAL: This EXACT environment must be used for ALL shots in this batch.
-Do NOT change the background, location, or setting between different angle shots.
+  // Normalize scene/environment to explicit description
+  const normalizedEnvironment = (() => {
+    const scene = (environmentPrompt || style.preferredEnvironment || '').toLowerCase();
+    if (scene.includes('studio') || scene === 'minimal' || scene === 'clean' || scene === 'white') {
+      return {
+        setting: 'PROFESSIONAL STUDIO',
+        description: 'Clean, neutral gray or white studio backdrop. Professional photography studio setting with seamless backdrop paper.',
+        forbidden: 'NO outdoor scenes, NO urban streets, NO graffiti walls, NO brick alleys, NO coffee shops, NO lifestyle settings, NO nature backgrounds',
+        lighting: 'Studio lighting only - softboxes, key light, fill light'
+      };
+    } else if (scene.includes('urban') || scene.includes('street') || scene.includes('city')) {
+      return {
+        setting: 'URBAN STREET',
+        description: 'Urban city street with buildings, possibly graffiti or street art in background. Consistent urban environment.',
+        forbidden: 'NO studio backdrops, NO nature scenes, NO indoor settings, NO beach or park settings',
+        lighting: 'Natural outdoor daylight, consistent throughout batch'
+      };
+    } else if (scene.includes('outdoor') || scene.includes('nature') || scene.includes('lifestyle')) {
+      return {
+        setting: 'OUTDOOR LIFESTYLE',
+        description: 'Natural outdoor setting with soft natural light. Park, garden, or natural environment.',
+        forbidden: 'NO studio backdrops, NO urban/city scenes, NO indoor settings',
+        lighting: 'Soft natural daylight, golden hour or overcast lighting'
+      };
+    } else {
+      return {
+        setting: 'PROFESSIONAL STUDIO',
+        description: 'Clean, neutral gray or white studio backdrop. Professional e-commerce photography setting.',
+        forbidden: 'NO outdoor scenes, NO urban streets, NO graffiti walls, NO lifestyle settings',
+        lighting: 'Studio lighting - professional 3-point setup'
+      };
+    }
+  })();
 
+  const environmentBlock = `
+===== ENVIRONMENT LOCK (CRITICAL - SAME BACKGROUND EVERY SHOT) =====
+[LOCKED - IDENTICAL ENVIRONMENT ACROSS ALL ANGLES AND ALL SIZES]
+[VIOLATION OF THIS LOCK IS A CRITICAL FAILURE]
+
+MANDATORY SETTING: ${normalizedEnvironment.setting}
+- Scene Description: ${normalizedEnvironment.description}
 - Brand style: ${style.name}
 - Mood: ${style.description}
 - Atmosphere: ${style.atmosphere}
-- Setting: ${environmentPrompt || style.preferredEnvironment}
-- Color palette mood: ${style.colorPalette}
-${style.platformNotes}
 
-CONSISTENCY REQUIREMENT:
-- The SAME physical location/studio must appear in every shot
-- Background elements must remain IDENTICAL (if studio, use same backdrop color; if outdoor, use same location)
-- Lighting conditions must match the environment (studio lighting for studio, natural for outdoor)
-- DO NOT mix studio shots with outdoor shots - pick ONE and maintain throughout
+FORBIDDEN BACKGROUNDS (DO NOT USE):
+${normalizedEnvironment.forbidden}
+
+LIGHTING REQUIREMENT:
+${normalizedEnvironment.lighting}
+
+BATCH CONSISTENCY (CRITICAL):
+- EVERY mockup in this batch MUST have the EXACT SAME background
+- If one mockup shows a gray studio backdrop, ALL mockups must show that gray studio backdrop
+- The background CANNOT change between different sizes (XS, S, M, L, XL, etc.)
+- The background CANNOT change between different angles (front, side, three-quarter)
+- The SAME physical location/studio must appear in EVERY shot
+- Background elements must be PIXEL-FOR-PIXEL identical where possible
+- DO NOT introduce variety - consistency is more important than visual interest
+
+ENVIRONMENT VIOLATION EXAMPLES (DO NOT DO THESE):
+- XS in studio, but L in urban street = VIOLATION
+- Front view in graffiti alley, side view in plain studio = VIOLATION
+- 4XL with industrial backdrop, 5XL with modern loft = VIOLATION
 ===== END ENVIRONMENT LOCK =====`;
 
   const negativePrompts = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
