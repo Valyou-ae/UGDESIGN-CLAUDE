@@ -28,6 +28,7 @@ import AffiliateProgram from "@/pages/affiliate-program";
 import Pricing from "@/pages/pricing";
 import Landing from "@/pages/landing";
 import ImageEditor from "@/pages/image-editor";
+import MockupWizardPage from "@/pages/mockup-wizard";
 import AdminDashboard from "@/pages/admin/index";
 import AdminUsers from "@/pages/admin/users";
 import AdminCRM from "@/pages/admin/crm";
@@ -79,6 +80,11 @@ function Router() {
       <Route path="/mockup-generator">
         <AuthGuard>
           <MockupGenerator />
+        </AuthGuard>
+      </Route>
+      <Route path="/mockup-wizard">
+        <AuthGuard>
+          <MockupWizardPage />
         </AuthGuard>
       </Route>
       <Route path="/image-editor">
