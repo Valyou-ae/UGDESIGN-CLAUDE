@@ -358,7 +358,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
     >
       <motion.div
         layout
-        className="relative bg-black/90 backdrop-blur-xl border-2 border-[#ed5387]/70 overflow-hidden animate-pulse-glow"
+        className="relative bg-black/90 backdrop-blur-xl border-2 border-[#F5A623]/70 overflow-hidden animate-pulse-glow"
         style={{ borderRadius: isExpanded ? 16 : 9999 }}
         initial={false}
         animate={{
@@ -384,7 +384,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
 
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-full">
-              <Zap className="h-3.5 w-3.5 text-[#9C27B0]" />
+              <Zap className="h-3.5 w-3.5 text-[#B8860B]" />
               <span className="text-xs font-medium text-white/70">{isAuthenticated ? credits.toLocaleString() : '0'}</span>
             </div>
 
@@ -394,7 +394,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
               onClick={() => handleGenerate()}
               disabled={isGenerating || (isAuthenticated && !prompt.trim())}
               className={cn(
-                "flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#ed5387] to-[#9C27B0] text-white rounded-full font-semibold text-sm hover:shadow-lg hover:shadow-[#ed5387]/30 transition-shadow",
+                "flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#F5A623] to-[#B8860B] text-white rounded-full font-semibold text-sm hover:shadow-lg hover:shadow-[#F5A623]/30 transition-shadow",
                 isGenerating && "opacity-60 cursor-not-allowed"
               )}
               data-testid="button-generate"
@@ -428,7 +428,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                       >
                         {(() => {
                           const QualityIcon = QUALITY_PRESETS.find(q => q.id === selectedQuality)?.icon || Sparkles;
-                          return <QualityIcon className="h-3 w-3 text-[#9C27B0]" />;
+                          return <QualityIcon className="h-3 w-3 text-[#B8860B]" />;
                         })()}
                         {QUALITY_PRESETS.find(q => q.id === selectedQuality)?.name}
                         <ChevronDown className={cn("h-3 w-3 text-white/50 transition-transform", openDropdown === "quality" && "rotate-180")} />
@@ -448,7 +448,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all",
                               selectedQuality === option.id
-                                ? "bg-[#ed5387] text-white"
+                                ? "bg-[#F5A623] text-white"
                                 : "text-white/70 hover:text-white hover:bg-white/10"
                             )}
                             data-testid={`quality-${option.id}`}
@@ -472,7 +472,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                       >
                         {(() => {
                           const SpeedIcon = SPEED_OPTIONS.find(s => s.id === selectedSpeed)?.icon || Zap;
-                          return <SpeedIcon className="h-3 w-3 text-[#9C27B0]" />;
+                          return <SpeedIcon className="h-3 w-3 text-[#B8860B]" />;
                         })()}
                         {SPEED_OPTIONS.find(s => s.id === selectedSpeed)?.name}
                         <ChevronDown className={cn("h-3 w-3 text-white/50 transition-transform", openDropdown === "speed" && "rotate-180")} />
@@ -492,7 +492,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all",
                               selectedSpeed === option.id
-                                ? "bg-[#ed5387] text-white"
+                                ? "bg-[#F5A623] text-white"
                                 : "text-white/70 hover:text-white hover:bg-white/10"
                             )}
                             data-testid={`speed-${option.id}`}
@@ -516,7 +516,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                       >
                         {(() => {
                           const RatioIcon = ASPECT_RATIOS.find(r => r.id === selectedRatio)?.icon || Square;
-                          return <RatioIcon className="h-3 w-3 text-[#ed5387]" />;
+                          return <RatioIcon className="h-3 w-3 text-[#F5A623]" />;
                         })()}
                         {selectedRatio}
                         <ChevronDown className={cn("h-3 w-3 text-white/50 transition-transform", openDropdown === "ratio" && "rotate-180")} />
@@ -536,7 +536,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all",
                               selectedRatio === option.id
-                                ? "bg-[#ed5387] text-white"
+                                ? "bg-[#F5A623] text-white"
                                 : "text-white/70 hover:text-white hover:bg-white/10"
                             )}
                             data-testid={`ratio-${option.id}`}
@@ -560,7 +560,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                       >
                         {(() => {
                           const DetailIcon = DETAIL_LEVELS.find(d => d.id === selectedDetail)?.icon || Circle;
-                          return <DetailIcon className="h-3 w-3 text-[#ed5387]" />;
+                          return <DetailIcon className="h-3 w-3 text-[#F5A623]" />;
                         })()}
                         {DETAIL_LEVELS.find(d => d.id === selectedDetail)?.name}
                         <ChevronDown className={cn("h-3 w-3 text-white/50 transition-transform", openDropdown === "detail" && "rotate-180")} />
@@ -580,7 +580,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all",
                               selectedDetail === option.id
-                                ? "bg-[#ed5387] text-white"
+                                ? "bg-[#F5A623] text-white"
                                 : "text-white/70 hover:text-white hover:bg-white/10"
                             )}
                             data-testid={`detail-${option.id}`}
@@ -604,7 +604,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                       >
                         {(() => {
                           const StyleIcon = STYLE_PRESETS.find(s => s.id === selectedStyle)?.icon || Sparkles;
-                          return <StyleIcon className="h-3 w-3 text-[#ed5387]" />;
+                          return <StyleIcon className="h-3 w-3 text-[#F5A623]" />;
                         })()}
                         {STYLE_PRESETS.find(s => s.id === selectedStyle)?.name}
                         <ChevronDown className={cn("h-3 w-3 text-white/50 transition-transform", openDropdown === "styleExpanded" && "rotate-180")} />
@@ -624,7 +624,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-2 rounded text-xs font-medium transition-all",
                               selectedStyle === option.id
-                                ? "bg-[#ed5387] text-white"
+                                ? "bg-[#F5A623] text-white"
                                 : "text-white/70 hover:text-white hover:bg-white/10"
                             )}
                           >
@@ -656,7 +656,7 @@ export function FloatingPromptBar({ onImageGenerated }: FloatingPromptBarProps =
                           className={cn(
                             "w-7 h-7 flex items-center justify-center rounded text-xs font-semibold transition-all",
                             selectedCount === option.id
-                              ? "bg-[#ed5387] text-white"
+                              ? "bg-[#F5A623] text-white"
                               : "text-white/50 hover:text-white hover:bg-white/10"
                           )}
                           data-testid={`count-${option.id}`}

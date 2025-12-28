@@ -16,7 +16,7 @@ const WELCOME_STEPS: WelcomeStep[] = [
     title: "Create Stunning Images",
     description: "Use our AI-powered image generator to bring your ideas to life. Just describe what you want, and watch the magic happen.",
     icon: Sparkles,
-    gradient: "from-[#ed5387] to-[#C2185B]",
+    gradient: "from-[#F5A623] to-[#D4881E]",
   },
   {
     title: "Professional Mockups",
@@ -28,7 +28,7 @@ const WELCOME_STEPS: WelcomeStep[] = [
     title: "Remove Backgrounds",
     description: "Instantly remove backgrounds from any image with our AI-powered tool. Get clean, transparent results in seconds.",
     icon: Scissors,
-    gradient: "from-[#9C27B0] to-[#7B1FA2]",
+    gradient: "from-[#B8860B] to-[#996B08]",
   },
 ];
 

@@ -698,7 +698,7 @@ const PRODUCT_COLOR_MAP: Record<string, string> = {
   "Gold": "#FBC02D",
   "Irish Green": "#388E3C",
   "Forest": "#1B5E20",
-  "Purple": "#7B1FA2",
+  "Purple": "#996B08",
   "Light Pink": "#F8BBD0",
   "Sand": "#F5F5DC",
 };
@@ -725,7 +725,7 @@ function ProductPreview({ uploadedImage, selectedProduct, selectedColor, isMinim
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
         onClick={onToggle}
-        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-30 h-14 w-14 rounded-full bg-card border-2 border-border shadow-lg flex items-center justify-center hover:border-[#ed5387] hover:shadow-xl transition-all group"
+        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-30 h-14 w-14 rounded-full bg-card border-2 border-border shadow-lg flex items-center justify-center hover:border-[#F5A623] hover:shadow-xl transition-all group"
         data-testid="button-expand-preview"
       >
         <Eye className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -835,13 +835,13 @@ function ProductThumbnail({ productName, isSelected, color = "#FFFFFF" }: Produc
     <div 
       className={cn(
         "h-10 w-10 rounded-full flex items-center justify-center transition-colors overflow-hidden",
-        isSelected ? "bg-[#ed5387]/20 dark:bg-[#ed5387]/40" : "bg-muted"
+        isSelected ? "bg-[#F5A623]/20 dark:bg-[#F5A623]/40" : "bg-muted"
       )}
       style={{ backgroundColor: isSelected ? undefined : color }}
     >
       <div 
         className="h-6 w-6"
-        style={{ color: isSelected ? "#ed5387" : "rgba(0,0,0,0.15)" }}
+        style={{ color: isSelected ? "#F5A623" : "rgba(0,0,0,0.15)" }}
         dangerouslySetInnerHTML={{ __html: silhouette.svg }}
       />
     </div>
@@ -1749,7 +1749,7 @@ export default function MockupGenerator() {
                     </h1>
                     <Shirt className="h-5 w-5 md:h-6 md:w-6 text-primary animate-cut" />
                   </div>
-                  <Badge className="bg-primary hover:bg-[#C2185B] text-white rounded-full px-2 py-0.5 text-[11px]">
+                  <Badge className="bg-primary hover:bg-[#D4881E] text-white rounded-full px-2 py-0.5 text-[11px]">
                     Professional
                   </Badge>
                 </div>
@@ -1783,9 +1783,9 @@ export default function MockupGenerator() {
                 {/* DTG Card */}
                 <div 
                   onClick={() => handleJourneySelect("DTG")}
-                  className="bg-card border-2 border-border rounded-[20px] md:rounded-[24px] p-5 md:p-10 text-left cursor-pointer transition-all duration-300 hover:border-[#ed5387] hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#ed5387]/15 group"
+                  className="bg-card border-2 border-border rounded-[20px] md:rounded-[24px] p-5 md:p-10 text-left cursor-pointer transition-all duration-300 hover:border-[#F5A623] hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#F5A623]/15 group"
                 >
-                  <div className="h-10 w-10 md:h-16 md:w-16 rounded-xl bg-[#ed5387]/10 dark:bg-[#ed5387]/20 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
+                  <div className="h-10 w-10 md:h-16 md:w-16 rounded-xl bg-[#F5A623]/10 dark:bg-[#F5A623]/20 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
                     <Shirt className="h-5 w-5 md:h-8 md:w-8 text-primary" />
                   </div>
                   <h3 className="text-lg md:text-2xl font-bold text-foreground mb-1 md:mb-3">Direct-to-Garment (DTG)</h3>
@@ -1800,10 +1800,10 @@ export default function MockupGenerator() {
                 {/* AOP Card */}
                 <div 
                   onClick={() => handleJourneySelect("AOP")}
-                  className="bg-card border-2 border-border rounded-[20px] md:rounded-[24px] p-5 md:p-10 text-left cursor-pointer transition-all duration-300 hover:border-secondary hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#9C27B0]/15 group relative overflow-hidden"
+                  className="bg-card border-2 border-border rounded-[20px] md:rounded-[24px] p-5 md:p-10 text-left cursor-pointer transition-all duration-300 hover:border-secondary hover:-translate-y-2 hover:shadow-2xl hover:shadow-[#B8860B]/15 group relative overflow-hidden"
                 >
                   <Badge className="absolute top-3 right-3 md:top-6 md:right-6 bg-purple-500 text-white hover:bg-purple-600 text-[10px] md:text-[11px]">Pro</Badge>
-                  <div className="h-10 w-10 md:h-16 md:w-16 rounded-xl bg-[#9C27B0]/10 dark:bg-[#9C27B0]/20 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
+                  <div className="h-10 w-10 md:h-16 md:w-16 rounded-xl bg-[#B8860B]/10 dark:bg-[#B8860B]/20 flex items-center justify-center mb-3 md:mb-6 group-hover:scale-110 transition-transform">
                     <Grid className="h-5 w-5 md:h-8 md:w-8 text-secondary" />
                   </div>
                   <h3 className="text-lg md:text-2xl font-bold text-foreground mb-1 md:mb-3">All-Over Print (AOP)</h3>
@@ -1905,15 +1905,15 @@ export default function MockupGenerator() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}
-                    className="mt-6 md:mt-8 w-full max-w-[900px] bg-gradient-to-r from-[#ed5387]/10 via-[#9C27B0]/10 to-[#ed5387]/10 border border-[#ed5387]/30 rounded-2xl p-4"
+                    className="mt-6 md:mt-8 w-full max-w-[900px] bg-gradient-to-r from-[#F5A623]/10 via-[#B8860B]/10 to-[#F5A623]/10 border border-[#F5A623]/30 rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl border-2 border-[#ed5387] overflow-hidden bg-white/10 flex-shrink-0 shadow-lg">
+                      <div className="h-16 w-16 md:h-20 md:w-20 rounded-xl border-2 border-[#F5A623] overflow-hidden bg-white/10 flex-shrink-0 shadow-lg">
                         <img src={uploadedImage} alt="Transferred design" className="h-full w-full object-contain" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <CheckCircle2 className="h-5 w-5 text-[#ed5387]" />
+                          <CheckCircle2 className="h-5 w-5 text-[#F5A623]" />
                           <span className="font-bold text-foreground">Design Ready</span>
                         </div>
                         <p className="text-sm text-muted-foreground">Your design from My Creations is loaded. Choose DTG or AOP above to continue.</p>
@@ -2223,7 +2223,7 @@ export default function MockupGenerator() {
                           <div className={cn(
                             "h-8 w-8 sm:h-9 sm:w-9 rounded-full flex items-center justify-center border-2 transition-all duration-300 z-10",
                             isCompleted ? "bg-primary border-primary text-white" :
-                            isCurrent ? "bg-primary border-primary text-white ring-2 sm:ring-4 ring-[#ed5387]/20" :
+                            isCurrent ? "bg-primary border-primary text-white ring-2 sm:ring-4 ring-[#F5A623]/20" :
                             "bg-card border-border text-muted-foreground"
                           )}>
                             <StepIcon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -2445,7 +2445,7 @@ export default function MockupGenerator() {
                               className={cn(
                                 "gap-2 px-6 min-h-[44px] flex-1 sm:flex-none max-w-[200px]",
                                 (uploadedImage && (journey !== "AOP" || isAlreadySeamless || selectedVariationId))
-                                  ? "bg-primary hover:bg-[#C2185B] text-white" 
+                                  ? "bg-primary hover:bg-[#D4881E] text-white" 
                                   : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
                               )}
                               data-testid="button-next"
@@ -2613,7 +2613,7 @@ export default function MockupGenerator() {
                               className={cn(
                                 "gap-2 px-6 min-h-[44px] flex-1 sm:flex-none max-w-[200px]",
                                 selectedProductType
-                                  ? "bg-primary hover:bg-[#C2185B] text-white" 
+                                  ? "bg-primary hover:bg-[#D4881E] text-white" 
                                   : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
                               )}
                               data-testid="button-next"
@@ -2706,7 +2706,7 @@ export default function MockupGenerator() {
                                       { name: "Gold", class: "bg-[#FBC02D]" },
                                       { name: "Irish Green", class: "bg-[#388E3C]" },
                                       { name: "Forest", class: "bg-[#1B5E20]" },
-                                      { name: "Purple", class: "bg-[#7B1FA2]" },
+                                      { name: "Purple", class: "bg-[#996B08]" },
                                       { name: "Light Pink", class: "bg-[#F8BBD0]" },
                                       { name: "Sand", class: "bg-[#F5F5DC]" },
                                     ].map((color) => {
@@ -2980,7 +2980,7 @@ export default function MockupGenerator() {
                               className={cn(
                                 "gap-2 px-6 min-h-[44px] flex-1 sm:flex-none max-w-[200px]",
                                 (selectedSizes.length > 0 && (journey === "AOP" || selectedColors.length > 0))
-                                  ? "bg-primary hover:bg-[#C2185B] text-white" 
+                                  ? "bg-primary hover:bg-[#D4881E] text-white" 
                                   : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"
                               )}
                               data-testid="button-next"

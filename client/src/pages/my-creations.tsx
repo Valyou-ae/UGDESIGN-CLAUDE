@@ -687,7 +687,7 @@ export default function MyCreations() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setCalendarOpen(true)}
-                className="h-10 w-10 bg-white dark:bg-[#1F1F25] border border-[#E4E4E7] dark:border-[#2A2A30] rounded-lg hover:bg-[#F4F4F5] dark:hover:bg-[#2A2A30] text-[#71717A] hover:text-[#ed5387]"
+                className="h-10 w-10 bg-white dark:bg-[#1F1F25] border border-[#E4E4E7] dark:border-[#2A2A30] rounded-lg hover:bg-[#F4F4F5] dark:hover:bg-[#2A2A30] text-[#71717A] hover:text-[#F5A623]"
                 data-testid="button-calendar-history"
               >
                 <Calendar className="h-4 w-4" />
@@ -1144,7 +1144,7 @@ export default function MyCreations() {
                 <Button
                   onClick={() => fetchNextPage()}
                   disabled={isFetchingNextPage}
-                  className="bg-[#ed5387] hover:bg-[#9A3E25] text-white px-8 py-2"
+                  className="bg-[#F5A623] hover:bg-[#9A3E25] text-white px-8 py-2"
                   data-testid="button-load-more"
                 >
                   {isFetchingNextPage ? (
@@ -1222,9 +1222,9 @@ export default function MyCreations() {
                   </div>
 
                   {/* Edit Image Section - prominent styling */}
-                  <div className="space-y-2 bg-gradient-to-br from-[#ed5387]/10 to-[#ed5387]/5 rounded-lg p-3 border border-[#ed5387]/20">
+                  <div className="space-y-2 bg-gradient-to-br from-[#F5A623]/10 to-[#F5A623]/5 rounded-lg p-3 border border-[#F5A623]/20">
                     <label className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
-                      <Wand2 className="h-4 w-4 text-[#ed5387]" />
+                      <Wand2 className="h-4 w-4 text-[#F5A623]" />
                       Edit with UGLI AI
                     </label>
                     <div className="relative w-full">
@@ -1245,7 +1245,7 @@ export default function MyCreations() {
                       <button
                         onClick={handleEditImage}
                         disabled={!editPrompt.trim() || isEditing}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#ed5387] hover:bg-[#d64375] text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#F5A623] hover:bg-[#d64375] text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         data-testid="button-apply-edit-creations"
                       >
                         {isEditing ? (
@@ -1291,7 +1291,7 @@ export default function MyCreations() {
                               className={cn(
                                 "relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all hover:opacity-100",
                                 currentVersionId === version.id 
-                                  ? "border-[#ed5387] ring-2 ring-[#ed5387]/30" 
+                                  ? "border-[#F5A623] ring-2 ring-[#F5A623]/30" 
                                   : "border-border opacity-70 hover:border-muted-foreground"
                               )}
                               data-testid={`version-thumbnail-creations-${index}`}
@@ -1434,7 +1434,7 @@ export default function MyCreations() {
                           checked={selectedItem.isPublic}
                           onCheckedChange={() => toggleVisibility(selectedItem.id, selectedItem.isPublic)}
                           data-testid="switch-visibility-creations"
-                          className="data-[state=checked]:bg-[#ed5387] scale-75"
+                          className="data-[state=checked]:bg-[#F5A623] scale-75"
                         />
                       </div>
                     </div>

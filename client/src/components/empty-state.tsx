@@ -27,8 +27,8 @@ const EMPTY_STATE_CONFIGS = {
     description: "Start your creative journey by generating your first image, mockup, or removing a background.",
     actionLabel: "Create Something",
     actionHref: "/image-gen",
-    gradient: "from-[#ed5387]/10 to-[#9C27B0]/10",
-    iconBg: "bg-[#ed5387]/10 text-[#ed5387]",
+    gradient: "from-[#F5A623]/10 to-[#B8860B]/10",
+    iconBg: "bg-[#F5A623]/10 text-[#F5A623]",
   },
   mockups: {
     icon: Shirt,
@@ -45,8 +45,8 @@ const EMPTY_STATE_CONFIGS = {
     description: "Upload an image to instantly remove its background and get clean, transparent results.",
     actionLabel: "Remove Background",
     actionHref: "/bg-remover",
-    gradient: "from-[#9C27B0]/10 to-[#7B1FA2]/10",
-    iconBg: "bg-[#9C27B0]/10 text-[#B99A2C]",
+    gradient: "from-[#B8860B]/10 to-[#996B08]/10",
+    iconBg: "bg-[#B8860B]/10 text-[#B99A2C]",
   },
   generic: {
     icon: Sparkles,
@@ -152,10 +152,10 @@ export function QuickStartCard({
         <div className="relative z-10">
           <div className={cn(
             "h-12 w-12 rounded-xl flex items-center justify-center mb-4",
-            gradient.includes("B94E30") ? "bg-[#ed5387]/10 text-[#ed5387]" :
-            gradient.includes("E3B436") ? "bg-[#9C27B0]/10 text-[#B99A2C]" :
+            gradient.includes("B94E30") ? "bg-[#F5A623]/10 text-[#F5A623]" :
+            gradient.includes("E3B436") ? "bg-[#B8860B]/10 text-[#B99A2C]" :
             gradient.includes("664D3F") ? "bg-[#1A1A2E]/10 text-[#1A1A2E]" :
-            "bg-[#ed5387]/10 text-[#ed5387]"
+            "bg-[#F5A623]/10 text-[#F5A623]"
           )}>
             <Icon className="h-6 w-6" />
           </div>

@@ -187,7 +187,7 @@ export default function AdminDashboard() {
             description="Registered users"
             icon={Users}
             trend={analytics?.totalUsers ? "+12%" : undefined}
-            colorClass="text-[#ed5387]"
+            colorClass="text-[#F5A623]"
             isLoading={isLoading}
             testId="card-total-users"
           />
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
             description="Total generations"
             icon={ImageIcon}
             trend={analytics?.totalImages ? "+23%" : undefined}
-            colorClass="text-[#9C27B0]"
+            colorClass="text-[#B8860B]"
             isLoading={isLoading}
             testId="card-total-images"
           />
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
                   description="Manage users, roles, and permissions"
                   icon={Users}
                   href="/admin/users"
-                  gradient="bg-gradient-to-br from-[#ed5387] to-[#C2185B]"
+                  gradient="bg-gradient-to-br from-[#F5A623] to-[#D4881E]"
                   testId="link-admin-users"
                 />
                 <QuickActionCard
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
                   description="View detailed platform analytics"
                   icon={BarChart3}
                   href="/admin/analytics"
-                  gradient="bg-gradient-to-br from-[#9C27B0] to-[#7B1FA2]"
+                  gradient="bg-gradient-to-br from-[#B8860B] to-[#996B08]"
                   testId="link-admin-analytics"
                 />
               </div>

@@ -163,7 +163,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
     >
       <div className={cn(
         "group w-full h-full bg-white dark:bg-[#111113] rounded-lg overflow-hidden cursor-pointer hover:shadow-[0_10px_40px_rgba(233,30,99,0.2)] transition-all duration-300",
-        item.isGenerated && "ring-2 ring-[#9C27B0] ring-offset-2 ring-offset-[#0A0A0B]"
+        item.isGenerated && "ring-2 ring-[#B8860B] ring-offset-2 ring-offset-[#0A0A0B]"
       )}>
         <div className="relative w-full h-full overflow-hidden">
           {isVisible ? (
@@ -180,7 +180,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
                 )}
               />
               {!imageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-br from-[#ed5387]/20 to-[#1A1A2E]/20 animate-pulse" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#F5A623]/20 to-[#1A1A2E]/20 animate-pulse" />
               )}
             </>
           ) : (
@@ -188,7 +188,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
           )}
           
           {item.isGenerated && (
-            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#ed5387] to-[#9C27B0] px-2 py-1 rounded-full flex items-center gap-1 z-10">
+            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#F5A623] to-[#B8860B] px-2 py-1 rounded-full flex items-center gap-1 z-10">
               <Sparkles className="h-3 w-3 text-white" />
               <span className="text-[10px] font-medium text-white">NEW</span>
             </div>
@@ -196,7 +196,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
           
           {!item.isGenerated && item.createdAt && (
             <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full flex items-center gap-1 z-10">
-              <Clock className="h-3 w-3 text-[#9C27B0]" />
+              <Clock className="h-3 w-3 text-[#B8860B]" />
               <span className="text-[10px] font-medium text-white">{formatTimeAgo(new Date(item.createdAt))}</span>
             </div>
           )}
@@ -214,7 +214,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
                 data-testid={`button-like-${item.id}`}
                 className={cn(
                   "flex items-center gap-1 text-xs transition-all duration-200 hover:scale-110",
-                  item.isLiked ? "text-[#ed5387]" : "text-white/80 hover:text-[#ed5387]"
+                  item.isLiked ? "text-[#F5A623]" : "text-white/80 hover:text-[#F5A623]"
                 )}
               >
                 <Heart className={cn("h-3 w-3", item.isLiked && "fill-current")} />
@@ -237,7 +237,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
                 >
                   <div className="bg-black/40 backdrop-blur-md rounded-lg p-2">
                     <p className="text-[10px] text-white/90 leading-relaxed line-clamp-2">
-                      <span className="text-[#9C27B0] font-medium">Prompt: </span>
+                      <span className="text-[#B8860B] font-medium">Prompt: </span>
                       {item.prompt}
                     </p>
                   </div>
@@ -474,7 +474,7 @@ function BrandingHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
         <span className="text-sm text-white/60" data-testid="text-tagline"><strong className="font-bold">U</strong> <strong className="font-bold">G</strong>onna <strong className="font-bold">L</strong>ove <strong className="font-bold">I</strong>t!!</span>
         <Button 
           onClick={() => openLoginPopup()}
-          className="ml-4 bg-gradient-to-r from-[#ed5387] to-[#9C27B0] hover:from-[#C2185B] hover:to-[#7B1FA2] text-white font-medium px-4 py-1.5 text-sm rounded-full shadow-lg shadow-[#ed5387]/30 transition-all hover:scale-105"
+          className="ml-4 bg-gradient-to-r from-[#F5A623] to-[#B8860B] hover:from-[#D4881E] hover:to-[#996B08] text-white font-medium px-4 py-1.5 text-sm rounded-full shadow-lg shadow-[#F5A623]/30 transition-all hover:scale-105"
           data-testid="button-get-started-hero"
         >
           Get Started For FREE!
@@ -647,7 +647,7 @@ export default function PublicHome() {
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-[#ed5387] border-t-transparent rounded-full animate-spin" />
+                <div className="w-12 h-12 border-4 border-[#F5A623] border-t-transparent rounded-full animate-spin" />
                 <p className="text-gray-400 text-sm">Loading gallery...</p>
               </div>
             </div>
