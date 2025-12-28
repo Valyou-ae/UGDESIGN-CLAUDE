@@ -22,7 +22,7 @@ export type Ethnicity =
   | 'Indigenous' 
   | 'Diverse';
 
-export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL';
+export type Size = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL' | 'XXXL' | '4XL' | '5XL';
 
 // ============================================================================
 // OUTPUT QUALITY

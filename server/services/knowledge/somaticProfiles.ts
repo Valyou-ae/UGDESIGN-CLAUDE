@@ -32,7 +32,9 @@ const SIZE_HEIGHT_MODIFIER: Record<Size, number> = {
   'L': 1,
   'XL': 2,
   'XXL': 2,
-  'XXXL': 2
+  'XXXL': 2,
+  '4XL': 2,
+  '5XL': 2
 };
 
 const SIZE_WEIGHT_MULTIPLIER: Record<Size, { min: number; max: number }> = {
@@ -42,7 +44,9 @@ const SIZE_WEIGHT_MULTIPLIER: Record<Size, { min: number; max: number }> = {
   'L': { min: 1.05, max: 1.20 },
   'XL': { min: 1.20, max: 1.40 },
   'XXL': { min: 1.40, max: 1.60 },
-  'XXXL': { min: 1.60, max: 1.85 }
+  'XXXL': { min: 1.60, max: 1.85 },
+  '4XL': { min: 1.85, max: 2.10 },
+  '5XL': { min: 2.10, max: 2.40 }
 };
 
 const SIZE_BUILD: Record<Size, string> = {
@@ -52,7 +56,9 @@ const SIZE_BUILD: Record<Size, string> = {
   'L': 'solid, sturdy build',
   'XL': 'stocky, fuller build',
   'XXL': 'heavyset, broad frame',
-  'XXXL': 'plus-size, very broad frame'
+  'XXXL': 'plus-size, very broad frame',
+  '4XL': 'plus-size, extra broad frame',
+  '5XL': 'plus-size, very large frame'
 };
 
 const AGE_MODIFIERS: Record<AgeGroup, { heightMod: number; weightMod: number; buildNote: string }> = {
@@ -143,7 +149,7 @@ export function getSomaticProfilePrompt(age: AgeGroup, sex: Sex, ethnicity: Ethn
   return `${profile.description} Height: ${profile.height}, Weight: ${profile.weight}, Build: ${profile.build}.`;
 }
 
-export const SOMATIC_PROFILE_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+export const SOMATIC_PROFILE_SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL', '4XL', '5XL'];
 export const SOMATIC_PROFILE_AGE_GROUPS: AgeGroup[] = ['Baby', 'Toddler', 'Kids', 'Teen', 'Young Adult', 'Adult', 'Senior'];
 export const SOMATIC_PROFILE_SEXES: Sex[] = ['Male', 'Female'];
 export const SOMATIC_PROFILE_ETHNICITIES: Ethnicity[] = ['White', 'Black', 'Hispanic', 'Asian', 'Indian', 'Southeast Asian', 'Middle Eastern', 'Indigenous', 'Diverse'];
