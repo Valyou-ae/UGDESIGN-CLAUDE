@@ -322,10 +322,15 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         const knowledge = await import("../services/knowledge");
 
         const ethnicityMap: Record<string, string> = {
+          // Uppercase keys (legacy)
           "CAUCASIAN": "White", "WHITE": "White", "AFRICAN": "Black", "BLACK": "Black",
           "ASIAN": "Asian", "HISPANIC": "Hispanic", "SOUTH_ASIAN": "Indian", "INDIAN": "Indian",
           "MIDDLE_EASTERN": "Middle Eastern", "SOUTHEAST_ASIAN": "Southeast Asian",
-          "MIXED": "Diverse", "INDIGENOUS": "Indigenous", "DIVERSE": "Diverse"
+          "MIXED": "Diverse", "INDIGENOUS": "Indigenous", "DIVERSE": "Diverse",
+          // Exact frontend values (case-sensitive)
+          "White": "White", "Black": "Black", "Hispanic": "Hispanic", "Asian": "Asian",
+          "Indian": "Indian", "Southeast Asian": "Southeast Asian", "Middle Eastern": "Middle Eastern",
+          "Indigenous": "Indigenous", "Diverse": "Diverse"
         };
 
         const ageMap: Record<string, string> = {
@@ -335,7 +340,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         };
 
         const sexMap: Record<string, string> = {
-          "MALE": "Male", "FEMALE": "Female"
+          "MALE": "Male", "FEMALE": "Female",
+          "Male": "Male", "Female": "Female"
         };
 
         const mappedModelDetails = {
@@ -344,6 +350,12 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
           ethnicity: ethnicityMap[modelDetails.ethnicity] || "White",
           modelSize: modelDetails.modelSize || "M"
         };
+
+        logger.info("Model details mapping", { 
+          source: "mockup", 
+          rawInput: { age: modelDetails.age, sex: modelDetails.sex, ethnicity: modelDetails.ethnicity, size: modelDetails.modelSize },
+          mappedOutput: mappedModelDetails
+        });
 
         const styleMap: Record<string, string> = {
           "minimal": "MINIMALIST_MODERN", "editorial": "EDITORIAL_FASHION",
