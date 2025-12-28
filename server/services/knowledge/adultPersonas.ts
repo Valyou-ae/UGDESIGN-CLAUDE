@@ -18,7 +18,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light olive',
     fullDescription: 'Athletic 32-year-old man with an approachable demeanor. Light stubble frames his defined jaw, with short textured dark brown hair and attentive green eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-white-m-01.png'
   },
   {
     id: 'adult-male-black-m-01',
@@ -37,7 +38,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'rich brown',
     fullDescription: 'Confident 35-year-old man with strong cheekbones and a clean-shaven face. His short fade haircut is meticulously groomed, complementing his warm dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-black-m-01.png'
   },
   {
     id: 'adult-male-hispanic-m-01',
@@ -56,7 +58,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm tan',
     fullDescription: 'Friendly 38-year-old with a warm smile and neatly trimmed goatee. His wavy dark brown hair frames his face naturally, with expressive brown eyes that convey openness.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-hispanic-m-01.png'
   },
   {
     id: 'adult-female-white-m-01',
