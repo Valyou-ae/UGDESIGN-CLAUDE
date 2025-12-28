@@ -39,6 +39,7 @@ import SuperAdminDashboard from "@/pages/super-admin/index";
 import ShareImage from "@/pages/share-image";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
+import CreatorProfile from "@/pages/creator-profile";
 
 function Router() {
   return (
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/share/:id" component={ShareImage} />
+      <Route path="/creator/:id" component={CreatorProfile} />
 
       {/* Protected routes (require authentication) */}
       <Route path="/discover">

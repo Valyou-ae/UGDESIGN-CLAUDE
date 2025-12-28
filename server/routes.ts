@@ -38,7 +38,7 @@ import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import { getFromCache, CACHE_TTL, invalidateCache } from "./cache";
 import { verifyGoogleToken } from "./googleAuth";
-import { registerAdminRoutes, registerSuperAdminRoutes, registerAuthRoutes, registerGalleryRoutes, registerUserRoutes, registerImageRoutes, registerImageEditorRoutes, registerGenerationRoutes, registerMockupRoutes, registerBackgroundRoutes, registerMoodBoardRoutes, registerBillingRoutes, registerAffiliateRoutes, registerInspirationRoutes, registerKnowledgeRoutes, createMiddleware } from "./routes/index";
+import { registerAdminRoutes, registerSuperAdminRoutes, registerAuthRoutes, registerGalleryRoutes, registerUserRoutes, registerImageRoutes, registerImageEditorRoutes, registerGenerationRoutes, registerMockupRoutes, registerBackgroundRoutes, registerMoodBoardRoutes, registerBillingRoutes, registerAffiliateRoutes, registerInspirationRoutes, registerKnowledgeRoutes, registerSocialRoutes, createMiddleware } from "./routes/index";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -125,6 +125,7 @@ export async function registerRoutes(
   registerAffiliateRoutes(app, sharedMiddleware);
   await registerInspirationRoutes(app, sharedMiddleware);
   await registerKnowledgeRoutes(app, sharedMiddleware);
+  registerSocialRoutes(app, sharedMiddleware);
 
   // Credit costs for different operations
   const CREDIT_COSTS = {

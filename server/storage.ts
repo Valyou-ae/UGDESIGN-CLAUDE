@@ -20,6 +20,7 @@ import {
   chatMessages,
   userPreferences,
   imageFolders,
+  userFollows,
   type User, 
   type InsertUser, 
   type UpdateProfile, 
@@ -53,6 +54,7 @@ import {
   type InsertImageFolder,
   type MockupVersion,
   type InsertMockupVersion,
+  type UserFollow,
   mockupVersions
 } from "@shared/schema";
 import { db } from "./db";
@@ -219,6 +221,17 @@ export interface IStorage {
   getLatestVersionNumber(userId: string, sessionId: string): Promise<number>;
   deleteMockupVersion(userId: string, versionId: string): Promise<void>;
   getUserMockupSessions(userId: string, limit?: number): Promise<{ sessionId: string; latestVersion: MockupVersion; versionCount: number }[]>;
+  
+  // User Follows
+  followUser(followerId: string, followingId: string): Promise<UserFollow>;
+  unfollowUser(followerId: string, followingId: string): Promise<void>;
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  getFollowers(userId: string, limit?: number, offset?: number): Promise<{ users: (User & { followedAt: Date })[]; total: number }>;
+  getFollowing(userId: string, limit?: number, offset?: number): Promise<{ users: (User & { followedAt: Date })[]; total: number }>;
+  getFollowerCount(userId: string): Promise<number>;
+  getFollowingCount(userId: string): Promise<number>;
+  getDiscoveryFeed(userId: string | null, limit?: number, offset?: number): Promise<{ images: (GeneratedImage & { creator: { id: string; username: string | null; displayName: string | null; profileImageUrl: string | null }; isFollowing: boolean })[]; total: number }>;
+  getCreatorProfile(creatorId: string, viewerId: string | null): Promise<{ user: User; followerCount: number; followingCount: number; imageCount: number; isFollowing: boolean } | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2042,6 +2055,172 @@ export class DatabaseStorage implements IStorage {
     );
 
     return results.filter(r => r.latestVersion);
+  }
+
+  // ============== USER FOLLOWS ==============
+
+  async followUser(followerId: string, followingId: string): Promise<UserFollow> {
+    if (followerId === followingId) {
+      throw new Error("Cannot follow yourself");
+    }
+    
+    // Check if already following
+    const existing = await db
+      .select()
+      .from(userFollows)
+      .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)));
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    
+    const [follow] = await db
+      .insert(userFollows)
+      .values({ followerId, followingId })
+      .returning();
+    return follow;
+  }
+
+  async unfollowUser(followerId: string, followingId: string): Promise<void> {
+    await db
+      .delete(userFollows)
+      .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)));
+  }
+
+  async isFollowing(followerId: string, followingId: string): Promise<boolean> {
+    const [follow] = await db
+      .select()
+      .from(userFollows)
+      .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)));
+    return !!follow;
+  }
+
+  async getFollowers(userId: string, limit = 20, offset = 0): Promise<{ users: (User & { followedAt: Date })[]; total: number }> {
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(userFollows)
+      .where(eq(userFollows.followingId, userId));
+    const total = countResult?.count || 0;
+
+    const followers = await db
+      .select({
+        user: users,
+        followedAt: userFollows.createdAt,
+      })
+      .from(userFollows)
+      .innerJoin(users, eq(userFollows.followerId, users.id))
+      .where(eq(userFollows.followingId, userId))
+      .orderBy(desc(userFollows.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      users: followers.map(f => ({ ...f.user, followedAt: f.followedAt })),
+      total,
+    };
+  }
+
+  async getFollowing(userId: string, limit = 20, offset = 0): Promise<{ users: (User & { followedAt: Date })[]; total: number }> {
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(userFollows)
+      .where(eq(userFollows.followerId, userId));
+    const total = countResult?.count || 0;
+
+    const following = await db
+      .select({
+        user: users,
+        followedAt: userFollows.createdAt,
+      })
+      .from(userFollows)
+      .innerJoin(users, eq(userFollows.followingId, users.id))
+      .where(eq(userFollows.followerId, userId))
+      .orderBy(desc(userFollows.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      users: following.map(f => ({ ...f.user, followedAt: f.followedAt })),
+      total,
+    };
+  }
+
+  async getFollowerCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(userFollows)
+      .where(eq(userFollows.followingId, userId));
+    return result?.count || 0;
+  }
+
+  async getFollowingCount(userId: string): Promise<number> {
+    const [result] = await db
+      .select({ count: count() })
+      .from(userFollows)
+      .where(eq(userFollows.followerId, userId));
+    return result?.count || 0;
+  }
+
+  async getDiscoveryFeed(viewerId: string | null, limit = 20, offset = 0): Promise<{ images: (GeneratedImage & { creator: { id: string; username: string | null; displayName: string | null; profileImageUrl: string | null }; isFollowing: boolean })[]; total: number }> {
+    const [countResult] = await db
+      .select({ count: count() })
+      .from(generatedImages)
+      .where(eq(generatedImages.isPublic, true));
+    const total = countResult?.count || 0;
+
+    const images = await db
+      .select({
+        image: generatedImages,
+        creator: {
+          id: users.id,
+          username: users.username,
+          displayName: users.displayName,
+          profileImageUrl: users.profileImageUrl,
+        },
+      })
+      .from(generatedImages)
+      .innerJoin(users, eq(generatedImages.userId, users.id))
+      .where(eq(generatedImages.isPublic, true))
+      .orderBy(desc(generatedImages.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Check follow status for each creator if viewer is logged in
+    const results = await Promise.all(
+      images.map(async (item) => {
+        let isFollowing = false;
+        if (viewerId && viewerId !== item.creator.id) {
+          isFollowing = await this.isFollowing(viewerId, item.creator.id);
+        }
+        return {
+          ...item.image,
+          creator: item.creator,
+          isFollowing,
+        };
+      })
+    );
+
+    return { images: results, total };
+  }
+
+  async getCreatorProfile(creatorId: string, viewerId: string | null): Promise<{ user: User; followerCount: number; followingCount: number; imageCount: number; isFollowing: boolean } | undefined> {
+    const user = await this.getUser(creatorId);
+    if (!user) return undefined;
+
+    const [followerCount, followingCount, imageCount, isFollowing] = await Promise.all([
+      this.getFollowerCount(creatorId),
+      this.getFollowingCount(creatorId),
+      this.getImageCountByUserId(creatorId),
+      viewerId && viewerId !== creatorId ? this.isFollowing(viewerId, creatorId) : Promise.resolve(false),
+    ]);
+
+    return {
+      user,
+      followerCount,
+      followingCount,
+      imageCount,
+      isFollowing,
+    };
   }
 }
 

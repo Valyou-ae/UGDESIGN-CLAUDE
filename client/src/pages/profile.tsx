@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "@tanstack/react-query";
-import { imagesApi } from "@/lib/api";
+import { imagesApi, socialApi } from "@/lib/api";
 import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,12 @@ export default function Profile() {
       if (!res.ok) throw new Error("Failed to fetch referral stats");
       return res.json();
     },
+    enabled: isAuthenticated,
+  });
+
+  const { data: followStats } = useQuery({
+    queryKey: ["me", "follow-stats"],
+    queryFn: socialApi.getMyFollowStats,
     enabled: isAuthenticated,
   });
 
@@ -270,9 +276,11 @@ export default function Profile() {
           </div>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-10">
             {[
               { label: "Credits", value: (stats.credits ?? 0).toString(), icon: Coins, highlight: true },
+              { label: "Followers", value: (followStats?.followerCount || 0).toString(), icon: Users },
+              { label: "Following", value: (followStats?.followingCount || 0).toString(), icon: Users },
               { label: "Images", value: (stats.images || 0).toString(), icon: ImageIcon },
               { label: "Mockups", value: (stats.mockups || 0).toString(), icon: Layers },
               { label: "Backgrounds", value: (stats.bgRemoved || 0).toString(), icon: Grid },

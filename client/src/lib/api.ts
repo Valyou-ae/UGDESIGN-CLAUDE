@@ -1029,6 +1029,70 @@ export const galleryApi = {
     }),
 };
 
+// Social/Follow API
+export interface CreatorProfile {
+  id: string;
+  username: string | null;
+  displayName: string | null;
+  bio: string | null;
+  profileImageUrl: string | null;
+  createdAt: string;
+  followerCount: number;
+  followingCount: number;
+  imageCount: number;
+  isFollowing: boolean;
+}
+
+export interface DiscoveryImage {
+  id: string;
+  userId: string;
+  imageUrl: string;
+  prompt: string;
+  style: string | null;
+  aspectRatio: string | null;
+  createdAt: string;
+  creator: {
+    id: string;
+    username: string | null;
+    displayName: string | null;
+    profileImageUrl: string | null;
+  };
+  isFollowing: boolean;
+}
+
+export const socialApi = {
+  followUser: (userId: string) =>
+    fetchApi<{ success: boolean; isFollowing: boolean; followerCount: number }>(`/users/${userId}/follow`, {
+      method: "POST",
+    }),
+
+  unfollowUser: (userId: string) =>
+    fetchApi<{ success: boolean; isFollowing: boolean; followerCount: number }>(`/users/${userId}/follow`, {
+      method: "DELETE",
+    }),
+
+  isFollowing: (userId: string) =>
+    fetchApi<{ isFollowing: boolean }>(`/users/${userId}/following`),
+
+  getFollowers: (userId: string, limit?: number, offset?: number) =>
+    fetchApi<{ users: any[]; total: number }>(`/users/${userId}/followers?limit=${limit || 20}&offset=${offset || 0}`),
+
+  getFollowing: (userId: string, limit?: number, offset?: number) =>
+    fetchApi<{ users: any[]; total: number }>(`/users/${userId}/following-list?limit=${limit || 20}&offset=${offset || 0}`),
+
+  getCreatorProfile: (creatorId: string) =>
+    fetchApi<CreatorProfile>(`/creators/${creatorId}`),
+
+  getCreatorImages: (creatorId: string, limit?: number, offset?: number) =>
+    fetchApi<{ images: any[]; total: number }>(`/creators/${creatorId}/images?limit=${limit || 20}&offset=${offset || 0}`),
+
+  getDiscoveryFeed: (limit?: number, offset?: number) =>
+    fetchApi<{ images: DiscoveryImage[]; total: number }>(`/discover?limit=${limit || 20}&offset=${offset || 0}`),
+
+  getMyFollowStats: () =>
+    fetchApi<{ followerCount: number; followingCount: number }>("/me/follow-stats"),
+};
+
 // Daily Inspiration API
 export interface DailyInspiration {
   id: string;

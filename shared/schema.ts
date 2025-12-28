@@ -494,6 +494,27 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
 export type InsertChatSession = z.infer<typeof insertChatSessionSchema>;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 
+// ============== USER FOLLOWS ==============
+
+export const userFollows = pgTable("user_follows", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  followerId: varchar("follower_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  followingId: varchar("following_id").references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_user_follows_follower_id").on(table.followerId),
+  index("idx_user_follows_following_id").on(table.followingId),
+  index("idx_user_follows_unique").on(table.followerId, table.followingId),
+]);
+
+export const insertUserFollowSchema = createInsertSchema(userFollows).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type UserFollow = typeof userFollows.$inferSelect;
+export type InsertUserFollow = z.infer<typeof insertUserFollowSchema>;
+
 // ============== MOCKUP VERSION HISTORY ==============
 
 export const mockupVersions = pgTable("mockup_versions", {
