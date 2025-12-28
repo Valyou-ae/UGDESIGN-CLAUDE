@@ -119,6 +119,34 @@ async function cacheHeadshot(persona: UnifiedPersona, headshot: string): Promise
   }
 }
 
+// Design analysis cache - keyed by image hash for reuse
+const designAnalysisCache = new Map<string, { analysis: DesignAnalysis; timestamp: number }>();
+const DESIGN_ANALYSIS_CACHE_TTL = 1000 * 60 * 30; // 30 minute cache
+
+function getImageHash(imageBase64: string): string {
+  // Use first 1000 chars + last 1000 chars + length as fingerprint (fast, collision-resistant for our use case)
+  const start = imageBase64.substring(0, 1000);
+  const end = imageBase64.substring(Math.max(0, imageBase64.length - 1000));
+  const length = imageBase64.length.toString();
+  return `${start.length}_${end.length}_${length}_${start.slice(0, 100)}_${end.slice(-100)}`;
+}
+
+function getCachedDesignAnalysis(imageBase64: string): DesignAnalysis | null {
+  const key = getImageHash(imageBase64);
+  const cached = designAnalysisCache.get(key);
+  if (cached && Date.now() - cached.timestamp < DESIGN_ANALYSIS_CACHE_TTL) {
+    logger.info("Using cached design analysis", { source: "eliteMockupGenerator", cacheSize: designAnalysisCache.size });
+    return cached.analysis;
+  }
+  return null;
+}
+
+function cacheDesignAnalysis(imageBase64: string, analysis: DesignAnalysis): void {
+  const key = getImageHash(imageBase64);
+  designAnalysisCache.set(key, { analysis, timestamp: Date.now() });
+  logger.info("Cached design analysis", { source: "eliteMockupGenerator", cacheSize: designAnalysisCache.size });
+}
+
 interface LockData {
   type: string;
   locked: boolean;
@@ -158,6 +186,12 @@ export interface PersonaLock {
 }
 
 export async function analyzeDesignForMockup(imageBase64: string): Promise<DesignAnalysis> {
+  // Check cache first
+  const cached = getCachedDesignAnalysis(imageBase64);
+  if (cached) {
+    return cached;
+  }
+  
   const systemInstruction = `You are an expert product design analyst. Analyze this uploaded design for product mockup placement.
 
 Determine:
@@ -203,7 +237,9 @@ Respond with JSON:
 
     const rawJson = response.text;
     if (rawJson) {
-      return JSON.parse(rawJson) as DesignAnalysis;
+      const analysis = JSON.parse(rawJson) as DesignAnalysis;
+      cacheDesignAnalysis(imageBase64, analysis);
+      return analysis;
     }
   } catch (error) {
     logger.error("Design analysis failed", error, { source: "eliteMockupGenerator" });
@@ -1178,13 +1214,22 @@ export async function generateMockupBatch(
     logger.info("Reusing existing persona lock for consistent model appearance", { source: "eliteMockupGenerator" });
     designAnalysis = await analyzeDesignForMockup(request.designImage);
   } else if (request.product.isWearable && request.modelDetails) {
-    // PARALLEL: Run design analysis and persona lock generation simultaneously
-    const [analysisResult, personaResult] = await Promise.all([
+    // PARALLEL: Run design analysis, persona lock generation, and headshot cache lookup simultaneously
+    const [analysisResult, personaWithHeadshotResult] = await Promise.all([
       analyzeDesignForMockup(request.designImage),
       (async () => {
         try {
           const lock = await generatePersonaLock(request.modelDetails!);
-          return { success: true as const, lock };
+          
+          // Check headshot cache immediately after persona lock (L1 memory + L2 R2 storage)
+          const cachedHeadshot = await getCachedHeadshot(lock.persona);
+          if (cachedHeadshot) {
+            lock.headshot = cachedHeadshot;
+            logger.info("Using cached persona headshot from L1/L2", { source: "eliteMockupGenerator" });
+            return { success: true as const, lock, headshot: cachedHeadshot, fromCache: true };
+          }
+          
+          return { success: true as const, lock, headshot: undefined, fromCache: false };
         } catch (error) {
           logger.warn("Persona lock generation failed", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
           return { success: false as const, error };
@@ -1194,17 +1239,14 @@ export async function generateMockupBatch(
     
     designAnalysis = analysisResult;
     
-    if (personaResult.success) {
-      personaLock = personaResult.lock;
+    if (personaWithHeadshotResult.success) {
+      personaLock = personaWithHeadshotResult.lock;
       
-      // Check headshot cache first (L1 memory + L2 R2 storage)
-      const cachedHeadshot = await getCachedHeadshot(personaLock.persona);
-      if (cachedHeadshot) {
-        personaHeadshot = cachedHeadshot;
-        personaLock.headshot = personaHeadshot;
+      if (personaWithHeadshotResult.fromCache && personaWithHeadshotResult.headshot) {
+        personaHeadshot = personaWithHeadshotResult.headshot;
         reportStage('generating_headshot', 'Using cached model reference...', 15);
       } else {
-        // Generate new headshot
+        // Generate new headshot (not in cache)
         reportStage('generating_headshot', 'Creating model reference...', 12);
         try {
           personaHeadshot = await generatePersonaHeadshot(personaLock);
