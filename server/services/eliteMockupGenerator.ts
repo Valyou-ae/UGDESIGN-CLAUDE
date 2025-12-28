@@ -1377,19 +1377,38 @@ export async function generateMockupBatch(
   let completedCount = 0;
   const totalJobs = jobs.length;
 
-  // For wearable products with persona lock, process SEQUENTIALLY to use first result as reference
-  // This improves model consistency by passing the first generated image to subsequent generations
+  // For wearable products with persona lock, sequential until first success, then parallelize rest
+  // This ensures cross-angle consistency while maximizing speed after reference is established
   let firstSuccessfulMockup: string | undefined;
+  let processedJobsCount = 0;
   
   if (request.product.isWearable && personaLock) {
-    // Sequential processing for consistency
-    for (const job of jobs) {
-      await processJobWithReference(job, firstSuccessfulMockup);
+    // Sequential phase: process jobs one by one until we get a successful reference
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i];
+      await processJobWithReference(job, undefined);
+      processedJobsCount++;
       
-      // Capture first successful result to use as reference
-      if (!firstSuccessfulMockup && job.result?.imageData) {
+      if (job.result?.imageData) {
         firstSuccessfulMockup = job.result.imageData;
-        logger.info("First mockup captured for cross-angle consistency reference", { source: "eliteMockupGenerator" });
+        logger.info(`First successful mockup captured on job ${i + 1} for cross-angle consistency reference`, { source: "eliteMockupGenerator" });
+        break; // Got reference, switch to parallel mode
+      }
+    }
+    
+    // Parallel phase: process remaining jobs using the reference
+    const remainingJobs = jobs.slice(processedJobsCount);
+    if (remainingJobs.length > 0 && firstSuccessfulMockup) {
+      const batchSize = 2; // 2 parallel to balance speed vs API limits
+      
+      for (let i = 0; i < remainingJobs.length; i += batchSize) {
+        const batchJobs = remainingJobs.slice(i, i + batchSize);
+        await Promise.all(batchJobs.map(job => processJobWithReference(job, firstSuccessfulMockup)));
+      }
+    } else if (remainingJobs.length > 0) {
+      // No reference available, continue sequentially
+      for (const job of remainingJobs) {
+        await processJobWithReference(job, undefined);
       }
     }
   } else {
