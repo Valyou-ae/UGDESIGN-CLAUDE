@@ -34,8 +34,16 @@ Preferred communication style: Simple, everyday language.
     -   **Enhanced Libraries (10) - +10-20% Quality Boost**: Material physics enhanced (100+ materials with IOR/roughness/BRDF), optical phenomena enhanced (reflections/refractions/scattering), color psychology enhanced (50+ colors with emotional palettes), film stocks enhanced (20+ stocks), subject libraries enhanced (portrait/architecture/food/fashion/automotive/landscape), meta-prompting enhanced, depth systems enhanced (DoF profiles/bokeh styles), weather effects enhanced, typography mastery, quality control enhanced (checklists/validation).
     -   **Hyper-Realism Libraries (15) - +25-30% Quality Boost**: Human anatomy perfection (eye/skin/hand rendering), photographic lens simulation, imperfection library (authentic flaws), advanced lighting physics, surface material accuracy, environmental context, micro-detail enhancement, film stock emulation, forensic anti-AI detection, skin rendering mastery, hyper-resolution, tonal range, behavioral realism, subject-specific hyper-realism, forensic standards.
     -   **API Endpoint**: `/api/knowledge/all` exposes all modules for frontend consumption.
+-   **288-Persona Library**: Complete diverse persona system for accurate mockup representation:
+    -   **Structure**: 8 ethnicities × 6 sizes × 3 age groups × 2 genders = 288 unique personas
+    -   **Ethnicities**: White, Black, Hispanic, Asian, Indian, Southeast Asian, Indigenous, Middle Eastern
+    -   **Sizes**: XS, S, M, L, XL, 2XL with size-specific body measurements
+    -   **Age Groups**: Teen (13-17), Young Adult (18-24), Adult (25-45)
+    -   **ID Format**: ETH_AGE_SEX_SIZE_001 (e.g., WHT_AD_F_M_001)
+    -   **Lookup Functions**: getExactPersona(), getPersonaByFilters(), getRandomPersona()
+    -   **Files**: adultPersonas.ts, teenPersonas.ts, youngAdultPersonas.ts (96 personas each)
 -   **Lock-In Consistency System**: Multi-lock approach ensuring consistent mockups:
-    -   **Persona Lock**: Consistent human models for wearable products.
+    -   **Persona Lock**: Exact persona matching for ethnicity/sex/size/age via getExactPersona().
     -   **Product Lock**: Enforces product specifications.
     -   **Color Lock**: Exact color matching.
     -   **Design Lock**: Rules for design application (DTG/AOP).
