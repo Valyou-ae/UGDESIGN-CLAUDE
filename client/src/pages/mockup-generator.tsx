@@ -2812,6 +2812,34 @@ export default function MockupGenerator() {
                                         ))}
                                       </div>
                                     </div>
+
+                                    {/* Age Group Section */}
+                                    <div className="mt-2">
+                                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Age Group</label>
+                                      <div className="grid grid-cols-3 gap-2">
+                                        {[
+                                          { value: "TEEN", label: "Teen", description: "13-17 years", icon: "🧒" },
+                                          { value: "YOUNG_ADULT", label: "Young Adult", description: "18-24 years", icon: "🧑" },
+                                          { value: "ADULT", label: "Adult", description: "25-45 years", icon: "👨" },
+                                        ].map((option) => (
+                                          <button
+                                            key={option.value}
+                                            onClick={() => setModelDetails({...modelDetails, age: option.value as AgeGroup})}
+                                            className={cn(
+                                              "flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-lg border transition-all",
+                                              modelDetails.age === option.value
+                                                ? "bg-primary/10 border-primary text-primary"
+                                                : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"
+                                            )}
+                                            data-testid={`button-age-${option.value.toLowerCase()}`}
+                                          >
+                                            <span className="text-lg">{option.icon}</span>
+                                            <span className="text-xs font-medium">{option.label}</span>
+                                            <span className="text-[10px] text-muted-foreground">{option.description}</span>
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
                                     
                                     {/* Ethnicity Section */}
                                     <div className="mt-2">
