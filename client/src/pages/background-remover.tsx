@@ -725,7 +725,7 @@ export default function BackgroundRemover() {
       <div className="w-full max-w-[800px]">
         
         <div 
-          className="group relative bg-card border-2 border-dashed border-border rounded-[20px] md:rounded-[24px] p-6 md:p-16 text-center transition-all duration-300 hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10 hover:scale-[1.01] cursor-pointer"
+          className="group relative bg-card dark:bg-[#3d3d3e] border-2 border-dashed border-border rounded-[20px] md:rounded-[24px] p-6 md:p-16 text-center transition-all duration-300 hover:border-primary hover:bg-primary/5 dark:hover:bg-[#434344] hover:scale-[1.01] cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
