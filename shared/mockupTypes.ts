@@ -442,6 +442,7 @@ export interface GenerationJob {
   materialCondition?: MaterialPresetKey;
   environmentPrompt?: string;
   personaLockImage?: string;
+  personaLock?: PersonaLockData;
   status: JobStatus;
   retryCount: number;
   result?: GeneratedMockup;

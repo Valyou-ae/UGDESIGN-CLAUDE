@@ -1323,41 +1323,73 @@ export async function generateMockupBatch(
   
   const designAnalysis = await analyzeDesignForMockup(request.designImage);
 
-  let personaLock: PersonaLock | undefined;
-  let personaHeadshot: string | undefined;
-
-  if (request.existingPersonaLock) {
-    personaLock = request.existingPersonaLock as PersonaLock;
-    personaHeadshot = personaLock.headshot;
-    logger.info("Reusing existing persona lock for consistent model appearance", { source: "eliteMockupGenerator" });
-  } else if (request.product.isWearable && request.modelDetails) {
-    try {
-      personaLock = await generatePersonaLock(request.modelDetails);
-      
-      if (personaLock.persona.headshotUrl) {
-        try {
-          const fs = await import('fs/promises');
-          const path = await import('path');
-          const headshotPath = path.join(process.cwd(), personaLock.persona.headshotUrl);
-          const headshotBuffer = await fs.readFile(headshotPath);
-          personaHeadshot = headshotBuffer.toString('base64');
-          personaLock.headshot = personaHeadshot;
-          logger.info("Pre-stored persona headshot loaded successfully", { source: "eliteMockupGenerator", personaId: personaLock.persona.id });
-        } catch (fileError) {
-          logger.warn("Pre-stored headshot file not found, proceeding without headshot", { source: "eliteMockupGenerator", headshotUrl: personaLock.persona.headshotUrl, error: fileError instanceof Error ? fileError.message : String(fileError) });
-        }
-      } else {
-        logger.info("No pre-stored headshot for persona, using text description only", { source: "eliteMockupGenerator", personaId: personaLock.persona.id });
-      }
-    } catch (error) {
-      logger.warn("Persona lock generation failed, proceeding without model", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
-    }
-  }
-
+  // SIZE-SPECIFIC PERSONAS: Select one persona per size for accurate body representation
+  // Each size gets its own persona with matching body proportions
+  const personaLocksBySize: Map<string, PersonaLock> = new Map();
+  const headshotsBySize: Map<string, string> = new Map();
+  
   const jobs: GenerationJob[] = [];
   const sizesToGenerate = request.sizes && request.sizes.length > 0 
     ? request.sizes 
     : [request.modelDetails?.modelSize || 'M'];
+
+  // Pre-generate persona locks for each size
+  if (request.product.isWearable && request.modelDetails) {
+    const fsPromises = await import('fs/promises');
+    const pathModule = await import('path');
+    
+    for (const size of sizesToGenerate) {
+      try {
+        // Create size-specific model details to get matching persona
+        const sizeModelDetails: ModelDetails = { 
+          ...request.modelDetails, 
+          modelSize: size as Size 
+        };
+        
+        const sizePersonaLock = await generatePersonaLock(sizeModelDetails);
+        
+        logger.info("Size-specific persona selected", { 
+          source: "eliteMockupGenerator", 
+          size,
+          personaId: sizePersonaLock.persona.id,
+          personaName: sizePersonaLock.persona.name,
+          personaSize: sizePersonaLock.persona.size,
+          personaBuild: sizePersonaLock.persona.build
+        });
+        
+        // Load headshot for this size's persona
+        if (sizePersonaLock.persona.headshotUrl) {
+          try {
+            const headshotPath = pathModule.join(process.cwd(), sizePersonaLock.persona.headshotUrl);
+            const headshotBuffer = await fsPromises.readFile(headshotPath);
+            const headshot = headshotBuffer.toString('base64');
+            sizePersonaLock.headshot = headshot;
+            headshotsBySize.set(size, headshot);
+          } catch (fileError) {
+            logger.warn("Pre-stored headshot file not found for size", { 
+              source: "eliteMockupGenerator", 
+              size,
+              headshotUrl: sizePersonaLock.persona.headshotUrl 
+            });
+          }
+        }
+        
+        personaLocksBySize.set(size, sizePersonaLock);
+      } catch (error) {
+        logger.warn("Persona lock generation failed for size, proceeding without model", { 
+          source: "eliteMockupGenerator", 
+          size,
+          error: error instanceof Error ? error.message : String(error) 
+        });
+      }
+    }
+    
+    logger.info("Size-specific personas loaded", { 
+      source: "eliteMockupGenerator", 
+      sizesWithPersonas: Array.from(personaLocksBySize.keys()),
+      sizesWithHeadshots: Array.from(headshotsBySize.keys())
+    });
+  }
   
   for (const size of sizesToGenerate) {
     for (const color of request.colors) {
@@ -1365,6 +1397,9 @@ export async function generateMockupBatch(
         const sizeModelDetails = request.modelDetails 
           ? { ...request.modelDetails, modelSize: size as Size }
           : undefined;
+        
+        const sizePersonaLock = personaLocksBySize.get(size);
+        const sizeHeadshot = headshotsBySize.get(size);
         
         jobs.push({
           id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -1378,7 +1413,8 @@ export async function generateMockupBatch(
           lightingPreset: request.lightingPreset,
           materialCondition: request.materialCondition,
           environmentPrompt: request.environmentPrompt,
-          personaLockImage: personaHeadshot,
+          personaLockImage: sizeHeadshot,
+          personaLock: sizePersonaLock,
           status: 'pending',
           retryCount: 0,
           createdAt: Date.now()
@@ -1386,6 +1422,11 @@ export async function generateMockupBatch(
       }
     }
   }
+  
+  // For backward compatibility, use the first size's persona as the batch persona
+  const firstSize = sizesToGenerate[0];
+  const personaLock = personaLocksBySize.get(firstSize);
+  const personaHeadshot = headshotsBySize.get(firstSize);
 
   const batch: MockupBatch = {
     id: batchId,
@@ -1409,11 +1450,11 @@ export async function generateMockupBatch(
   let completedCount = 0;
   const totalJobs = jobs.length;
 
-  // With pre-stored headshots, we can process all jobs in parallel since consistency is ensured by the headshot image
-  // Fall back to sequential only if no headshot is available (rare edge case)
-  const hasPreStoredHeadshot = personaHeadshot && personaLock?.persona.headshotUrl;
+  // With pre-stored headshots (per size), we can process all jobs in parallel
+  // Fall back to sequential only if no headshots are available (rare edge case)
+  const hasPreStoredHeadshots = headshotsBySize.size > 0;
   
-  if (request.product.isWearable && personaLock && !hasPreStoredHeadshot) {
+  if (request.product.isWearable && personaLocksBySize.size > 0 && !hasPreStoredHeadshots) {
     // Sequential processing only for wearables WITHOUT pre-stored headshot (fallback)
     let firstSuccessfulMockup: string | undefined;
     for (const job of jobs) {
@@ -1429,7 +1470,7 @@ export async function generateMockupBatch(
     // Parallel processing for all products with pre-stored headshots (optimized path) and non-wearables
     // KEY FIX: Use first successful mockup as reference for subsequent batches to ensure consistency
     const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
-    logger.info(`Processing ${jobs.length} jobs in parallel batches of ${batchSize}`, { source: "eliteMockupGenerator", hasPreStoredHeadshot: !!hasPreStoredHeadshot });
+    logger.info(`Processing ${jobs.length} jobs in parallel batches of ${batchSize}`, { source: "eliteMockupGenerator", hasPreStoredHeadshots, sizesWithHeadshots: headshotsBySize.size });
     
     let batchReferenceImage: string | undefined;
     
@@ -1474,13 +1515,17 @@ export async function generateMockupBatch(
     job.status = 'processing';
     job.startedAt = Date.now();
 
+    // Use job-specific persona lock for size-accurate body representation
+    const jobPersonaLock = job.personaLock as PersonaLock | undefined;
+    const jobHeadshot = job.personaLockImage;
+
     const renderSpec = buildRenderSpecification(
       designAnalysis,
       request.product,
       job.color,
       job.angle,
       job.modelDetails,
-      personaLock,
+      jobPersonaLock,
       request.brandStyle,
       request.journey,
       request.materialCondition,
@@ -1491,11 +1536,11 @@ export async function generateMockupBatch(
       request.outputQuality
     );
 
-    // Use both headshot AND first successful mockup as references for better consistency
+    // Use job-specific headshot for size-appropriate model appearance
     const result = await generateMockupWithRetry(
       request.designImage,
       renderSpec,
-      personaHeadshot,
+      jobHeadshot,
       referenceImage
     );
 
