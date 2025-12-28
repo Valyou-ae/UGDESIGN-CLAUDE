@@ -360,12 +360,32 @@ export function buildRenderSpecification(
   const garmentBlueprint = product.isWearable ? getGarmentBlueprintPrompt(product) : "";
 
   const sizeForBody = (currentSize || modelDetails?.modelSize || personaLock?.persona.size || 'M') as Size;
-  const sizeSpecificProfile = personaLock && modelDetails ? getSomaticProfile(
+  
+  // PERSONA-FIRST APPROACH: Use persona's embedded body data ONLY if size matches
+  // This ensures size-specific body variation while using persona data when applicable
+  // If generating a different size than the persona's native size, fall back to somatic profiles
+  const personaSizeMatches = personaLock?.persona?.size === sizeForBody;
+  const personaHasBodyData = personaLock?.persona?.height && personaLock?.persona?.weight && personaLock?.persona?.build;
+  
+  // Only use persona body data if the persona's size matches the requested size
+  const personaBodyData = (personaSizeMatches && personaHasBodyData) ? {
+    height: personaLock!.persona.height,
+    weight: personaLock!.persona.weight,
+    build: personaLock!.persona.build,
+    description: personaLock!.persona.fullDescription || `${personaLock!.persona.build} build, ${personaLock!.persona.height} tall, ${personaLock!.persona.weight}`
+  } : null;
+  
+  // FALLBACK: Use somatic profile when persona size doesn't match OR no persona available
+  // This ensures each size gets appropriate body proportions
+  const somaticFallback = !personaBodyData && modelDetails ? getSomaticProfile(
     modelDetails.age,
     modelDetails.sex,
     modelDetails.ethnicity,
     sizeForBody
   ) : null;
+  
+  // Unified body data: persona (if size matches) first, somatic fallback for other sizes
+  const bodyData = personaBodyData || somaticFallback;
 
   const customization = modelDetails?.customization;
   const customizationBlock = customization ? `
@@ -406,11 +426,11 @@ ${customizationBlock}
 
 ===== SIZE-SPECIFIC BODY TYPE (SIZE: ${sizeForBody}) =====
 [CRITICAL - BODY MUST MATCH THE GARMENT SIZE - THIS IS MANDATORY]
-${sizeSpecificProfile ? `
-- Height: ${sizeSpecificProfile.height}
-- Weight: ${sizeSpecificProfile.weight}
-- Build: ${sizeSpecificProfile.build}
-- Body description: ${sizeSpecificProfile.description}
+${bodyData ? `
+- Height: ${bodyData.height}
+- Weight: ${bodyData.weight}
+- Build: ${bodyData.build}
+- Body description: ${bodyData.description}
 ` : `
 - Height: ${personaLock.persona.height}
 - Weight: ${personaLock.persona.weight}
@@ -458,11 +478,11 @@ BODY SIZE VIOLATION EXAMPLES (DO NOT DO THESE):
    - DO NOT blend ethnic features incorrectly
 
 4. BODY SIZE ENFORCEMENT (SIZE: ${sizeForBody}):
-${sizeSpecificProfile ? `   - Build: ${sizeSpecificProfile.build}
-   - Weight: ${sizeSpecificProfile.weight}
-   - Height: ${sizeSpecificProfile.height}
+${bodyData ? `   - Build: ${bodyData.build}
+   - Weight: ${bodyData.weight}
+   - Height: ${bodyData.height}
    - The body MUST match these size-specific specifications
-   - A ${sizeForBody} garment should be worn by a person with ${sizeSpecificProfile.build}` : `   - Build: ${personaLock.persona.build}
+   - A ${sizeForBody} garment should be worn by a person with ${bodyData.build}` : `   - Build: ${personaLock.persona.build}
    - Weight: ${personaLock.persona.weight}
    - The body MUST match these specifications exactly`}
 
@@ -513,9 +533,9 @@ ${aopColorRules}
 ===== SIZE/FIT LOCK =====
 [LOCKED - GARMENT MUST FIT AS SPECIFIED]
 - Garment size: ${sizeForBody}
-${sizeSpecificProfile ? `- Model body type: ${sizeSpecificProfile.build}
-- Model weight range: ${sizeSpecificProfile.weight}
-- Model height range: ${sizeSpecificProfile.height}` : `- Build type: ${personaLock.persona.build}`}
+${bodyData ? `- Model body type: ${bodyData.build}
+- Model weight range: ${bodyData.weight}
+- Model height range: ${bodyData.height}` : `- Build type: ${personaLock.persona.build}`}
 - Garment must appear properly fitted for this body type
 - The person wearing ${sizeForBody} should have a body that naturally fits ${sizeForBody} clothing
 - No baggy or overly tight appearance unless specified by product type
