@@ -43,6 +43,7 @@ import {
   getRandomName,
   getGarmentBlueprintPrompt
 } from "./knowledge";
+import { cacheHeadshotToR2, getHeadshotFromR2, isR2Configured } from "../objectStorage";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -64,30 +65,58 @@ const GENERATION_CONFIG = {
 let currentJobCount = 0;
 let lastMinuteRequests: number[] = [];
 
-// Persona headshot cache - keyed by persona characteristics for reuse
+// Two-tier persona headshot cache:
+// L1: In-memory cache (fast, lost on restart)
+// L2: R2 persistent storage (slower, survives restarts)
 const personaHeadshotCache = new Map<string, { headshot: string; timestamp: number }>();
-const HEADSHOT_CACHE_TTL = 1000 * 60 * 60; // 1 hour cache
+const HEADSHOT_CACHE_TTL = 1000 * 60 * 60; // 1 hour L1 cache (L2 uses 6 hours)
 
 function getPersonaCacheKey(persona: UnifiedPersona): string {
   // Include persona ID and facial features for unique identification
-  // This prevents cross-persona/cross-user headshot reuse
   return `${persona.id}_${persona.sex}_${persona.ethnicity}_${persona.age}_${persona.hairStyle}_${persona.hairColor}_${persona.eyeColor}_${persona.skinTone}_${persona.facialFeatures}`;
 }
 
-function getCachedHeadshot(persona: UnifiedPersona): string | null {
+async function getCachedHeadshot(persona: UnifiedPersona): Promise<string | null> {
   const key = getPersonaCacheKey(persona);
+  
+  // L1: Check in-memory cache first (fastest)
   const cached = personaHeadshotCache.get(key);
   if (cached && Date.now() - cached.timestamp < HEADSHOT_CACHE_TTL) {
-    logger.info("Using cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key });
+    logger.info("Using L1 cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key.substring(0, 50) });
     return cached.headshot;
   }
+  
+  // L2: Check R2 persistent cache
+  if (isR2Configured()) {
+    try {
+      const r2Headshot = await getHeadshotFromR2(key);
+      if (r2Headshot) {
+        // Populate L1 cache from L2
+        personaHeadshotCache.set(key, { headshot: r2Headshot, timestamp: Date.now() });
+        logger.info("Using L2 (R2) cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key.substring(0, 50) });
+        return r2Headshot;
+      }
+    } catch (error) {
+      logger.warn("R2 headshot cache lookup failed", { source: "eliteMockupGenerator", error: (error as Error).message });
+    }
+  }
+  
   return null;
 }
 
-function cacheHeadshot(persona: UnifiedPersona, headshot: string): void {
+async function cacheHeadshot(persona: UnifiedPersona, headshot: string): Promise<void> {
   const key = getPersonaCacheKey(persona);
+  
+  // L1: Always cache in memory
   personaHeadshotCache.set(key, { headshot, timestamp: Date.now() });
-  logger.info("Cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key, cacheSize: personaHeadshotCache.size });
+  logger.info("Cached persona headshot to L1", { source: "eliteMockupGenerator", cacheKey: key.substring(0, 50), cacheSize: personaHeadshotCache.size });
+  
+  // L2: Async cache to R2 (don't await - fire and forget)
+  if (isR2Configured()) {
+    cacheHeadshotToR2(key, headshot).catch(error => {
+      logger.warn("Failed to cache headshot to R2", { source: "eliteMockupGenerator", error: (error as Error).message });
+    });
+  }
 }
 
 interface LockData {
@@ -1168,8 +1197,8 @@ export async function generateMockupBatch(
     if (personaResult.success) {
       personaLock = personaResult.lock;
       
-      // Check headshot cache first
-      const cachedHeadshot = getCachedHeadshot(personaLock.persona);
+      // Check headshot cache first (L1 memory + L2 R2 storage)
+      const cachedHeadshot = await getCachedHeadshot(personaLock.persona);
       if (cachedHeadshot) {
         personaHeadshot = cachedHeadshot;
         personaLock.headshot = personaHeadshot;
@@ -1180,8 +1209,8 @@ export async function generateMockupBatch(
         try {
           personaHeadshot = await generatePersonaHeadshot(personaLock);
           personaLock.headshot = personaHeadshot;
-          // Cache for future use
-          cacheHeadshot(personaLock.persona, personaHeadshot);
+          // Cache for future use (L1 + L2)
+          await cacheHeadshot(personaLock.persona, personaHeadshot);
           logger.info("Persona headshot generated and cached", { source: "eliteMockupGenerator" });
         } catch (headshotError) {
           logger.warn("Persona headshot generation failed, proceeding without it", { source: "eliteMockupGenerator", error: headshotError instanceof Error ? headshotError.message : String(headshotError) });
