@@ -185,8 +185,12 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
   });
 
   app.post("/api/generate/draft", requireAuth, async (req: Request, res: Response) => {
+    // Define at handler scope for catch block access
+    let userId: string = '';
+    let creditsDeducted = 0;
+    
     try {
-      const userId = getUserId(req as AuthenticatedRequest);
+      userId = getUserId(req as AuthenticatedRequest);
       const { prompt, stylePreset = "auto", aspectRatio = "1:1", detail = "medium", speed = "quality", imageCount = 1, isPublic = false, knowledgeConfig } = req.body;
       if (!prompt || typeof prompt !== "string") {
         return res.status(400).json({ message: "Prompt is required" });
@@ -210,11 +214,14 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       }
 
       // Track credits deducted for potential refund
-      let creditsDeducted = creditCost;
+      creditsDeducted = creditCost;
 
+      // SSE headers with anti-buffering settings
       res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
       res.setHeader("Connection", "keep-alive");
+      res.setHeader("X-Accel-Buffering", "no"); // Disable nginx buffering
+      res.setHeader("Content-Encoding", "none"); // Disable compression
       res.flushHeaders();
 
       const sendEvent = (event: string, data: unknown) => {
@@ -473,8 +480,12 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
   });
 
   app.post("/api/generate/final", requireAuth, generationRateLimiter, async (req: Request, res: Response) => {
+    // Define at handler scope for catch block access
+    let userId: string = '';
+    let creditsDeducted = 0;
+    
     try {
-      const userId = getUserId(req as AuthenticatedRequest);
+      userId = getUserId(req as AuthenticatedRequest);
       const {
         prompt,
         stylePreset = "auto",
@@ -505,7 +516,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       }
 
       // Track credits deducted for potential refund
-      let creditsDeducted = creditCost;
+      creditsDeducted = creditCost;
 
       // SSE headers with anti-buffering settings
       res.setHeader("Content-Type", "text/event-stream");
@@ -518,10 +529,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
       const sendEvent = (event: string, data: unknown) => {
         const eventStr = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
         res.write(eventStr);
-        // Force immediate send
-        if (typeof (res as { flush?: () => void }).flush === 'function') {
-          (res as { flush: () => void }).flush();
-        }
+        // Note: Express response doesn't have flush() - flushHeaders() at start handles it
       };
 
       // Performance tracking
