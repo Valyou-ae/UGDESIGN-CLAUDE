@@ -3,6 +3,8 @@
  * Implements the "Lock-In" consistency system for high-quality product mockups
  */
 
+import { promises as fs } from 'fs';
+import path from 'path';
 import { GoogleGenAI, Modality } from "@google/genai";
 import { logger } from "../logger";
 import type {
@@ -201,6 +203,18 @@ export async function generatePersonaHeadshot(
   personaLock: PersonaLock,
   maxRetries: number = GENERATION_CONFIG.MAX_RETRIES
 ): Promise<string> {
+  if (personaLock.persona.headshotUrl) {
+    try {
+      const headshotPath = path.join(process.cwd(), personaLock.persona.headshotUrl);
+      const fileBuffer = await fs.readFile(headshotPath);
+      const base64Data = fileBuffer.toString('base64');
+      logger.info(`Loaded pre-stored headshot for persona ${personaLock.persona.id}`, { source: "eliteMockupGenerator" });
+      return base64Data;
+    } catch (error) {
+      logger.warn(`Pre-stored headshot not found for ${personaLock.persona.id}, falling back to generation`, { source: "eliteMockupGenerator" });
+    }
+  }
+
   const ethnicFeatures = getEthnicFeatures(personaLock.persona.ethnicity);
   
   const headshotPrompt = `Professional passport-style headshot photograph of a ${personaLock.persona.age}-year-old ${personaLock.persona.sex.toLowerCase()} ${personaLock.persona.ethnicity} person.
