@@ -198,6 +198,20 @@ export async function generatePersonaLock(modelDetails: ModelDetails): Promise<P
     throw new Error("No matching persona found");
   }
 
+  logger.info("Persona selected for mockup generation", { 
+    source: "eliteMockupGenerator", 
+    personaId: persona.id,
+    personaName: persona.name,
+    personaAge: persona.age,
+    personaSex: persona.sex,
+    personaEthnicity: persona.ethnicity,
+    personaSize: persona.size,
+    requestedAge: modelDetails.age,
+    requestedSex: modelDetails.sex,
+    requestedEthnicity: modelDetails.ethnicity,
+    requestedSize: modelDetails.modelSize
+  });
+
   const somaticProfile = getSomaticProfile(
     modelDetails.age,
     modelDetails.sex,

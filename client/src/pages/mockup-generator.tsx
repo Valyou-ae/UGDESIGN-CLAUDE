@@ -314,6 +314,10 @@ interface MockupDetails {
   currentVersionIndex?: number;
   sessionId?: string;
   productName?: string;
+  ageGroup?: string;
+  sex?: string;
+  ethnicity?: string;
+  printType?: string;
 }
 
 interface GeneratedMockupData {
@@ -326,6 +330,10 @@ interface GeneratedMockupData {
   currentVersionIndex?: number;
   sessionId?: string;
   productName?: string;
+  ageGroup?: string;
+  sex?: string;
+  ethnicity?: string;
+  printType?: string;
 }
 
 const DTG_STEPS: WizardStep[] = ["design", "product", "customize", "output"];
@@ -1613,6 +1621,10 @@ export default function MockupGenerator() {
                   size: event.data.size || 'M',
                   sessionId: sessionId,
                   productName: productName,
+                  ageGroup: useModel ? modelDetails.age : undefined,
+                  sex: useModel ? modelDetails.sex : undefined,
+                  ethnicity: useModel ? modelDetails.ethnicity : undefined,
+                  printType: journey || 'DTG',
                   versions: [{
                     id: versionId,
                     src: imageUrl,
@@ -3513,18 +3525,48 @@ export default function MockupGenerator() {
                     <div className="space-y-3">
                       <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Details</label>
                       <div className="space-y-2 text-sm">
+                        {selectedMockupDetails.productName && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Product</span>
+                            <span className="text-foreground font-medium">{selectedMockupDetails.productName}</span>
+                          </div>
+                        )}
+                        {selectedMockupDetails.printType && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Print Type</span>
+                            <span className="text-foreground font-medium">{selectedMockupDetails.printType}</span>
+                          </div>
+                        )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Color</span>
                           <span className="text-foreground font-medium">{selectedMockupDetails.color}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Angle</span>
-                          <span className="text-foreground font-medium">{selectedMockupDetails.angle}</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-muted-foreground">Size</span>
                           <span className="text-foreground font-medium">{selectedMockupDetails.size}</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Angle</span>
+                          <span className="text-foreground font-medium">{selectedMockupDetails.angle}</span>
+                        </div>
+                        {selectedMockupDetails.ageGroup && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Model Age</span>
+                            <span className="text-foreground font-medium">{selectedMockupDetails.ageGroup}</span>
+                          </div>
+                        )}
+                        {selectedMockupDetails.sex && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Model Gender</span>
+                            <span className="text-foreground font-medium">{selectedMockupDetails.sex === 'MALE' ? 'Male' : 'Female'}</span>
+                          </div>
+                        )}
+                        {selectedMockupDetails.ethnicity && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Model Ethnicity</span>
+                            <span className="text-foreground font-medium">{selectedMockupDetails.ethnicity}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
