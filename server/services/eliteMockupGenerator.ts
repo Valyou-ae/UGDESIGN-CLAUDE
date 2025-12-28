@@ -255,28 +255,82 @@ Respond with JSON:
   };
 }
 
+// Normalize sex value to expected format (Male/Female)
+function normalizeSex(sex: string): "Male" | "Female" {
+  const normalized = sex?.toLowerCase();
+  if (normalized === "male" || normalized === "m") return "Male";
+  if (normalized === "female" || normalized === "f") return "Female";
+  return "Male"; // Default fallback
+}
+
+// Normalize age group to expected format
+function normalizeAgeGroup(age: string): string {
+  const ageMap: Record<string, string> = {
+    "baby": "Baby",
+    "toddler": "Toddler",
+    "kids": "Kids",
+    "teen": "Teen",
+    "young adult": "Young Adult",
+    "young_adult": "Young Adult",
+    "youngadult": "Young Adult",
+    "adult": "Adult",
+    "senior": "Senior",
+    // Legacy uppercase mappings
+    "BABY": "Baby",
+    "TODDLER": "Toddler",
+    "KIDS": "Kids",
+    "TEEN": "Teen",
+    "YOUNG_ADULT": "Young Adult",
+    "ADULT": "Adult",
+    "SENIOR": "Senior"
+  };
+  return ageMap[age] || ageMap[age?.toLowerCase()] || age || "Adult";
+}
+
 export async function generatePersonaLock(modelDetails: ModelDetails): Promise<PersonaLock> {
+  // Normalize input values to expected formats
+  const normalizedSex = normalizeSex(modelDetails.sex);
+  const normalizedAge = normalizeAgeGroup(modelDetails.age);
+  
+  logger.info("Generating persona lock with normalized values", { 
+    source: "eliteMockupGenerator",
+    originalSex: modelDetails.sex,
+    normalizedSex,
+    originalAge: modelDetails.age,
+    normalizedAge,
+    ethnicity: modelDetails.ethnicity
+  });
+  
   const persona = getRandomPersona({
-    ageGroup: modelDetails.age,
-    sex: modelDetails.sex,
+    ageGroup: normalizedAge,
+    sex: normalizedSex,
     ethnicity: modelDetails.ethnicity,
     size: modelDetails.modelSize
   });
 
   if (!persona) {
-    throw new Error("No matching persona found");
+    throw new Error(`No matching persona found for ${normalizedSex} ${normalizedAge} ${modelDetails.ethnicity}`);
   }
+  
+  logger.info("Persona selected", { 
+    source: "eliteMockupGenerator",
+    personaId: persona.id,
+    personaName: persona.name,
+    personaSex: persona.sex,
+    personaAge: persona.age,
+    personaEthnicity: persona.ethnicity
+  });
 
   const somaticProfile = getSomaticProfile(
-    modelDetails.age,
-    modelDetails.sex,
+    normalizedAge,
+    normalizedSex,
     modelDetails.ethnicity,
     modelDetails.modelSize
   );
 
   const somaticPrompt = getSomaticProfilePrompt(
-    modelDetails.age,
-    modelDetails.sex,
+    normalizedAge,
+    normalizedSex,
     modelDetails.ethnicity,
     modelDetails.modelSize
   );
