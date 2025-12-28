@@ -542,8 +542,6 @@ export interface MockupGenerationRequest {
   aopBaseColor?: string;
   aopTrimColor?: string;
   outputQuality?: OutputQuality;
-  useDesignCompositing?: boolean;
-  originalDesignBase64?: string;
 }
 
 export interface MockupRefinementRequest {

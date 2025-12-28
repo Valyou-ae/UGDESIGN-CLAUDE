@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { logger } from './logger';
 
@@ -170,92 +170,4 @@ export function getStorageStats() {
     publicUrl: PUBLIC_URL,
     configured: !!(process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID),
   };
-}
-
-// ============================================================================
-// PERSONA HEADSHOT CACHE (Persistent R2 Storage)
-// ============================================================================
-
-const HEADSHOT_CACHE_PREFIX = 'cache/headshots';
-const HEADSHOT_CACHE_TTL_HOURS = 6;
-
-/**
- * Save a persona headshot to R2 cache
- * @param cacheKey - Unique cache key for the persona
- * @param headshotBase64 - Base64 encoded headshot image
- */
-export async function cacheHeadshotToR2(cacheKey: string, headshotBase64: string): Promise<void> {
-  const safeKey = cacheKey.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 200);
-  const key = `${HEADSHOT_CACHE_PREFIX}/${safeKey}.txt`;
-  
-  try {
-    const metadata = JSON.stringify({
-      createdAt: Date.now(),
-      expiresAt: Date.now() + (HEADSHOT_CACHE_TTL_HOURS * 60 * 60 * 1000)
-    });
-    
-    await s3Client.send(new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: headshotBase64,
-      ContentType: 'text/plain',
-      Metadata: {
-        'cache-metadata': metadata
-      }
-    }));
-    
-    logger.info('Headshot cached to R2', { source: 'storage', cacheKey: safeKey });
-  } catch (error) {
-    logger.warn('Failed to cache headshot to R2', { source: 'storage', error: (error as Error).message });
-  }
-}
-
-/**
- * Retrieve a persona headshot from R2 cache
- * @param cacheKey - Unique cache key for the persona
- * @returns Base64 encoded headshot or null if not found/expired
- */
-export async function getHeadshotFromR2(cacheKey: string): Promise<string | null> {
-  const safeKey = cacheKey.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 200);
-  const key = `${HEADSHOT_CACHE_PREFIX}/${safeKey}.txt`;
-  
-  try {
-    const response = await s3Client.send(new GetObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key
-    }));
-    
-    if (!response.Body) return null;
-    
-    // Check expiration from metadata
-    const metadataStr = response.Metadata?.['cache-metadata'];
-    if (metadataStr) {
-      try {
-        const metadata = JSON.parse(metadataStr);
-        if (metadata.expiresAt && Date.now() > metadata.expiresAt) {
-          logger.info('Headshot cache expired', { source: 'storage', cacheKey: safeKey });
-          return null;
-        }
-      } catch {
-        // Ignore metadata parse errors
-      }
-    }
-    
-    const bodyContents = await response.Body.transformToString();
-    logger.info('Headshot retrieved from R2 cache', { source: 'storage', cacheKey: safeKey });
-    return bodyContents;
-  } catch (error: any) {
-    if (error.name !== 'NoSuchKey' && error.$metadata?.httpStatusCode !== 404) {
-      logger.warn('Failed to get headshot from R2', { source: 'storage', error: (error as Error).message });
-    }
-    return null;
-  }
-}
-
-/**
- * Check if R2 storage is configured and available
- */
-export function isR2Configured(): boolean {
-  return !!(process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID) && 
-         !!(process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME);
 }

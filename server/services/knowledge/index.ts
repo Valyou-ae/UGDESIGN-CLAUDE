@@ -87,7 +87,6 @@ export {
   ADULT_PERSONAS,
   TEEN_PERSONAS,
   YOUNG_ADULT_PERSONAS,
-  SENIOR_PERSONAS,
   getPersona,
   getPersonasByAgeGroup,
   getPersonasBySex,

@@ -98,7 +98,6 @@ import { Sidebar } from "@/components/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -150,27 +149,16 @@ import moodUrban from "@assets/generated_images/mood_image_for_urban_street_styl
 import moodNatural from "@assets/generated_images/mood_image_for_natural_organic_style.png";
 import moodBold from "@assets/generated_images/mood_image_for_bold_vibrant_style.png";
 
-// Import ethnicity face avatars - Female
-import ethnicityWhiteFemale from "@assets/generated_images/white_ethnicity_face_avatar.png";
-import ethnicityBlackFemale from "@assets/generated_images/black_ethnicity_face_avatar.png";
-import ethnicityHispanicFemale from "@assets/generated_images/hispanic_ethnicity_face_avatar.png";
-import ethnicityAsianFemale from "@assets/generated_images/asian_ethnicity_face_avatar.png";
-import ethnicityIndianFemale from "@assets/generated_images/indian_ethnicity_face_avatar.png";
-import ethnicitySEAsianFemale from "@assets/generated_images/se_asian_ethnicity_face_avatar.png";
-import ethnicityMidEastFemale from "@assets/generated_images/mid_eastern_ethnicity_avatar.png";
-import ethnicityIndigenousFemale from "@assets/generated_images/indigenous_ethnicity_avatar.png";
-import ethnicityDiverseFemale from "@assets/generated_images/diverse_ethnicity_avatar.png";
-
-// Import ethnicity face avatars - Male
-import ethnicityWhiteMale from "@assets/generated_images/white_male_professional_headshot.png";
-import ethnicityBlackMale from "@assets/generated_images/black_male_professional_headshot.png";
-import ethnicityHispanicMale from "@assets/generated_images/hispanic_male_professional_headshot.png";
-import ethnicityAsianMale from "@assets/generated_images/asian_male_professional_headshot.png";
-import ethnicityIndianMale from "@assets/generated_images/indian_male_professional_headshot.png";
-import ethnicitySEAsianMale from "@assets/generated_images/se_asian_male_professional_headshot.png";
-import ethnicityMidEastMale from "@assets/generated_images/middle_eastern_male_headshot.png";
-import ethnicityIndigenousMale from "@assets/generated_images/indigenous_male_professional_headshot.png";
-import ethnicityDiverseMale from "@assets/generated_images/diverse_males_group_headshot.png";
+// Import ethnicity face avatars
+import ethnicityWhite from "@assets/generated_images/white_ethnicity_face_avatar.png";
+import ethnicityBlack from "@assets/generated_images/black_ethnicity_face_avatar.png";
+import ethnicityHispanic from "@assets/generated_images/hispanic_ethnicity_face_avatar.png";
+import ethnicityAsian from "@assets/generated_images/asian_ethnicity_face_avatar.png";
+import ethnicityIndian from "@assets/generated_images/indian_ethnicity_face_avatar.png";
+import ethnicitySEAsian from "@assets/generated_images/se_asian_ethnicity_face_avatar.png";
+import ethnicityMidEast from "@assets/generated_images/mid_eastern_ethnicity_avatar.png";
+import ethnicityIndigenous from "@assets/generated_images/indigenous_ethnicity_avatar.png";
+import ethnicityDiverse from "@assets/generated_images/diverse_ethnicity_avatar.png";
 
 
 // Types
@@ -181,20 +169,10 @@ type WizardStep =
   | "customize" // Sizes + Colors + Model + Scene
   | "output";   // Angles + Quality + Generate
 
-type AgeGroup = "Baby" | "Toddler" | "Kids" | "Teen" | "Young Adult" | "Adult" | "Senior";
+type AgeGroup = "ADULT" | "YOUNG_ADULT" | "TEEN";
 type Sex = "MALE" | "FEMALE";
 type Ethnicity = "White" | "Black" | "Hispanic" | "Asian" | "Indian" | "Southeast Asian" | "Middle Eastern" | "Indigenous" | "Diverse";
-type ModelSize = "XS" | "S" | "M" | "L" | "XL" | "XXL" | "XXXL";
-
-const AGE_GROUP_OPTIONS = [
-  { value: "Baby", label: "Baby", ageRange: "0-2", icon: Baby },
-  { value: "Toddler", label: "Toddler", ageRange: "2-5", icon: Baby },
-  { value: "Kids", label: "Kids", ageRange: "6-12", icon: Smile },
-  { value: "Teen", label: "Teen", ageRange: "13-17", icon: PersonStanding },
-  { value: "Young Adult", label: "Young Adult", ageRange: "18-29", icon: User },
-  { value: "Adult", label: "Adult", ageRange: "30-50", icon: UserCheck },
-  { value: "Senior", label: "Senior", ageRange: "50+", icon: Users },
-];
+type ModelSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
 type OutputQuality = "standard" | "high" | "ultra";
 type HairStyle = "Short" | "Medium" | "Long" | "Bald";
 type Expression = "Neutral" | "Smiling" | "Serious" | "Candid";
@@ -857,15 +835,6 @@ const getGenderFromCategory = (category: string): Sex | null => {
   return null;
 };
 
-const getAgeGroupFromCategory = (category: string): AgeGroup | null => {
-  const lower = category.toLowerCase();
-  if (lower.includes("baby") || lower.includes("bodysuits")) return "Baby";
-  if (lower.includes("toddler")) return "Toddler";
-  if (lower.includes("kids'") || lower.includes("kids") || lower.includes("children")) return "Kids";
-  if (lower.includes("teen")) return "Teen";
-  return null; // Default to user selection for adult categories
-};
-
 const isNonWearableCategory = (category: string): boolean => {
   const nonWearable = ["accessories", "home & living"];
   return nonWearable.some(nw => category.toLowerCase().includes(nw));
@@ -883,7 +852,7 @@ export default function MockupGenerator() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["M"]);
   const [selectedAngles, setSelectedAngles] = useState<string[]>(["front"]);
   const [modelDetails, setModelDetails] = useState<ModelDetails>({
-    age: "Adult",
+    age: "ADULT",
     sex: "MALE",
     ethnicity: "White",
     modelSize: "M"
@@ -892,7 +861,6 @@ export default function MockupGenerator() {
   const [genderAutoSelected, setGenderAutoSelected] = useState<boolean>(true);
   const [personaHeadshot, setPersonaHeadshot] = useState<string | null>(null);
   const [outputQuality, setOutputQuality] = useState<OutputQuality>("high");
-  const [useDesignCompositing, setUseDesignCompositing] = useState<boolean>(true);
   const [selectedSeasonalTheme, setSelectedSeasonalTheme] = useState<SeasonalThemeId>("none");
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState<boolean>(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
@@ -1593,7 +1561,6 @@ export default function MockupGenerator() {
           patternScale: isAopJourney ? patternScale : undefined,
           isSeamlessPattern: isAopJourney,
           outputQuality: outputQuality,
-          useDesignCompositing: journey === "DTG" ? useDesignCompositing : false,
         },
         (event: MockupEvent) => {
           switch (event.type) {
@@ -2566,13 +2533,8 @@ export default function MockupGenerator() {
                                           } else {
                                             setUseModel(true);
                                             const autoGender = getGenderFromCategory(item.category);
-                                            const autoAgeGroup = getAgeGroupFromCategory(item.category);
-                                            setModelDetails(prev => ({
-                                              ...prev,
-                                              ...(autoGender && { sex: autoGender }),
-                                              ...(autoAgeGroup && { age: autoAgeGroup })
-                                            }));
                                             if (autoGender) {
+                                              setModelDetails(prev => ({...prev, sex: autoGender}));
                                               setGenderAutoSelected(true);
                                             }
                                           }
@@ -2840,48 +2802,20 @@ export default function MockupGenerator() {
                                       </div>
                                     </div>
                                     
-                                    {/* Age Group Section */}
-                                    <div className="mt-3">
-                                      <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Age Group</label>
-                                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                                        {AGE_GROUP_OPTIONS.map((option) => {
-                                          const IconComponent = option.icon;
-                                          const isSelected = modelDetails.age === option.value;
-                                          return (
-                                            <button
-                                              key={option.value}
-                                              onClick={() => setModelDetails({...modelDetails, age: option.value as AgeGroup})}
-                                              className={cn(
-                                                "flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg border transition-all",
-                                                isSelected
-                                                  ? "bg-primary/10 border-primary text-primary"
-                                                  : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"
-                                              )}
-                                              data-testid={`age-group-${option.value.toLowerCase().replace(' ', '-')}`}
-                                            >
-                                              <IconComponent className="h-4 w-4" />
-                                              <span className="text-xs font-medium">{option.label}</span>
-                                              <span className="text-[10px] text-muted-foreground">{option.ageRange}</span>
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                    
                                     {/* Ethnicity Section */}
-                                    <div className="mt-3">
+                                    <div className="mt-2">
                                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Ethnicity</label>
                                       <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 w-full">
                                         {[
-                                          { value: "White", label: "White", imageMale: ethnicityWhiteMale, imageFemale: ethnicityWhiteFemale },
-                                          { value: "Black", label: "Black", imageMale: ethnicityBlackMale, imageFemale: ethnicityBlackFemale },
-                                          { value: "Hispanic", label: "Hispanic", imageMale: ethnicityHispanicMale, imageFemale: ethnicityHispanicFemale },
-                                          { value: "Asian", label: "Asian", imageMale: ethnicityAsianMale, imageFemale: ethnicityAsianFemale },
-                                          { value: "Indian", label: "Indian", imageMale: ethnicityIndianMale, imageFemale: ethnicityIndianFemale },
-                                          { value: "Southeast Asian", label: "SE Asian", imageMale: ethnicitySEAsianMale, imageFemale: ethnicitySEAsianFemale },
-                                          { value: "Middle Eastern", label: "Mid Eastern", imageMale: ethnicityMidEastMale, imageFemale: ethnicityMidEastFemale },
-                                          { value: "Indigenous", label: "Indigenous", imageMale: ethnicityIndigenousMale, imageFemale: ethnicityIndigenousFemale },
-                                          { value: "Diverse", label: "Diverse", imageMale: ethnicityDiverseMale, imageFemale: ethnicityDiverseFemale },
+                                          { value: "White", label: "White", image: ethnicityWhite },
+                                          { value: "Black", label: "Black", image: ethnicityBlack },
+                                          { value: "Hispanic", label: "Hispanic", image: ethnicityHispanic },
+                                          { value: "Asian", label: "Asian", image: ethnicityAsian },
+                                          { value: "Indian", label: "Indian", image: ethnicityIndian },
+                                          { value: "Southeast Asian", label: "SE Asian", image: ethnicitySEAsian },
+                                          { value: "Middle Eastern", label: "Mid Eastern", image: ethnicityMidEast },
+                                          { value: "Indigenous", label: "Indigenous", image: ethnicityIndigenous },
+                                          { value: "Diverse", label: "Diverse", image: ethnicityDiverse },
                                         ].map((option) => (
                                           <button
                                             key={option.value}
@@ -2895,7 +2829,7 @@ export default function MockupGenerator() {
                                                 : "hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-2 hover:ring-offset-background"
                                             )}>
                                               <img 
-                                                src={modelDetails.sex === "MALE" ? option.imageMale : option.imageFemale} 
+                                                src={option.image} 
                                                 alt={option.label}
                                                 className="w-full h-full rounded-full object-cover"
                                               />
@@ -3141,26 +3075,6 @@ export default function MockupGenerator() {
                                         </Select>
                                       </div>
                                     </div>
-
-                                    {/* Preserve Exact Design Toggle - Only for DTG */}
-                                    {journey === "DTG" && (
-                                      <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-2">
-                                            <ImageIcon className="h-4 w-4 text-primary" />
-                                            <div>
-                                              <span className="text-sm font-bold text-foreground">Preserve Exact Design</span>
-                                              <p className="text-xs text-muted-foreground">Keep your design pixel-perfect</p>
-                                            </div>
-                                          </div>
-                                          <Switch 
-                                            checked={useDesignCompositing} 
-                                            onCheckedChange={setUseDesignCompositing}
-                                            data-testid="toggle-design-compositing"
-                                          />
-                                        </div>
-                                      </div>
-                                    )}
                                   </div>
                                 </div>
 

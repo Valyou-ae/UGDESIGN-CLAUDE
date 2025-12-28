@@ -21,8 +21,7 @@ import type {
   DesignAnalysis,
   Size,
   OutputQuality,
-  ModelCustomization,
-  AgeGroup
+  ModelCustomization
 } from "@shared/mockupTypes";
 import { OUTPUT_QUALITY_SPECS } from "@shared/mockupTypes";
 import {
@@ -44,8 +43,6 @@ import {
   getRandomName,
   getGarmentBlueprintPrompt
 } from "./knowledge";
-import { cacheHeadshotToR2, getHeadshotFromR2, isR2Configured } from "../objectStorage";
-import { getPlaceholderPromptAddition, processDesignOverlay, CompositeResult } from "./designCompositor";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -66,88 +63,6 @@ const GENERATION_CONFIG = {
 
 let currentJobCount = 0;
 let lastMinuteRequests: number[] = [];
-
-// Two-tier persona headshot cache:
-// L1: In-memory cache (fast, lost on restart)
-// L2: R2 persistent storage (slower, survives restarts)
-const personaHeadshotCache = new Map<string, { headshot: string; timestamp: number }>();
-const HEADSHOT_CACHE_TTL = 1000 * 60 * 60; // 1 hour L1 cache (L2 uses 6 hours)
-
-function getPersonaCacheKey(persona: UnifiedPersona): string {
-  // Include persona ID and facial features for unique identification
-  return `${persona.id}_${persona.sex}_${persona.ethnicity}_${persona.age}_${persona.hairStyle}_${persona.hairColor}_${persona.eyeColor}_${persona.skinTone}_${persona.facialFeatures}`;
-}
-
-async function getCachedHeadshot(persona: UnifiedPersona): Promise<string | null> {
-  const key = getPersonaCacheKey(persona);
-  
-  // L1: Check in-memory cache first (fastest)
-  const cached = personaHeadshotCache.get(key);
-  if (cached && Date.now() - cached.timestamp < HEADSHOT_CACHE_TTL) {
-    logger.info("Using L1 cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key.substring(0, 50) });
-    return cached.headshot;
-  }
-  
-  // L2: Check R2 persistent cache
-  if (isR2Configured()) {
-    try {
-      const r2Headshot = await getHeadshotFromR2(key);
-      if (r2Headshot) {
-        // Populate L1 cache from L2
-        personaHeadshotCache.set(key, { headshot: r2Headshot, timestamp: Date.now() });
-        logger.info("Using L2 (R2) cached persona headshot", { source: "eliteMockupGenerator", cacheKey: key.substring(0, 50) });
-        return r2Headshot;
-      }
-    } catch (error) {
-      logger.warn("R2 headshot cache lookup failed", { source: "eliteMockupGenerator", error: (error as Error).message });
-    }
-  }
-  
-  return null;
-}
-
-async function cacheHeadshot(persona: UnifiedPersona, headshot: string): Promise<void> {
-  const key = getPersonaCacheKey(persona);
-  
-  // L1: Always cache in memory
-  personaHeadshotCache.set(key, { headshot, timestamp: Date.now() });
-  logger.info("Cached persona headshot to L1", { source: "eliteMockupGenerator", cacheKey: key.substring(0, 50), cacheSize: personaHeadshotCache.size });
-  
-  // L2: Async cache to R2 (don't await - fire and forget)
-  if (isR2Configured()) {
-    cacheHeadshotToR2(key, headshot).catch(error => {
-      logger.warn("Failed to cache headshot to R2", { source: "eliteMockupGenerator", error: (error as Error).message });
-    });
-  }
-}
-
-// Design analysis cache - keyed by image hash for reuse
-const designAnalysisCache = new Map<string, { analysis: DesignAnalysis; timestamp: number }>();
-const DESIGN_ANALYSIS_CACHE_TTL = 1000 * 60 * 30; // 30 minute cache
-
-function getImageHash(imageBase64: string): string {
-  // Use first 1000 chars + last 1000 chars + length as fingerprint (fast, collision-resistant for our use case)
-  const start = imageBase64.substring(0, 1000);
-  const end = imageBase64.substring(Math.max(0, imageBase64.length - 1000));
-  const length = imageBase64.length.toString();
-  return `${start.length}_${end.length}_${length}_${start.slice(0, 100)}_${end.slice(-100)}`;
-}
-
-function getCachedDesignAnalysis(imageBase64: string): DesignAnalysis | null {
-  const key = getImageHash(imageBase64);
-  const cached = designAnalysisCache.get(key);
-  if (cached && Date.now() - cached.timestamp < DESIGN_ANALYSIS_CACHE_TTL) {
-    logger.info("Using cached design analysis", { source: "eliteMockupGenerator", cacheSize: designAnalysisCache.size });
-    return cached.analysis;
-  }
-  return null;
-}
-
-function cacheDesignAnalysis(imageBase64: string, analysis: DesignAnalysis): void {
-  const key = getImageHash(imageBase64);
-  designAnalysisCache.set(key, { analysis, timestamp: Date.now() });
-  logger.info("Cached design analysis", { source: "eliteMockupGenerator", cacheSize: designAnalysisCache.size });
-}
 
 interface LockData {
   type: string;
@@ -188,12 +103,6 @@ export interface PersonaLock {
 }
 
 export async function analyzeDesignForMockup(imageBase64: string): Promise<DesignAnalysis> {
-  // Check cache first
-  const cached = getCachedDesignAnalysis(imageBase64);
-  if (cached) {
-    return cached;
-  }
-  
   const systemInstruction = `You are an expert product design analyst. Analyze this uploaded design for product mockup placement.
 
 Determine:
@@ -239,9 +148,7 @@ Respond with JSON:
 
     const rawJson = response.text;
     if (rawJson) {
-      const analysis = JSON.parse(rawJson) as DesignAnalysis;
-      cacheDesignAnalysis(imageBase64, analysis);
-      return analysis;
+      return JSON.parse(rawJson) as DesignAnalysis;
     }
   } catch (error) {
     logger.error("Design analysis failed", error, { source: "eliteMockupGenerator" });
@@ -257,82 +164,27 @@ Respond with JSON:
   };
 }
 
-// Normalize sex value to expected format (Male/Female)
-function normalizeSex(sex: string): "Male" | "Female" {
-  const normalized = sex?.toLowerCase();
-  if (normalized === "male" || normalized === "m") return "Male";
-  if (normalized === "female" || normalized === "f") return "Female";
-  return "Male"; // Default fallback
-}
-
-// Normalize age group to expected format
-function normalizeAgeGroup(age: string): AgeGroup {
-  const ageMap: Record<string, AgeGroup> = {
-    "baby": "Baby",
-    "toddler": "Toddler",
-    "kids": "Kids",
-    "teen": "Teen",
-    "young adult": "Young Adult",
-    "young_adult": "Young Adult",
-    "youngadult": "Young Adult",
-    "adult": "Adult",
-    "senior": "Senior",
-    // Legacy uppercase mappings
-    "BABY": "Baby",
-    "TODDLER": "Toddler",
-    "KIDS": "Kids",
-    "TEEN": "Teen",
-    "YOUNG_ADULT": "Young Adult",
-    "ADULT": "Adult",
-    "SENIOR": "Senior"
-  };
-  return ageMap[age] || ageMap[age?.toLowerCase()] || "Adult";
-}
-
 export async function generatePersonaLock(modelDetails: ModelDetails): Promise<PersonaLock> {
-  // Normalize input values to expected formats
-  const normalizedSex = normalizeSex(modelDetails.sex);
-  const normalizedAge = normalizeAgeGroup(modelDetails.age);
-  
-  logger.info("Generating persona lock with normalized values", { 
-    source: "eliteMockupGenerator",
-    originalSex: modelDetails.sex,
-    normalizedSex,
-    originalAge: modelDetails.age,
-    normalizedAge,
-    ethnicity: modelDetails.ethnicity
-  });
-  
   const persona = getRandomPersona({
-    ageGroup: normalizedAge,
-    sex: normalizedSex,
+    sex: modelDetails.sex,
     ethnicity: modelDetails.ethnicity,
     size: modelDetails.modelSize
   });
 
   if (!persona) {
-    throw new Error(`No matching persona found for ${normalizedSex} ${normalizedAge} ${modelDetails.ethnicity}`);
+    throw new Error("No matching persona found");
   }
-  
-  logger.info("Persona selected", { 
-    source: "eliteMockupGenerator",
-    personaId: persona.id,
-    personaName: persona.name,
-    personaSex: persona.sex,
-    personaAge: persona.age,
-    personaEthnicity: persona.ethnicity
-  });
 
   const somaticProfile = getSomaticProfile(
-    normalizedAge,
-    normalizedSex,
+    modelDetails.age,
+    modelDetails.sex,
     modelDetails.ethnicity,
     modelDetails.modelSize
   );
 
   const somaticPrompt = getSomaticProfilePrompt(
-    normalizedAge,
-    normalizedSex,
+    modelDetails.age,
+    modelDetails.sex,
     modelDetails.ethnicity,
     modelDetails.modelSize
   );
@@ -447,8 +299,7 @@ export function buildRenderSpecification(
   environmentPrompt?: string,
   currentSize?: string,
   patternScale?: number,
-  outputQuality: OutputQuality = 'high',
-  useDesignCompositing: boolean = false
+  outputQuality: OutputQuality = 'high'
 ): RenderSpecification {
   const qualitySpec = OUTPUT_QUALITY_SPECS[outputQuality];
   const style = BRAND_STYLES[brandStyle];
@@ -813,11 +664,8 @@ CONSISTENCY REQUIREMENT:
 
   const negativePrompts = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
 
-  const compositingPlaceholderBlock = useDesignCompositing ? getPlaceholderPromptAddition() : '';
-
   const fullPrompt = `ELITE MOCKUP GENERATION - RENDER SPECIFICATION
 ================================================================
-${compositingPlaceholderBlock}
 
 ${personaLockBlock}
 
@@ -825,7 +673,7 @@ ${colorLockBlock}
 
 ${sizeFitLockBlock}
 
-${useDesignCompositing ? '' : designLockBlock}
+${designLockBlock}
 
 ${cameraLockBlock}
 
@@ -843,7 +691,7 @@ ${environmentBlock}
 - Output: Photorealistic commercial product photography
 - Target Resolution: ${qualitySpec.resolution}px (${qualitySpec.name} quality - ${qualitySpec.bestFor})
 - Quality: Sharp focus, professional studio standards, high detail
-${useDesignCompositing ? '- Design: Generate with GREEN PLACEHOLDER for post-process design overlay' : '- Design: Must follow fabric contours naturally with accurate color reproduction'}
+- Design: Must follow fabric contours naturally with accurate color reproduction
 - Style: ${style.technicalNotes}
 ===== END REQUIREMENTS =====
 
@@ -1032,7 +880,7 @@ export async function generateSingleMockup(
   designBase64: string,
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
-  batchSeed?: number
+  previousMockupReference?: string
 ): Promise<GeneratedMockup | null> {
   await waitForRateLimit();
   await waitForConcurrencySlot();
@@ -1040,135 +888,114 @@ export async function generateSingleMockup(
   try {
     const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
 
-    // PART 0: Design artwork - [IMAGE 1] (MUST come first per API spec)
-    parts.push({
-      inlineData: { data: designBase64, mimeType: "image/png" }
-    });
-
-    // PART 1: Persona headshot - [IMAGE 2] (if provided)
-    // NOTE: Do NOT add previous mockup reference - it confuses AI's understanding of 3D volume
-    // Use seed for cross-angle consistency instead
     if (personaHeadshot) {
       parts.push({
         inlineData: { data: personaHeadshot, mimeType: "image/png" }
       });
+      parts.push({
+        text: `===== CRITICAL IDENTITY REFERENCE - PHOTO PROVIDED =====
+[MANDATORY - HIGHEST PRIORITY - THIS IS THE PERSON TO RENDER]
+
+**IDENTITY LOCK ACTIVE** - A reference photo has been provided. You MUST render this EXACT same person.
+
+This is NOT a style reference. This is NOT optional. This IS the person who must appear in your output.
+
+FACE MATCHING (MANDATORY - PIXEL-LEVEL ACCURACY REQUIRED):
+1. BONE STRUCTURE: Copy the exact skull shape, cheekbone prominence, jawline angle
+2. NOSE: Exact same nose - bridge width, tip shape, nostril size, length
+3. MOUTH: Exact lip shape, lip thickness, philtrum length, mouth width
+4. EYES: Exact eye shape, spacing, depth, eyelid crease, brow position
+5. FOREHEAD: Same forehead height and hairline position
+6. CHIN: Exact chin shape, prominence, and width
+
+COLORING (MANDATORY - EXACT MATCH):
+1. SKIN TONE: Identical skin color, undertones, and complexion
+2. HAIR COLOR: Exact same shade - do not lighten or darken
+3. EYE COLOR: Exact same iris color
+4. HAIR STYLE: Identical cut, length, texture, and styling
+
+CONSISTENCY RULE:
+This same person must appear in ALL mockup angles (front, three-quarter, side, closeup).
+If you cannot match this face exactly, the output is INVALID.
+
+VERIFICATION CHECK:
+Before finalizing, ask: "Would someone who knows this person recognize them in my output?"
+If the answer is "no" or "maybe", regenerate with closer matching.
+
+===== END IDENTITY REFERENCE =====`
+      });
     }
 
-    // Extract key info from renderSpec for the technical specification prompt
-    const productDetails = renderSpec.locks.product?.details || {};
-    const colorDetails = renderSpec.locks.color?.details || {};
-    const cameraDetails = renderSpec.locks.camera?.details || {};
-    const lightingDetails = renderSpec.locks.lighting?.details || {};
-    const personaDetails = renderSpec.locks.persona?.details || {};
-    
-    const productColor = colorDetails.productColor || 'Black';
-    const productHex = colorDetails.productHex || '#000000';
-    const angle = cameraDetails.angle || 'front';
-    const focalLength = cameraDetails.focalLength || '85mm';
-    const aperture = cameraDetails.aperture || 'f/8';
-    const lightingSetup = lightingDetails.setupName || 'Three-point studio';
-    const colorTemp = lightingDetails.colorTemperature || '5500K';
+    // Add previous mockup as additional consistency reference
+    if (previousMockupReference) {
+      parts.push({
+        inlineData: { data: previousMockupReference, mimeType: "image/png" }
+      });
+      parts.push({
+        text: `===== CROSS-ANGLE CONSISTENCY REFERENCE =====
+[MANDATORY - MATCH THIS PREVIOUS SHOT]
 
-    // Build the "Golden" Technical Specification Prompt
-    let promptText = `===== TECHNICAL SPECIFICATION DOCUMENT =====
+This is a mockup from a PREVIOUS ANGLE of the SAME photoshoot.
 
-===== PART A: IDENTITY LOCK (WHO) =====
-`;
+CONSISTENCY REQUIREMENTS:
+1. SAME MODEL: This is the SAME PERSON - match their face, hair, and body EXACTLY
+2. SAME PRODUCT: Same garment with same pattern/design coverage
+3. SAME ENVIRONMENT: Same background, lighting conditions, and studio setup
+4. SAME STYLE: Same photography style, color grading, and mood
 
-    if (personaHeadshot) {
-      promptText += `RULE: The model in the final render MUST be the EXACT SAME PERSON as shown in the reference headshot [IMAGE 2].
-Ignore the background of [IMAGE 2]; use it for facial identity and build reference only.
+The person in your output must be IMMEDIATELY RECOGNIZABLE as the same individual from this reference.
+Only the CAMERA ANGLE should change - everything else stays consistent.
 
-IDENTITY REQUIREMENTS:
-- FACE: The person in the output must have the EXACT same face as [IMAGE 2]
-- SKIN TONE: Must match [IMAGE 2] exactly - same ethnicity, same complexion
-- HAIR: Same color, style, length, and texture as [IMAGE 2]
-- BUILD: Same body type and proportions as [IMAGE 2]
-
-VERIFICATION: Would someone who knows this person in [IMAGE 2] recognize them in the output?
-If "no" or "maybe", the output is INVALID and must be regenerated.
-`;
-    } else {
-      promptText += `No specific model identity lock. Use an appropriate model for the product presentation.
-`;
+===== END CROSS-ANGLE REFERENCE =====`
+      });
     }
 
-    promptText += `
-===== PART B: PRODUCT BLUEPRINT (WHAT) =====
-Garment Specification: ${productDetails.productName || 'T-Shirt'}
-- Category: ${productDetails.category || 'Apparel'}
-- Material: ${productDetails.fabricDescription || 'Professional 100% heavy cotton'}
-- The fabric must show natural cotton weave texture
-- Fit: Regular Fit on a size ${personaDetails.size || 'Medium'} frame
-
-FABRIC COLOR SPECIFICATION:
-The fabric color of the garment MUST be EXACTLY ${productColor} (Hex: ${productHex}).
-Do NOT shift, tint, or alter this color under any lighting conditions.
-The garment color must read as ${productColor} in the final image.
-
-===== PART C: PHYSICS ENGINE (3D DISTORTION - THE SECRET SAUCE) =====
-Apply the provided design asset [IMAGE 1] to the garment. It must be a 1:1 pixel-perfect copy.
-The design from [IMAGE 1] must be printed at exactly 12 inches wide on the center chest.
-
-3D DISTORTION PHYSICS:
-Map the flat design from [IMAGE 1] onto the cylindrical volume of the model's torso.
-- At the side edges, the design MUST compress horizontally by 35%
-- The design must follow every fold and wrinkle of the fabric
-- If a fold appears, the design must bend and distort with it
-- Design compresses in valleys (armpit, waist) and stretches on peaks (chest, shoulders)
-
-PRINT INTEGRATION:
-- Design integrates INTO the fabric fibers, not floating above it
-- Fabric texture visible through semi-transparent areas of the design
-- Lighting on design matches garment lighting exactly
-- Shadows fall naturally across both fabric and printed design
-- The result should look like a REAL professionally printed garment
-- [IMAGE 1] must appear as if it was physically printed on the fabric BEFORE the photo was taken
-
-CRITICAL: Do NOT render the design as a flat sticker pasted on top. It must have 3D fabric integration.
-
-===== PART D: LENS & LIGHTING (HOW) =====
-Photography: ${focalLength} lens at ${aperture}, positioned 6 feet away at eye level.
-Camera Angle: ${angle} view
-Lighting Setup: ${lightingSetup} (${colorTemp}) with soft fill shadows.
-Environment: Clean studio background, professional product photography setting.
-
-===== PART E: NEGATIVE PROMPT (EXCLUSIONS) =====
-${renderSpec.negativePrompts}
-
-MUST AVOID:
-- Flat sticker appearance
-- Floating logo
-- Bad anatomy, extra fingers
-- Cartoon or illustration style
-- Watermark
-- Low resolution
-- Blurry edges
-- Design that doesn't follow fabric folds
-- Wrong person (if [IMAGE 2] provided)
-
-===== END TECHNICAL SPECIFICATION =====`;
-
-    // NOTE: We intentionally do NOT append renderSpec.fullPrompt here
-    // The Technical Specification Document above follows the AI Studio "Golden Prompt" structure
-    // and contains all necessary instructions. Adding legacy prompts would conflict with this structure.
-
-    parts.push({ text: promptText });
-
-    logger.info("Calling Gemini API for mockup generation", { 
-      source: "eliteMockupGenerator", 
-      model: MODELS.IMAGE_GENERATION,
-      batchSeed,
-      partsCount: parts.length
+    parts.push({
+      inlineData: { data: designBase64, mimeType: "image/png" }
     });
+
+    parts.push({
+      text: `===== CRITICAL DESIGN REFERENCE =====
+[MANDATORY - DO NOT MODIFY THE DESIGN]
+
+This is the EXACT design that MUST appear on the product. Use this image AS-IS.
+
+STRICT DESIGN FIDELITY REQUIREMENTS:
+1. COLORS: Keep the EXACT same colors - do not alter, shift, or recolor any part of the design
+2. BORDERS/OUTLINES: If the design has borders, strokes, or outlines - KEEP THEM. If it does NOT have borders - DO NOT ADD THEM
+3. SHAPES: Maintain the EXACT same shapes, proportions, and geometry
+4. DETAILS: Preserve ALL details, gradients, textures, and effects from the original
+5. NO REDRAWING: Do NOT redraw, recreate, or reinterpret the design - project it directly onto the garment
+6. NO FILTERS: Do NOT apply artistic filters, effects, or style changes to the design
+
+WHAT TO DO:
+- Place this EXACT image onto the product's print area
+- Scale it proportionally to fit the designated area
+- Apply natural fabric distortion based on body contours
+- Adjust lighting/shadows to match the scene
+
+WHAT NOT TO DO:
+- DO NOT add borders, outlines, or strokes that aren't in the original
+- DO NOT remove borders, outlines, or strokes that ARE in the original
+- DO NOT change any colors (even slightly)
+- DO NOT simplify or "clean up" the design
+- DO NOT recreate the design from scratch
+
+The design on the final mockup MUST be pixel-perfect identical to this reference (except for natural fabric distortion and lighting).
+
+===== END DESIGN REFERENCE =====
+
+Apply this design to the product as specified:
+
+${renderSpec.fullPrompt}`
+    });
+
+    logger.info("Calling Gemini API for mockup generation", { source: "eliteMockupGenerator", model: MODELS.IMAGE_GENERATION });
     
     const response = await genAI.models.generateContent({
       model: MODELS.IMAGE_GENERATION,
       contents: [{ role: "user", parts }],
-      config: { 
-        responseModalities: [Modality.TEXT, Modality.IMAGE],
-        seed: batchSeed
-      }
+      config: { responseModalities: [Modality.TEXT, Modality.IMAGE] }
     });
 
     logger.info("Gemini API response received", { source: "eliteMockupGenerator", hasCandidates: !!response.candidates, candidateCount: response.candidates?.length || 0 });
@@ -1225,14 +1052,14 @@ export async function generateMockupWithRetry(
   designBase64: string,
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
-  maxRetries: number = GENERATION_CONFIG.MAX_RETRIES,
-  batchSeed?: number
+  previousMockupReference?: string,
+  maxRetries: number = GENERATION_CONFIG.MAX_RETRIES
 ): Promise<GeneratedMockup | null> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const result = await generateSingleMockup(designBase64, renderSpec, personaHeadshot, batchSeed);
+      const result = await generateSingleMockup(designBase64, renderSpec, personaHeadshot, previousMockupReference);
       if (result) {
         return result;
       }
@@ -1258,116 +1085,44 @@ export interface BatchGenerationError {
   details?: string;
 }
 
-export type GenerationStage = 'analyzing' | 'generating_headshot' | 'building_prompts' | 'generating' | 'complete';
-
-export interface StageUpdate {
-  stage: GenerationStage;
-  message: string;
-  progress: number;
-}
-
-export interface MockupReadyEvent {
-  index: number;
-  color: string;
-  colorHex: string;
-  angle: string;
-  imageData: string;
-  mimeType: string;
-}
-
 export async function generateMockupBatch(
   request: MockupGenerationRequest,
   onProgress?: (completed: number, total: number, job: GenerationJob) => void,
-  onError?: (error: BatchGenerationError) => void,
-  onStage?: (update: StageUpdate) => void,
-  onMockupReady?: (mockup: MockupReadyEvent) => void
+  onError?: (error: BatchGenerationError) => void
 ): Promise<MockupBatch> {
   const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
-  // SEED STRATEGY: Generate a single seed for the entire batch for consistency
-  // This ensures consistent lighting, model features, and environment across all angles
-  const batchSeed = Math.floor(Math.random() * 2147483647);
-  logger.info("Generated batch seed for consistency", { source: "eliteMockupGenerator", batchId, batchSeed });
-  
-  // Helper to report stage updates
-  const reportStage = (stage: GenerationStage, message: string, progress: number) => {
-    if (onStage) {
-      onStage({ stage, message, progress });
-    }
-  };
-  
-  // OPTIMIZATION: Run design analysis and persona preparation in parallel
-  reportStage('analyzing', 'Analyzing design and preparing model...', 5);
-  
-  let designAnalysis: DesignAnalysis;
+  const designAnalysis = await analyzeDesignForMockup(request.designImage);
+
   let personaLock: PersonaLock | undefined;
   let personaHeadshot: string | undefined;
 
   if (request.existingPersonaLock) {
-    // Reusing existing persona - just run design analysis
     personaLock = request.existingPersonaLock as PersonaLock;
     personaHeadshot = personaLock.headshot;
     logger.info("Reusing existing persona lock for consistent model appearance", { source: "eliteMockupGenerator" });
-    designAnalysis = await analyzeDesignForMockup(request.designImage);
   } else if (request.product.isWearable && request.modelDetails) {
-    // PARALLEL: Run design analysis, persona lock generation, and headshot cache lookup simultaneously
-    const [analysisResult, personaWithHeadshotResult] = await Promise.all([
-      analyzeDesignForMockup(request.designImage),
-      (async () => {
-        try {
-          const lock = await generatePersonaLock(request.modelDetails!);
-          
-          // Check headshot cache immediately after persona lock (L1 memory + L2 R2 storage)
-          const cachedHeadshot = await getCachedHeadshot(lock.persona);
-          if (cachedHeadshot) {
-            lock.headshot = cachedHeadshot;
-            logger.info("Using cached persona headshot from L1/L2", { source: "eliteMockupGenerator" });
-            return { success: true as const, lock, headshot: cachedHeadshot, fromCache: true };
-          }
-          
-          return { success: true as const, lock, headshot: undefined, fromCache: false };
-        } catch (error) {
-          logger.warn("Persona lock generation failed", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
-          return { success: false as const, error };
-        }
-      })()
-    ]);
-    
-    designAnalysis = analysisResult;
-    
-    if (personaWithHeadshotResult.success) {
-      personaLock = personaWithHeadshotResult.lock;
+    try {
+      personaLock = await generatePersonaLock(request.modelDetails);
       
-      if (personaWithHeadshotResult.fromCache && personaWithHeadshotResult.headshot) {
-        personaHeadshot = personaWithHeadshotResult.headshot;
-        reportStage('generating_headshot', 'Using cached model reference...', 15);
-      } else {
-        // Generate new headshot (not in cache)
-        reportStage('generating_headshot', 'Creating model reference...', 12);
-        try {
-          personaHeadshot = await generatePersonaHeadshot(personaLock);
-          personaLock.headshot = personaHeadshot;
-          // Cache for future use (L1 + L2)
-          await cacheHeadshot(personaLock.persona, personaHeadshot);
-          logger.info("Persona headshot generated and cached", { source: "eliteMockupGenerator" });
-        } catch (headshotError) {
-          logger.warn("Persona headshot generation failed, proceeding without it", { source: "eliteMockupGenerator", error: headshotError instanceof Error ? headshotError.message : String(headshotError) });
-          if (onError) {
-            onError({
-              type: 'persona_lock_failed',
-              message: 'Headshot generation skipped - proceeding with text-based persona description',
-              details: headshotError instanceof Error ? headshotError.message : String(headshotError)
-            });
-          }
+      try {
+        personaHeadshot = await generatePersonaHeadshot(personaLock);
+        personaLock.headshot = personaHeadshot;
+        logger.info("Persona headshot generated successfully", { source: "eliteMockupGenerator" });
+      } catch (headshotError) {
+        logger.warn("Persona headshot generation failed, proceeding without it", { source: "eliteMockupGenerator", error: headshotError instanceof Error ? headshotError.message : String(headshotError) });
+        if (onError) {
+          onError({
+            type: 'persona_lock_failed',
+            message: 'Headshot generation skipped - proceeding with text-based persona description',
+            details: headshotError instanceof Error ? headshotError.message : String(headshotError)
+          });
         }
       }
+    } catch (error) {
+      logger.warn("Persona lock generation failed, proceeding without model", { source: "eliteMockupGenerator", error: error instanceof Error ? error.message : String(error) });
     }
-  } else {
-    // Non-wearable product - just design analysis
-    designAnalysis = await analyzeDesignForMockup(request.designImage);
   }
-  
-  reportStage('building_prompts', 'Building generation prompts...', 18);
 
   const jobs: GenerationJob[] = [];
   for (const color of request.colors) {
@@ -1413,21 +1168,33 @@ export async function generateMockupBatch(
   let completedCount = 0;
   const totalJobs = jobs.length;
 
-  // For wearable products with persona lock, sequential until first success, then parallelize rest
-  // PARALLEL PROCESSING: Use seed for cross-angle consistency instead of reference images
-  // Per AI Studio docs, reference images confuse AI's 3D volume understanding
-  // All jobs can run in parallel since batchSeed ensures consistent model/lighting/environment
-  const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
-  for (let i = 0; i < jobs.length; i += batchSize) {
-    const batchJobs = jobs.slice(i, i + batchSize);
-    await Promise.all(batchJobs.map(job => processJob(job)));
+  // For wearable products with persona lock, process SEQUENTIALLY to use first result as reference
+  // This improves model consistency by passing the first generated image to subsequent generations
+  let firstSuccessfulMockup: string | undefined;
+  
+  if (request.product.isWearable && personaLock) {
+    // Sequential processing for consistency
+    for (const job of jobs) {
+      await processJobWithReference(job, firstSuccessfulMockup);
+      
+      // Capture first successful result to use as reference
+      if (!firstSuccessfulMockup && job.result?.imageData) {
+        firstSuccessfulMockup = job.result.imageData;
+        logger.info("First mockup captured for cross-angle consistency reference", { source: "eliteMockupGenerator" });
+      }
+    }
+  } else {
+    // Parallel processing for non-wearable products
+    const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
+    for (let i = 0; i < jobs.length; i += batchSize) {
+      const batchJobs = jobs.slice(i, i + batchSize);
+      await Promise.all(batchJobs.map(job => processJobWithReference(job, undefined)));
+    }
   }
   
-  async function processJob(job: GenerationJob): Promise<void> {
+  async function processJobWithReference(job: GenerationJob, referenceImage?: string): Promise<void> {
     job.status = 'processing';
     job.startedAt = Date.now();
-
-    const useCompositing = request.useDesignCompositing && request.journey === 'DTG';
 
     const renderSpec = buildRenderSpecification(
       designAnalysis,
@@ -1443,98 +1210,25 @@ export async function generateMockupBatch(
       request.environmentPrompt,
       job.modelDetails?.modelSize,
       request.patternScale,
-      request.outputQuality,
-      useCompositing
+      request.outputQuality
     );
 
-    // Pass headshot and batchSeed for consistent identity and environment across all angles
-    // NOTE: We do NOT pass previous mockup reference - per AI Studio docs, it confuses AI's 3D volume understanding
-    // Seed provides sufficient consistency for lighting, model features, and environment
+    // Use both headshot AND first successful mockup as references for better consistency
     const result = await generateMockupWithRetry(
       request.designImage,
       renderSpec,
       personaHeadshot,
-      GENERATION_CONFIG.MAX_RETRIES,
-      batchSeed
+      referenceImage
     );
 
     if (result) {
-      let finalImageData = result.imageData;
-      const MAX_COMPOSITING_RETRIES = 2;
-
-      if (useCompositing && result.imageData && request.originalDesignBase64) {
-        let compositingSuccess = false;
-        let currentMockup = result.imageData;
-        
-        for (let compositeAttempt = 0; compositeAttempt <= MAX_COMPOSITING_RETRIES && !compositingSuccess; compositeAttempt++) {
-          try {
-            logger.info(`Applying design compositing (attempt ${compositeAttempt + 1}/${MAX_COMPOSITING_RETRIES + 1})`, { source: "eliteMockupGenerator" });
-            
-            const compositeResult: CompositeResult = await processDesignOverlay(
-              currentMockup,
-              request.originalDesignBase64,
-              { blendMode: 'multiply', opacity: 0.95 }
-            );
-            
-            if (compositeResult.success) {
-              finalImageData = compositeResult.imageData;
-              compositingSuccess = true;
-              logger.info("Design compositing completed successfully", { source: "eliteMockupGenerator" });
-            } else {
-              logger.warn(`Compositing failed: ${compositeResult.reason}`, { source: "eliteMockupGenerator" });
-              
-              if (compositeAttempt < MAX_COMPOSITING_RETRIES) {
-                logger.info("Regenerating mockup with green placeholder...", { source: "eliteMockupGenerator" });
-                const retryResult = await generateMockupWithRetry(
-                  request.designImage,
-                  renderSpec,
-                  personaHeadshot,
-                  1,
-                  batchSeed
-                );
-                if (retryResult?.imageData) {
-                  currentMockup = retryResult.imageData;
-                } else {
-                  break;
-                }
-              } else {
-                logger.warn("Max compositing retries reached, using original AI output", { source: "eliteMockupGenerator" });
-                finalImageData = currentMockup;
-              }
-            }
-          } catch (compositeError) {
-            logger.warn("Design compositing error", { 
-              source: "eliteMockupGenerator", 
-              error: compositeError instanceof Error ? compositeError.message : String(compositeError)
-            });
-            break;
-          }
-        }
-      } else if (useCompositing && !request.originalDesignBase64) {
-        logger.warn("Design compositing enabled but originalDesignBase64 not provided, using AI output", { source: "eliteMockupGenerator" });
-      }
-
       job.status = 'completed';
       job.result = {
         ...result,
-        imageData: finalImageData,
         jobId: job.id,
         color: job.color.name,
         angle: job.angle
       };
-      
-      // PROGRESSIVE LOADING: Emit mockup immediately when ready
-      if (onMockupReady) {
-        const jobIndex = jobs.indexOf(job);
-        onMockupReady({
-          index: jobIndex,
-          color: job.color.name,
-          colorHex: job.color.hex,
-          angle: job.angle,
-          imageData: finalImageData,
-          mimeType: result.mimeType || 'image/png'
-        });
-      }
     } else {
       job.status = 'failed';
       job.error = 'Generation failed after max retries';
