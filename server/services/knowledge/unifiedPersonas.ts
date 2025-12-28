@@ -2,11 +2,13 @@ import { UnifiedPersona, AgeGroup, Sex, Ethnicity, Size } from '@shared/mockupTy
 import { ADULT_PERSONAS } from './adultPersonas';
 import { TEEN_PERSONAS } from './teenPersonas';
 import { YOUNG_ADULT_PERSONAS } from './youngAdultPersonas';
+import { SENIOR_PERSONAS } from './seniorPersonas';
 
 export const ALL_PERSONAS: UnifiedPersona[] = [
   ...ADULT_PERSONAS,
   ...TEEN_PERSONAS,
-  ...YOUNG_ADULT_PERSONAS
+  ...YOUNG_ADULT_PERSONAS,
+  ...SENIOR_PERSONAS
 ];
 
 export function getPersona(id: string): UnifiedPersona | undefined {
@@ -128,3 +130,4 @@ export function getRandomPersona(filters?: PersonaFilters): UnifiedPersona {
 export { ADULT_PERSONAS } from './adultPersonas';
 export { TEEN_PERSONAS } from './teenPersonas';
 export { YOUNG_ADULT_PERSONAS } from './youngAdultPersonas';
+export { SENIOR_PERSONAS } from './seniorPersonas';
