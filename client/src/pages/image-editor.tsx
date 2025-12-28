@@ -450,11 +450,12 @@ export default function ImageEditor() {
               {/* Upload Zone */}
               <div
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer min-h-0 bg-[#3d3d3e]",
+                  "flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer min-h-0",
                   isDragging
-                    ? "border-primary bg-[#434344]"
-                    : "border-border hover:border-primary/50 hover:bg-[#4a4a4b]"
+                    ? "border-primary"
+                    : "border-border hover:border-primary/50"
                 )}
+                style={{ backgroundColor: isDragging ? '#434344' : '#3d3d3e' }}
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
