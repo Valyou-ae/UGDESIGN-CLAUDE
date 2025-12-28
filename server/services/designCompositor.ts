@@ -295,20 +295,76 @@ async function replaceGreenWithDesign(
   const maskRaw = await sharp(maskBuffer).raw().toBuffer({ resolveWithObject: true });
 
   const outputData = Buffer.from(mockupRaw.data);
+  const channels = mockupRaw.info.channels;
+
+  // Collect edge pixels (immediately adjacent to mask boundary)
+  const edgePixels: { r: number; g: number; b: number }[] = [];
+  
+  for (let y = 1; y < canvasHeight - 1; y++) {
+    for (let x = 1; x < canvasWidth - 1; x++) {
+      const maskIdx = y * canvasWidth + x;
+      
+      if (maskRaw.data[maskIdx] <= 128) {
+        const neighbors = [
+          maskRaw.data[(y - 1) * canvasWidth + x],
+          maskRaw.data[(y + 1) * canvasWidth + x],
+          maskRaw.data[y * canvasWidth + (x - 1)],
+          maskRaw.data[y * canvasWidth + (x + 1)]
+        ];
+        
+        if (neighbors.some(n => n > 128)) {
+          const mockupIdx = (y * canvasWidth + x) * channels;
+          const r = mockupRaw.data[mockupIdx];
+          const g = mockupRaw.data[mockupIdx + 1];
+          const b = mockupRaw.data[mockupIdx + 2];
+          
+          // Only include non-green pixels
+          if (!(g > 200 && r < 100 && b < 100)) {
+            edgePixels.push({ r, g, b });
+          }
+        }
+      }
+    }
+  }
+  
+  // Calculate fabric color using median (robust against outliers)
+  let fabricR = 255, fabricG = 255, fabricB = 255;
+  if (edgePixels.length > 0) {
+    edgePixels.sort((a, b) => (a.r + a.g + a.b) - (b.r + b.g + b.b));
+    const median = edgePixels[Math.floor(edgePixels.length / 2)];
+    fabricR = median.r;
+    fabricG = median.g;
+    fabricB = median.b;
+  }
+  
+  logger.info("Fabric color detected for compositing", {
+    source: "designCompositor",
+    fabricColor: `rgb(${fabricR},${fabricG},${fabricB})`,
+    edgePixelCount: edgePixels.length
+  });
 
   for (let y = 0; y < canvasHeight; y++) {
     for (let x = 0; x < canvasWidth; x++) {
-      const mockupIdx = (y * canvasWidth + x) * mockupRaw.info.channels;
+      const mockupIdx = (y * canvasWidth + x) * channels;
       const designIdx = (y * canvasWidth + x) * designRaw.info.channels;
       const maskIdx = y * canvasWidth + x;
 
       if (maskRaw.data[maskIdx] > 128) {
+        const designR = designRaw.data[designIdx];
+        const designG = designRaw.data[designIdx + 1];
+        const designB = designRaw.data[designIdx + 2];
         const designAlpha = designRaw.info.channels === 4 ? designRaw.data[designIdx + 3] / 255 : 1;
         
-        if (designAlpha > 0.1) {
-          outputData[mockupIdx] = designRaw.data[designIdx];
-          outputData[mockupIdx + 1] = designRaw.data[designIdx + 1];
-          outputData[mockupIdx + 2] = designRaw.data[designIdx + 2];
+        if (designAlpha > 0.05) {
+          // PIXEL-PERFECT: Preserve exact design colors, blend only for transparency
+          outputData[mockupIdx] = Math.round(designR * designAlpha + fabricR * (1 - designAlpha));
+          outputData[mockupIdx + 1] = Math.round(designG * designAlpha + fabricG * (1 - designAlpha));
+          outputData[mockupIdx + 2] = Math.round(designB * designAlpha + fabricB * (1 - designAlpha));
+        } else {
+          // Transparent/empty area - fill with detected fabric color
+          outputData[mockupIdx] = fabricR;
+          outputData[mockupIdx + 1] = fabricG;
+          outputData[mockupIdx + 2] = fabricB;
         }
       }
     }
@@ -318,7 +374,7 @@ async function replaceGreenWithDesign(
     raw: {
       width: canvasWidth,
       height: canvasHeight,
-      channels: mockupRaw.info.channels
+      channels
     }
   })
     .jpeg({ quality: 90 })
