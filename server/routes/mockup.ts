@@ -219,6 +219,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         outputQuality: rawOutputQuality = "high",
         modelCustomization,
         knowledgeConfig,
+        useDesignCompositing = false,
       } = req.body;
 
       if (!designImage || typeof designImage !== "string") {
@@ -454,7 +455,9 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
               environmentPrompt: scene,
               existingPersonaLock: sharedPersonaLock,
               patternScale: isAopJourney ? patternScale : undefined,
-              outputQuality: outputQuality
+              outputQuality: outputQuality,
+              useDesignCompositing: journey === "DTG" ? useDesignCompositing : false,
+              originalDesignBase64: useDesignCompositing ? base64Data : undefined
             }, 
             // onProgress callback
             (completed, _total, job) => {

@@ -21,7 +21,8 @@ import type {
   DesignAnalysis,
   Size,
   OutputQuality,
-  ModelCustomization
+  ModelCustomization,
+  AgeGroup
 } from "@shared/mockupTypes";
 import { OUTPUT_QUALITY_SPECS } from "@shared/mockupTypes";
 import {
@@ -44,6 +45,7 @@ import {
   getGarmentBlueprintPrompt
 } from "./knowledge";
 import { cacheHeadshotToR2, getHeadshotFromR2, isR2Configured } from "../objectStorage";
+import { getPlaceholderPromptAddition, processDesignOverlay } from "./designCompositor";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -264,8 +266,8 @@ function normalizeSex(sex: string): "Male" | "Female" {
 }
 
 // Normalize age group to expected format
-function normalizeAgeGroup(age: string): string {
-  const ageMap: Record<string, string> = {
+function normalizeAgeGroup(age: string): AgeGroup {
+  const ageMap: Record<string, AgeGroup> = {
     "baby": "Baby",
     "toddler": "Toddler",
     "kids": "Kids",
@@ -284,7 +286,7 @@ function normalizeAgeGroup(age: string): string {
     "ADULT": "Adult",
     "SENIOR": "Senior"
   };
-  return ageMap[age] || ageMap[age?.toLowerCase()] || age || "Adult";
+  return ageMap[age] || ageMap[age?.toLowerCase()] || "Adult";
 }
 
 export async function generatePersonaLock(modelDetails: ModelDetails): Promise<PersonaLock> {
@@ -445,7 +447,8 @@ export function buildRenderSpecification(
   environmentPrompt?: string,
   currentSize?: string,
   patternScale?: number,
-  outputQuality: OutputQuality = 'high'
+  outputQuality: OutputQuality = 'high',
+  useDesignCompositing: boolean = false
 ): RenderSpecification {
   const qualitySpec = OUTPUT_QUALITY_SPECS[outputQuality];
   const style = BRAND_STYLES[brandStyle];
@@ -810,6 +813,8 @@ CONSISTENCY REQUIREMENT:
 
   const negativePrompts = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
 
+  const compositingPlaceholderBlock = useDesignCompositing ? getPlaceholderPromptAddition() : '';
+
   const fullPrompt = `ELITE MOCKUP GENERATION - RENDER SPECIFICATION
 ================================================================
 
@@ -833,11 +838,13 @@ ${contourDescription}
 
 ${environmentBlock}
 
+${compositingPlaceholderBlock}
+
 ===== TECHNICAL REQUIREMENTS =====
 - Output: Photorealistic commercial product photography
 - Target Resolution: ${qualitySpec.resolution}px (${qualitySpec.name} quality - ${qualitySpec.bestFor})
 - Quality: Sharp focus, professional studio standards, high detail
-- Design: Must follow fabric contours naturally with accurate color reproduction
+${useDesignCompositing ? '- Design: Generate with GREEN PLACEHOLDER for post-process design overlay' : '- Design: Must follow fabric contours naturally with accurate color reproduction'}
 - Style: ${style.technicalNotes}
 ===== END REQUIREMENTS =====
 
@@ -1399,6 +1406,8 @@ export async function generateMockupBatch(
     job.status = 'processing';
     job.startedAt = Date.now();
 
+    const useCompositing = request.useDesignCompositing && request.journey === 'DTG';
+
     const renderSpec = buildRenderSpecification(
       designAnalysis,
       request.product,
@@ -1413,21 +1422,45 @@ export async function generateMockupBatch(
       request.environmentPrompt,
       job.modelDetails?.modelSize,
       request.patternScale,
-      request.outputQuality
+      request.outputQuality,
+      useCompositing
     );
 
     // Use both headshot AND first successful mockup as references for better consistency
+    // When compositing, we don't send the design image - the AI generates with a placeholder
     const result = await generateMockupWithRetry(
-      request.designImage,
+      useCompositing ? "" : request.designImage,
       renderSpec,
       personaHeadshot,
       referenceImage
     );
 
     if (result) {
+      let finalImageData = result.imageData;
+
+      if (useCompositing && result.imageData && request.originalDesignBase64) {
+        try {
+          logger.info("Applying design compositing post-process", { source: "eliteMockupGenerator" });
+          finalImageData = await processDesignOverlay(
+            result.imageData,
+            request.originalDesignBase64,
+            { blendMode: 'multiply', opacity: 0.95 }
+          );
+          logger.info("Design compositing completed successfully", { source: "eliteMockupGenerator" });
+        } catch (compositeError) {
+          logger.warn("Design compositing failed, using original AI output", { 
+            source: "eliteMockupGenerator", 
+            error: compositeError instanceof Error ? compositeError.message : String(compositeError)
+          });
+        }
+      } else if (useCompositing && !request.originalDesignBase64) {
+        logger.warn("Design compositing enabled but originalDesignBase64 not provided, using AI output", { source: "eliteMockupGenerator" });
+      }
+
       job.status = 'completed';
       job.result = {
         ...result,
+        imageData: finalImageData,
         jobId: job.id,
         color: job.color.name,
         angle: job.angle

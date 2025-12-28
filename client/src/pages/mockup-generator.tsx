@@ -98,6 +98,7 @@ import { Sidebar } from "@/components/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -880,6 +881,7 @@ export default function MockupGenerator() {
   const [genderAutoSelected, setGenderAutoSelected] = useState<boolean>(true);
   const [personaHeadshot, setPersonaHeadshot] = useState<string | null>(null);
   const [outputQuality, setOutputQuality] = useState<OutputQuality>("high");
+  const [useDesignCompositing, setUseDesignCompositing] = useState<boolean>(true);
   const [selectedSeasonalTheme, setSelectedSeasonalTheme] = useState<SeasonalThemeId>("none");
   const [advancedOptionsOpen, setAdvancedOptionsOpen] = useState<boolean>(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
@@ -1580,6 +1582,7 @@ export default function MockupGenerator() {
           patternScale: isAopJourney ? patternScale : undefined,
           isSeamlessPattern: isAopJourney,
           outputQuality: outputQuality,
+          useDesignCompositing: journey === "DTG" ? useDesignCompositing : false,
         },
         (event: MockupEvent) => {
           switch (event.type) {
@@ -3127,6 +3130,26 @@ export default function MockupGenerator() {
                                         </Select>
                                       </div>
                                     </div>
+
+                                    {/* Preserve Exact Design Toggle - Only for DTG */}
+                                    {journey === "DTG" && (
+                                      <div className="bg-card rounded-xl border border-border p-4 sm:p-5">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-2">
+                                            <ImageIcon className="h-4 w-4 text-primary" />
+                                            <div>
+                                              <span className="text-sm font-bold text-foreground">Preserve Exact Design</span>
+                                              <p className="text-xs text-muted-foreground">Keep your design pixel-perfect</p>
+                                            </div>
+                                          </div>
+                                          <Switch 
+                                            checked={useDesignCompositing} 
+                                            onCheckedChange={setUseDesignCompositing}
+                                            data-testid="toggle-design-compositing"
+                                          />
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
 
