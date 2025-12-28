@@ -1,0 +1,100 @@
+
+Of course. I'd be happy to provide a detailed, step-by-step walkthrough of the entire mockup creation journey within the UGLI MockUP application. This guide will cover the user experience, the underlying state management, and the core logic, which you can use as a blueprint for your deployment on Replit.
+The application is architected around a central state manager (Zustand) and a series of React components that represent each step of the user's journey. The real "magic" happens in the services and knowledge base, which construct highly detailed prompts for the Gemini API.
+Here is the complete journey, from start to finish.
+Step 0: Journey Selection
+This is the user's entry point into the application.
+Component: JourneySelection.tsx
+User Action: The user is presented with two primary choices in the form of large, clickable cards:
+DTG (Direct to Garment): For designs that are printed on a specific area of a product (e.g., a logo on the chest of a t-shirt).
+AOP (All-Over Print): For seamless patterns that cover the entire surface of a product (e.g., leggings, blankets).
+Under the Hood:
+Clicking a card calls the setJourney function from the Zustand store (store.ts).
+This sets the journey state to either 'dtg' or 'aop'.
+This state change causes the main App.tsx component to re-render, hiding JourneySelection and showing the first step of the selected journey. The JOURNEY_STEP_KEYS constant in constants.ts defines the specific sequence of steps for each journey.
+Step 1: Upload Your Design
+Component: StepUpload.tsx
+User Action: The user uploads their design file (PNG, JPEG, or WebP). They can either click the upload area to open a file dialog or drag and drop a file onto it.
+Under the Hood:
+When a file is selected, the processFile function is triggered.
+It uses the ImageValidator class (utils/validation.ts) to check the file against predefined rules (max size 10MB, min/max dimensions 300-4096px).
+If the file is valid and over 2MB, it's automatically compressed to a JPEG to ensure fast API uploads.
+The validated (and possibly compressed) file is saved to the designImage state in the store.
+AOP Journey Special Logic:
+If the user is on the 'aop' journey, an additional checkbox appears: "This design is already a seamless pattern."
+If checked, the isSeamlessUpload state is set to true. This is a critical flag that tells the app to skip the next step (AI pattern generation).
+Step 2: Create a Seamless Pattern (AOP Journey Only)
+This step only appears if the user chose the 'aop' journey AND did not check the "already seamless" box in the previous step.
+Component: aop/components/StepSeamless.tsx
+User Action: The user sees a large button, "Generate AI Pattern". They can also adjust a "Pattern Scale" slider (defaulting to 50%).
+Under the Hood:
+Clicking the button calls handleGenerateSeamless from the store.
+This function calls generateAiCreativePattern (aop/services/aopGenerationService.ts), which sends the original uploaded design to the gemini-3-pro-image-preview model.
+The prompt asks Gemini to analyze the design and create a tileable, seamless pattern from it.
+The resulting pattern image is returned and stored in the seamlessVariations state. It's also automatically selected and stored in selectedSeamlessVariation.
+The user can then adjust the patternScale slider, which updates the patternScale state. This number is used later in the final prompt to determine how large the pattern should appear on the product.
+Step 3: Define Your Brand Style
+Component: components/StepStyle.tsx
+User Action: The user selects one of several "brand styles" presented as cards (e.g., E-Commerce Clean, Editorial Fashion, Vintage Retro).
+Under the Hood:
+Each card represents a BrandStyle object defined in services/knowledge/brandStyles.ts. These objects contain not just UI information (like icons and keywords) but also detailed prompt instructions for photography style, lighting, and mood.
+Selecting a style updates the selectedBrandStyle state. This key is used later to pull the detailed prompt information during final generation.
+Step 4: Select Your Product
+Component: components/StepProduct.tsx
+User Action: The user selects the specific product they want to generate a mockup for. The UI allows them to filter by category (e.g., Men's Clothing) and subcategory (e.g., T-Shirts).
+Under the Hood:
+The list of available products is filtered based on the journey state. If 'aop', only products suitable for all-over print (like aop-leggings or aop-blanket) are shown. If 'dtg', AOP products are hidden.
+When a product is selected, the selectedProduct state is updated with the full product object from PRODUCT_DATA in constants.ts.
+Crucially, the selectedColors state is also initialized with the first available color of that product, ensuring the user can proceed without having to manually select a color yet.
+Step 5: Customize the Model
+This step is automatically skipped if the selected product is non-wearable (e.g., a mug, a pillow).
+Component: components/StepModel.tsx
+User Action: The user selects the model's characteristics using dropdowns: Age Group, Sex, Ethnicity, and Model Wears Size.
+Under the Hood:
+The modelDetails object in the store is updated with each selection.
+There is dependent logic: changing the "Age Group" updates the available options in the "Model Wears Size" dropdown, based on the SIZES_BY_AGE_GROUP map.
+Step 6: Choose Your Platform
+Component: components/StepPlatform.tsx
+User Action: The user chooses the primary platform where the mockup will be used (e.g., Amazon, Shopify, Social Media).
+Under the Hood:
+The selectedPlatform state is updated.
+After the state update, a key function is triggered: updatePresetsFromContext() in store.ts. This function analyzes the selectedBrandStyle and selectedPlatform to automatically recommend the best "Lighting Preset" and "Material Condition" for the final generation step. For example, selecting "Amazon" will recommend a "Brand New" material condition and "E-Commerce" lighting. This provides smart defaults for the user.
+Step 7: Describe the Scene
+Component: components/StepEnvironment.tsx
+User Action: The user types a description of the background environment for the mockup. A list of suggestions is provided for inspiration.
+Under the Hood: The environmentPrompt state is updated with the user's text.
+Step 8: Select Colors
+Component: components/StepColors.tsx
+User Action: The user is shown color swatches for all available colors of their selectedProduct. They can select one or more colors.
+Under the Hood: The selectedColors array in the store is updated. The app allows for multi-selection, as each selected color will become a separate image generation job.
+Step 9: Choose Mockup Angles
+Component: components/StepAngles.tsx
+User Action: Similar to colors, the user selects one or more camera angles (e.g., Front, Three-Quarter, Closeup).
+Under the Hood: The selectedAngles array in the store is updated. Each selected angle will also become a separate generation job.
+Step 10: Generate
+This is the final and most complex step.
+Component: components/StepGenerate.tsx
+User Action (Phase 1: Review):
+The user sees a summary of their choices (Product, # of Colors, # of Angles, Total Images).
+They can expand an "Advanced Options" panel to override the automatically recommended "Lighting Preset" and "Material Condition".
+Finally, they click the "Generate X Mockups" button.
+Under the Hood (Phase 2: Generation Orchestration):
+Initiation: The handleGenerate function in store.ts is called. The isGenerating flag is set to true, showing a loading screen.
+Character Consistency: A random seed is generated. This seed is used to create a consistentDescription via generateConsistentDescription() in promptBuilder.ts. This description includes a name and a detailed physical profile based on the user's model selections.
+Persona Lock (Critical Step): If the product is wearable, the generatePersonaLockImage function is called. It uses the consistentDescription to generate a neutral, forward-facing headshot of the model. This image acts as a visual anchor ([IMAGE 2] in the final prompt) to ensure the same person appears in every single generated mockup, creating consistency.
+Job Queuing: The system loops through every selectedColor and every selectedAngle. For each combination, it creates a parameter object and adds it as a job to the GenerationQueue (services/generationQueue.ts). This queue manages concurrent API requests to avoid rate-limiting and handle retries.
+Master Prompt Construction: For each job, the buildMasterPrompt function (services/promptBuilder.ts) is the star of the show. It assembles an incredibly detailed, multi-part prompt by pulling information from the user's state and combining it with expert knowledge from the /services/knowledge/ directory. This includes:
+The model's identity lock and physical profile (somaticProfiles.ts).
+The product's specific construction details (productBlueprints.ts).
+The exact print method physics and material condition (materialRealism.ts).
+The precise camera and lens settings for the chosen angle (productAngleDetails.ts).
+Critical 3D distortion physics, explaining how the 2D design must wrap around a 3D body (contourDistortion.ts).
+A comprehensive list of negative prompts to avoid common AI errors (negativePrompts.ts).
+API Execution: The GenerationQueue processes jobs, calling generateMockup (or generateAopMockup). This service sends the master prompt, the design image ([IMAGE 1]), and the persona lock image ([IMAGE 2]) to the gemini-3-pro-image-preview model.
+Progress Tracking: A setInterval in handleGenerate periodically checks the status of jobs in the queue and updates the generationProgress and generationStatus state, which is reflected in the UI's progress bar.
+User Action (Phase 3: Results):
+As images are completed, they appear in a grid. Each ResultCard displays the generated mockup.
+The user can download an image or type a refinement prompt (e.g., "make the lighting a little brighter") and click a refresh button.
+Under the Hood (Phase 4: Refinement):
+The refinement action calls handleUpdateResult, which re-runs a single generation job using the exact same parameters as the original, but with the user's refinement text added to the prompt for a targeted adjustment.
+To replicate this on Replit, the most crucial part will be to correctly implement the entire /services directory, especially the promptBuilder.ts and the /knowledge base. This is the intellectual property of the application that turns simple user selections into world-class, photorealistic images.
