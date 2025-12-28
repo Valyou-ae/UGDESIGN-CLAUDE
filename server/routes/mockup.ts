@@ -222,9 +222,12 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       // Parse knowledge config from request
       const kbConfig: KnowledgeConfig = knowledgeConfig || {};
 
-      // Calculate total mockups and enforce batch limit
-      const totalMockups = productColors.length * angles.length;
-      const MAX_BATCH_SIZE = 10;
+      // Calculate total mockups including sizes and enforce batch limit
+      const sizesArray = Array.isArray(productSizes) && productSizes.length > 0 ? productSizes : ['M'];
+      const colorsArray = Array.isArray(productColors) ? productColors : [productColors];
+      const anglesArray = Array.isArray(angles) ? angles : [angles];
+      const totalMockups = colorsArray.length * anglesArray.length * sizesArray.length;
+      const MAX_BATCH_SIZE = 27; // 3 sizes × 3 colors × 3 angles max
       
       if (totalMockups > MAX_BATCH_SIZE) {
         return res.status(400).json({ 
@@ -240,6 +243,16 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       
       const creditCostPerMockup = MOCKUP_CREDIT_COSTS[outputQuality];
       const totalCreditCost = creditCostPerMockup * totalMockups;
+      
+      logger.info("Batch credit calculation", { 
+        source: "mockup", 
+        sizes: sizesArray.length, 
+        colors: colorsArray.length, 
+        angles: anglesArray.length, 
+        totalMockups, 
+        creditCostPerMockup, 
+        totalCreditCost 
+      });
       
       // Check and deduct credits
       const hasCredits = await checkAndDeductCredits(userId, totalCreditCost);
