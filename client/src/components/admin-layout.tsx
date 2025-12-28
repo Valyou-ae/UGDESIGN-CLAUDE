@@ -31,7 +31,7 @@ export function AdminLayout({ children, title = "Admin Dashboard", description }
                   </h1>
                   <Badge 
                     variant="outline" 
-                    className="hidden sm:inline-flex bg-gradient-to-r from-[#F5A623]/10 to-[#B8860B]/10 text-[#F5A623] border-[#F5A623]/30"
+                    className="hidden sm:inline-flex bg-gradient-to-r from-[#f8991c]/10 to-[#B8860B]/10 text-[#f8991c] border-[#f8991c]/30"
                   >
                     Admin
                   </Badge>
@@ -47,7 +47,7 @@ export function AdminLayout({ children, title = "Admin Dashboard", description }
             <div className="flex items-center gap-4 shrink-0">
               <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-full bg-sidebar-accent/50 border border-sidebar-border/50">
                 <div className="relative">
-                  <div className="absolute -inset-0.5 bg-gradient-to-br from-[#F5A623] to-[#B8860B] rounded-full opacity-70" />
+                  <div className="absolute -inset-0.5 bg-gradient-to-br from-[#f8991c] to-[#B8860B] rounded-full opacity-70" />
                   <Avatar className="h-8 w-8 border-2 border-background relative">
                     <AvatarImage src={user?.profileImageUrl} />
                     <AvatarFallback className="text-xs">{initials}</AvatarFallback>

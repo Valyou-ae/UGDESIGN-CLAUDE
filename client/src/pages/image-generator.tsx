@@ -156,7 +156,7 @@ type Agent = {
 };
 
 const AGENTS: Agent[] = [
-  { id: 1, name: "Text Sentinel", status: "idle", message: "Analyzing prompt...", icon: Bot, activeColor: "#F5A623" },
+  { id: 1, name: "Text Sentinel", status: "idle", message: "Analyzing prompt...", icon: Bot, activeColor: "#f8991c" },
   { id: 2, name: "Style Architect", status: "idle", message: "Enhancing style...", icon: Sparkles, activeColor: "#B8860B" },
   { id: 3, name: "Visual Synthesizer", status: "idle", message: "Generating image...", icon: Palette, activeColor: "#1A1A2E" },
 ];
@@ -332,7 +332,7 @@ export default function ImageGenerator() {
     toast({ 
       title: "Tutorial Complete!", 
       description: "You're ready to create amazing AI-generated images.",
-      className: "bg-gradient-to-r from-[#F5A623]/10 to-[#B8860B]/10 border-[#F5A623]/30 text-foreground"
+      className: "bg-gradient-to-r from-[#f8991c]/10 to-[#B8860B]/10 border-[#f8991c]/30 text-foreground"
     });
   };
 
@@ -386,7 +386,7 @@ export default function ImageGenerator() {
       toast({ 
         title: "Prompt Saved!", 
         description: `"${favoriteName}" has been saved to your favorites.`,
-        className: "bg-[#F5A623]/10 border-[#F5A623]/30 text-[#F5A623] dark:bg-[#F5A623]/20 dark:border-[#F5A623]/50 dark:text-[#B8860B]"
+        className: "bg-[#f8991c]/10 border-[#f8991c]/30 text-[#f8991c] dark:bg-[#f8991c]/20 dark:border-[#f8991c]/50 dark:text-[#B8860B]"
       });
     } catch (error) {
       toast({ title: "Save Failed", description: error instanceof Error ? error.message : "Could not save prompt.", variant: "destructive" });
@@ -408,7 +408,7 @@ export default function ImageGenerator() {
     toast({ 
       title: "Prompt Loaded", 
       description: `Loaded "${favorite.name}" with all settings.`,
-      className: "bg-[#F5A623]/10 border-[#F5A623]/30 text-[#F5A623] dark:bg-[#F5A623]/20 dark:border-[#F5A623]/50 dark:text-[#B8860B]"
+      className: "bg-[#f8991c]/10 border-[#f8991c]/30 text-[#f8991c] dark:bg-[#f8991c]/20 dark:border-[#f8991c]/50 dark:text-[#B8860B]"
     });
   };
 
@@ -894,7 +894,7 @@ export default function ImageGenerator() {
     toast({
       title: "Listening...",
       description: "Speak now to add to your prompt.",
-      className: "bg-[#F5A623]/10 border-[#F5A623]/30 text-[#F5A623]"
+      className: "bg-[#f8991c]/10 border-[#f8991c]/30 text-[#f8991c]"
     });
 
     recognition.onresult = (event: any) => {
@@ -1177,7 +1177,7 @@ export default function ImageGenerator() {
               toast({
                 title: "Image Generated!",
                 description: `Created ${imageCount} image${imageCount > 1 ? "s" : ""}. Saving to your creations...`,
-                className: "bg-[#F5A623]/10 border-[#F5A623]/30 text-[#F5A623] dark:bg-[#F5A623]/20 dark:border-[#F5A623]/50 dark:text-[#B8860B]",
+                className: "bg-[#f8991c]/10 border-[#f8991c]/30 text-[#f8991c] dark:bg-[#f8991c]/20 dark:border-[#f8991c]/50 dark:text-[#B8860B]",
               });
               
               let savedCount = 0;
@@ -1242,7 +1242,7 @@ export default function ImageGenerator() {
             toast({
               title: "Image Generated!",
               description: `Created ${imageCount} image${imageCount > 1 ? "s" : ""}. ${preSavedCount > 0 ? 'Saved!' : 'Sign in to save to your library.'}`,
-              className: "bg-[#F5A623]/10 border-[#F5A623]/30 text-[#F5A623] dark:bg-[#F5A623]/20 dark:border-[#F5A623]/50 dark:text-[#B8860B]",
+              className: "bg-[#f8991c]/10 border-[#f8991c]/30 text-[#f8991c] dark:bg-[#f8991c]/20 dark:border-[#f8991c]/50 dark:text-[#B8860B]",
             });
             setTimeout(() => {
               setStatus("idle");
@@ -1334,7 +1334,7 @@ export default function ImageGenerator() {
     toast({
       title: "Image Generated!",
       description: "Your creation is ready.",
-      className: "bg-[#F5A623]/10 border-[#F5A623]/30 text-[#F5A623] dark:bg-[#F5A623]/20 dark:border-[#F5A623]/50 dark:text-[#B8860B]",
+      className: "bg-[#f8991c]/10 border-[#f8991c]/30 text-[#f8991c] dark:bg-[#f8991c]/20 dark:border-[#f8991c]/50 dark:text-[#B8860B]",
     });
 
     // Reset agents after delay
@@ -1671,7 +1671,7 @@ export default function ImageGenerator() {
                           disabled={status === "generating"}
                           size="icon"
                           data-testid="button-generate"
-                          className="h-9 w-9 rounded-lg bg-gradient-to-r from-[#F5A623] to-[#D4881E] hover:brightness-110 text-white shadow-sm transition-all"
+                          className="h-9 w-9 rounded-lg bg-gradient-to-r from-[#f8991c] to-[#D4881E] hover:brightness-110 text-white shadow-sm transition-all"
                         >
                           {status === "generating" ? (
                             <RefreshCw className="h-4 w-4 animate-spin" />
@@ -1715,12 +1715,12 @@ export default function ImageGenerator() {
                           data-testid="button-load-prompts"
                           className="h-9 w-9 rounded-lg transition-all"
                         >
-                          <BookmarkCheck className="h-5 w-5 text-[#F5A623]" />
+                          <BookmarkCheck className="h-5 w-5 text-[#f8991c]" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-[280px] max-h-[320px] overflow-y-auto">
                         <DropdownMenuLabel className="flex items-center gap-2 text-xs">
-                          <BookmarkCheck className="h-3.5 w-3.5 text-[#F5A623]" />
+                          <BookmarkCheck className="h-3.5 w-3.5 text-[#f8991c]" />
                           Saved Prompts ({savedPrompts.length})
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
@@ -2068,9 +2068,9 @@ export default function ImageGenerator() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <div className="h-10 w-10 rounded-full border-2 border-[#F5A623]/30 flex items-center justify-center backdrop-blur-sm bg-background/50">
+                      <div className="h-10 w-10 rounded-full border-2 border-[#f8991c]/30 flex items-center justify-center backdrop-blur-sm bg-background/50">
                         <motion.div
-                          className="absolute inset-0 rounded-full border-2 border-[#F5A623]"
+                          className="absolute inset-0 rounded-full border-2 border-[#f8991c]"
                           style={{ borderTopColor: 'transparent', borderLeftColor: 'transparent' }}
                           animate={{ rotate: 360 }}
                           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -2105,7 +2105,7 @@ export default function ImageGenerator() {
                       className={cn(
                         "relative rounded-xl overflow-hidden border transition-all",
                         pending.status === 'loading' 
-                          ? "bg-gradient-to-br from-[#F5A623]/5 to-[#B8860B]/5 border-[#F5A623]/20" 
+                          ? "bg-gradient-to-br from-[#f8991c]/5 to-[#B8860B]/5 border-[#f8991c]/20" 
                           : "border-border bg-card"
                       )}
                       style={{ aspectRatio: settings.aspectRatio === "16:9" ? "16/9" : settings.aspectRatio === "9:16" ? "9/16" : settings.aspectRatio === "4:3" ? "4/3" : settings.aspectRatio === "3:4" ? "3/4" : "1/1" }}
@@ -2113,7 +2113,7 @@ export default function ImageGenerator() {
                       {pending.status === 'loading' ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                           <motion.div
-                            className="h-8 w-8 rounded-full border-2 border-[#F5A623] border-t-transparent"
+                            className="h-8 w-8 rounded-full border-2 border-[#f8991c] border-t-transparent"
                             animate={{ rotate: 360 }}
                             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                           />
@@ -2169,7 +2169,7 @@ export default function ImageGenerator() {
                       onClick={() => setSelectedImage(gen)}
                       className={cn(
                         "break-inside-avoid mb-3 relative group rounded-xl overflow-hidden cursor-pointer bg-card border transition-all duration-200",
-                        gen.isNew ? "border-2 border-[#F5A623]/50 hover:border-[#F5A623]" : "border-border hover:border-primary/50 hover:shadow-xl hover:scale-[1.02]"
+                        gen.isNew ? "border-2 border-[#f8991c]/50 hover:border-[#f8991c]" : "border-border hover:border-primary/50 hover:shadow-xl hover:scale-[1.02]"
                       )}
                     >
                       {/* Image Container - Dynamic aspect ratio */}
@@ -2291,7 +2291,7 @@ export default function ImageGenerator() {
                         </div>
                       </div>
                       {gen.isNew && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-[#F5A623] text-white text-[9px] font-bold rounded">NEW</div>
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-[#f8991c] text-white text-[9px] font-bold rounded">NEW</div>
                       )}
                       </div>
                     </motion.div>
@@ -2303,7 +2303,7 @@ export default function ImageGenerator() {
             {/* Empty State - Only when no generations at all */}
             {generations.length === 0 && status !== "generating" && (
               <div className="flex flex-col items-center justify-center text-center py-16">
-                <div className="w-32 h-32 bg-gradient-to-tr from-[#F5A623] to-[#B8860B] rounded-full blur-[60px] opacity-20 mb-6" />
+                <div className="w-32 h-32 bg-gradient-to-tr from-[#f8991c] to-[#B8860B] rounded-full blur-[60px] opacity-20 mb-6" />
                 <h2 className="text-2xl font-bold mb-2 text-foreground">Ready to Create</h2>
                 <p className="text-muted-foreground mb-6 max-w-md">
                   Type a prompt above or pick one from the suggestions to generate your first image.
@@ -2335,7 +2335,7 @@ export default function ImageGenerator() {
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4 text-[#F5A623]" />
+                  <Lightbulb className="h-4 w-4 text-[#f8991c]" />
                   <h3 className="font-semibold text-sm text-foreground">Daily Inspiration</h3>
                 </div>
                 <div className="flex items-center gap-2">
@@ -2365,10 +2365,10 @@ export default function ImageGenerator() {
               
               <div className="bg-card border border-border rounded-xl p-4" data-testid="inspiration-card">
                 <div className="flex items-center justify-between mb-3">
-                  <Badge className="bg-[#F5A623] text-white text-[10px] hover:bg-[#F5A623]">
+                  <Badge className="bg-[#f8991c] text-white text-[10px] hover:bg-[#f8991c]">
                     {currentInspiration.category}
                   </Badge>
-                  <span className="flex items-center gap-1 text-[10px] text-[#F5A623]">
+                  <span className="flex items-center gap-1 text-[10px] text-[#f8991c]">
                     <Zap className="h-3 w-3" />
                     {currentInspiration.difficulty || 'Intermediate'}
                   </span>
@@ -2398,7 +2398,7 @@ export default function ImageGenerator() {
                 
                 <Button
                   onClick={() => setPrompt(currentInspiration.prompt)}
-                  className="w-full bg-[#F5A623] hover:bg-[#F5A623]/90 text-white gap-2"
+                  className="w-full bg-[#f8991c] hover:bg-[#f8991c]/90 text-white gap-2"
                   data-testid="try-inspiration"
                 >
                   <Lightbulb className="h-4 w-4" />
@@ -2414,7 +2414,7 @@ export default function ImageGenerator() {
                       className={cn(
                         "w-2 h-2 rounded-full transition-colors",
                         idx === inspirationIndex % inspirations.length
-                          ? "bg-[#F5A623]"
+                          ? "bg-[#f8991c]"
                           : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
                       )}
                       data-testid={`inspiration-dot-${idx}`}
@@ -2463,7 +2463,7 @@ export default function ImageGenerator() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              className="h-6 px-2 text-xs text-[#F5A623] hover:text-[#F5A623] hover:bg-[#F5A623]/10"
+                              className="h-6 px-2 text-xs text-[#f8991c] hover:text-[#f8991c] hover:bg-[#f8991c]/10"
                               onClick={() => setPrompt(item.prompt)}
                               data-testid={`reuse-prompt-${item.id}`}
                             >
@@ -2546,9 +2546,9 @@ export default function ImageGenerator() {
 
                     {/* Edit Image Section - prominent styling */}
                     {selectedImage.id && !selectedImage.id.startsWith("sample-") && (
-                      <div className="space-y-2 bg-gradient-to-br from-[#F5A623]/10 to-[#F5A623]/5 rounded-lg p-3 border border-[#F5A623]/20">
+                      <div className="space-y-2 bg-gradient-to-br from-[#f8991c]/10 to-[#f8991c]/5 rounded-lg p-3 border border-[#f8991c]/20">
                         <label className="text-xs font-bold text-foreground uppercase tracking-widest flex items-center gap-2">
-                          <Wand2 className="h-4 w-4 text-[#F5A623]" />
+                          <Wand2 className="h-4 w-4 text-[#f8991c]" />
                           Edit with UGLI AI
                         </label>
                         <div className="relative w-full">
@@ -2569,7 +2569,7 @@ export default function ImageGenerator() {
                           <button
                             onClick={handleEditImage}
                             disabled={!editPrompt.trim() || isEditing}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#F5A623] hover:bg-[#d64375] text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#f8991c] hover:bg-[#d64375] text-white flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             data-testid="button-apply-edit"
                           >
                             {isEditing ? (
@@ -2616,7 +2616,7 @@ export default function ImageGenerator() {
                                 className={cn(
                                   "relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all hover:opacity-100",
                                   selectedImage.id === version.id 
-                                    ? "border-[#F5A623] ring-2 ring-[#F5A623]/30" 
+                                    ? "border-[#f8991c] ring-2 ring-[#f8991c]/30" 
                                     : "border-border opacity-70 hover:border-muted-foreground"
                                 )}
                                 data-testid={`version-thumbnail-${index}`}
@@ -2770,7 +2770,7 @@ export default function ImageGenerator() {
                             checked={selectedImage.isPublic || false}
                             onCheckedChange={() => toggleVisibility(selectedImage.id, selectedImage.isPublic || false)}
                             data-testid="switch-visibility"
-                            className="data-[state=checked]:bg-[#F5A623] scale-75"
+                            className="data-[state=checked]:bg-[#f8991c] scale-75"
                           />
                         </div>
                       </div>
@@ -2894,7 +2894,7 @@ export default function ImageGenerator() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bookmark className="h-5 w-5 text-[#F5A623]" />
+              <Bookmark className="h-5 w-5 text-[#f8991c]" />
               Save Prompt
             </DialogTitle>
           </DialogHeader>
@@ -2907,7 +2907,7 @@ export default function ImageGenerator() {
                 value={favoriteName}
                 onChange={(e) => setFavoriteName(e.target.value)}
                 data-testid="input-favorite-name"
-                className="focus-visible:ring-[#F5A623]"
+                className="focus-visible:ring-[#f8991c]"
               />
             </div>
             
@@ -2959,7 +2959,7 @@ export default function ImageGenerator() {
               onClick={handleSavePromptFavorite}
               disabled={isSavingFavorite || !favoriteName.trim()}
               data-testid="button-confirm-save-prompt"
-              className="bg-[#F5A623] hover:bg-[#D4881E] text-white"
+              className="bg-[#f8991c] hover:bg-[#D4881E] text-white"
             >
               {isSavingFavorite ? (
                 <>

@@ -187,7 +187,7 @@ export default function AdminDashboard() {
             description="Registered users"
             icon={Users}
             trend={analytics?.totalUsers ? "+12%" : undefined}
-            colorClass="text-[#F5A623]"
+            colorClass="text-[#f8991c]"
             isLoading={isLoading}
             testId="card-total-users"
           />
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
                   description="Manage users, roles, and permissions"
                   icon={Users}
                   href="/admin/users"
-                  gradient="bg-gradient-to-br from-[#F5A623] to-[#D4881E]"
+                  gradient="bg-gradient-to-br from-[#f8991c] to-[#D4881E]"
                   testId="link-admin-users"
                 />
                 <QuickActionCard

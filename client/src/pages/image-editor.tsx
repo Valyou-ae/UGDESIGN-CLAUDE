@@ -391,7 +391,7 @@ export default function ImageEditor() {
         {/* Compact Header */}
         <div className="flex-shrink-0 h-14 px-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#F5A623] to-[#B8860B] flex items-center justify-center">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#f8991c] to-[#B8860B] flex items-center justify-center">
               <Wand2 className="h-4 w-4 text-white" />
             </div>
             <h1 className="text-lg font-semibold text-foreground">Image Editor</h1>
@@ -478,7 +478,7 @@ export default function ImageEditor() {
                   animate={{ scale: 1, opacity: 1 }}
                   className="flex flex-col items-center gap-3"
                 >
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#F5A623]/20 to-[#B8860B]/20 flex items-center justify-center">
+                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#f8991c]/20 to-[#B8860B]/20 flex items-center justify-center">
                     <Upload className="h-8 w-8 text-primary" />
                   </div>
                   <div className="text-center">
@@ -600,7 +600,7 @@ export default function ImageEditor() {
                     <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
                       <div className="flex flex-col items-center gap-2">
                         <div className="relative">
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#F5A623] to-[#B8860B] animate-pulse" />
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#f8991c] to-[#B8860B] animate-pulse" />
                           <Wand2 className="h-6 w-6 text-white absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
                         </div>
                         <span className="text-sm font-medium">Editing...</span>
@@ -749,7 +749,7 @@ export default function ImageEditor() {
                               onClick={handleEdit}
                               disabled={!editPrompt.trim() || status === "editing"}
                               size="icon"
-                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 bg-gradient-to-r from-[#F5A623] to-[#B8860B] hover:from-[#F5A623]/90 hover:to-[#B8860B]/90 text-white"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 bg-gradient-to-r from-[#f8991c] to-[#B8860B] hover:from-[#f8991c]/90 hover:to-[#B8860B]/90 text-white"
                               data-testid="button-edit"
                             >
                               {status === "editing" ? (

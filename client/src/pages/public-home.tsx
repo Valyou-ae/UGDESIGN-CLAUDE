@@ -180,7 +180,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
                 )}
               />
               {!imageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-br from-[#F5A623]/20 to-[#1A1A2E]/20 animate-pulse" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#f8991c]/20 to-[#1A1A2E]/20 animate-pulse" />
               )}
             </>
           ) : (
@@ -188,7 +188,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
           )}
           
           {item.isGenerated && (
-            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#F5A623] to-[#B8860B] px-2 py-1 rounded-full flex items-center gap-1 z-10">
+            <div className="absolute top-2 right-2 bg-gradient-to-r from-[#f8991c] to-[#B8860B] px-2 py-1 rounded-full flex items-center gap-1 z-10">
               <Sparkles className="h-3 w-3 text-white" />
               <span className="text-[10px] font-medium text-white">NEW</span>
             </div>
@@ -214,7 +214,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
                 data-testid={`button-like-${item.id}`}
                 className={cn(
                   "flex items-center gap-1 text-xs transition-all duration-200 hover:scale-110",
-                  item.isLiked ? "text-[#F5A623]" : "text-white/80 hover:text-[#F5A623]"
+                  item.isLiked ? "text-[#f8991c]" : "text-white/80 hover:text-[#f8991c]"
                 )}
               >
                 <Heart className={cn("h-3 w-3", item.isLiked && "fill-current")} />
@@ -474,7 +474,7 @@ function BrandingHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
         <span className="text-sm text-white/60" data-testid="text-tagline"><strong className="font-bold">U</strong> <strong className="font-bold">G</strong>onna <strong className="font-bold">L</strong>ove <strong className="font-bold">I</strong>t!!</span>
         <Button 
           onClick={() => openLoginPopup()}
-          className="ml-4 bg-gradient-to-r from-[#F5A623] to-[#B8860B] hover:from-[#D4881E] hover:to-[#996B08] text-white font-medium px-4 py-1.5 text-sm rounded-full shadow-lg shadow-[#F5A623]/30 transition-all hover:scale-105"
+          className="ml-4 bg-gradient-to-r from-[#f8991c] to-[#B8860B] hover:from-[#D4881E] hover:to-[#996B08] text-white font-medium px-4 py-1.5 text-sm rounded-full shadow-lg shadow-[#f8991c]/30 transition-all hover:scale-105"
           data-testid="button-get-started-hero"
         >
           Get Started For FREE!
@@ -647,7 +647,7 @@ export default function PublicHome() {
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
-                <div className="w-12 h-12 border-4 border-[#F5A623] border-t-transparent rounded-full animate-spin" />
+                <div className="w-12 h-12 border-4 border-[#f8991c] border-t-transparent rounded-full animate-spin" />
                 <p className="text-gray-400 text-sm">Loading gallery...</p>
               </div>
             </div>

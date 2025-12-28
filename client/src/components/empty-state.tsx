@@ -27,8 +27,8 @@ const EMPTY_STATE_CONFIGS = {
     description: "Start your creative journey by generating your first image, mockup, or removing a background.",
     actionLabel: "Create Something",
     actionHref: "/image-gen",
-    gradient: "from-[#F5A623]/10 to-[#B8860B]/10",
-    iconBg: "bg-[#F5A623]/10 text-[#F5A623]",
+    gradient: "from-[#f8991c]/10 to-[#B8860B]/10",
+    iconBg: "bg-[#f8991c]/10 text-[#f8991c]",
   },
   mockups: {
     icon: Shirt,
@@ -152,10 +152,10 @@ export function QuickStartCard({
         <div className="relative z-10">
           <div className={cn(
             "h-12 w-12 rounded-xl flex items-center justify-center mb-4",
-            gradient.includes("B94E30") ? "bg-[#F5A623]/10 text-[#F5A623]" :
+            gradient.includes("B94E30") ? "bg-[#f8991c]/10 text-[#f8991c]" :
             gradient.includes("E3B436") ? "bg-[#B8860B]/10 text-[#B99A2C]" :
             gradient.includes("664D3F") ? "bg-[#1A1A2E]/10 text-[#1A1A2E]" :
-            "bg-[#F5A623]/10 text-[#F5A623]"
+            "bg-[#f8991c]/10 text-[#f8991c]"
           )}>
             <Icon className="h-6 w-6" />
           </div>

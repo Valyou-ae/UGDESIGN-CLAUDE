@@ -102,10 +102,10 @@
   }
   @keyframes pulse-glow {
     0%, 100% { 
-      box-shadow: 0 0 20px rgba(245, 166, 35, 0.4), 0 0 40px rgba(212, 136, 30, 0.2), 0 0 60px rgba(245, 166, 35, 0.1);
+      box-shadow: 0 0 20px rgba(248, 153, 28, 0.4), 0 0 40px rgba(201, 122, 22, 0.2), 0 0 60px rgba(248, 153, 28, 0.1);
     }
     50% { 
-      box-shadow: 0 0 30px rgba(245, 166, 35, 0.6), 0 0 60px rgba(212, 136, 30, 0.35), 0 0 80px rgba(245, 166, 35, 0.2);
+      box-shadow: 0 0 30px rgba(248, 153, 28, 0.6), 0 0 60px rgba(201, 122, 22, 0.35), 0 0 80px rgba(248, 153, 28, 0.2);
     }
   }
   --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
@@ -125,20 +125,20 @@
   --popover: 0 0% 100%;
   --popover-foreground: 240 29% 14%;
 
-  /* Primary: #F5A623 (UGLI Orange) */
-  --primary: 38 91% 55%;
+  /* Primary: #f8991c (UGLI Orange from logo) */
+  --primary: 34 94% 54%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: #D4881E (Dark Orange) */
-  --secondary: 33 77% 47%;
+  /* Secondary: #c97a16 (Darker Orange) */
+  --secondary: 34 81% 44%;
   --secondary-foreground: 0 0% 100%;
 
   /* Muted: light orange tinted */
-  --muted: 30 30% 94%;
+  --muted: 34 30% 94%;
   --muted-foreground: 240 29% 40%;
 
-  /* Accent: #B8860B (Dark Goldenrod) */
-  --accent: 43 85% 38%;
+  /* Accent: #a66512 (Deep Orange) */
+  --accent: 34 82% 36%;
   --accent-foreground: 0 0% 100%;
 
   /* Destructive: #FF5722 (Deep Orange) */
@@ -146,27 +146,27 @@
   --destructive-foreground: 0 0% 100%;
 
   /* Border */
-  --border: 30 20% 88%;
-  --input: 30 20% 88%;
-  --ring: 38 91% 55%;
+  --border: 34 20% 88%;
+  --input: 34 20% 88%;
+  --ring: 34 94% 54%;
 
   --radius: 0.75rem; /* 12px default radius */
 
   /* Sidebar */
   --sidebar: 0 0% 100%;
   --sidebar-foreground: 240 29% 26%;
-  --sidebar-primary: 38 91% 55%;
+  --sidebar-primary: 34 94% 54%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 30 30% 94%;
-  --sidebar-accent-foreground: 38 91% 55%;
-  --sidebar-border: 30 20% 88%;
-  --sidebar-ring: 38 91% 55%;
+  --sidebar-accent: 34 30% 94%;
+  --sidebar-accent-foreground: 34 94% 54%;
+  --sidebar-border: 34 20% 88%;
+  --sidebar-ring: 34 94% 54%;
   
   /* Chart Colors - UGLI Orange Theme */
-  --chart-1: 38 91% 55%;  /* Orange */
-  --chart-2: 33 77% 47%;  /* Dark Orange */
-  --chart-3: 43 85% 38%;  /* Goldenrod */
-  --chart-4: 14 100% 57%;  /* Deep Orange */
+  --chart-1: 34 94% 54%;  /* Orange #f8991c */
+  --chart-2: 34 81% 44%;  /* Dark Orange */
+  --chart-3: 34 82% 36%;  /* Deep Orange */
+  --chart-4: 14 100% 57%;  /* Red Orange */
   --chart-5: 240 29% 14%;  /* Dark */
 }
 
@@ -182,20 +182,20 @@
   --popover: 0 0% 10%;
   --popover-foreground: 0 0% 98%;
 
-  /* Primary: #F5A623 (UGLI Orange) */
-  --primary: 38 91% 55%;
+  /* Primary: #f8991c (UGLI Orange from logo) */
+  --primary: 34 94% 54%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary: #D4881E (Dark Orange) */
-  --secondary: 33 77% 47%;
+  /* Secondary: #c97a16 (Darker Orange) */
+  --secondary: 34 81% 44%;
   --secondary-foreground: 0 0% 100%;
 
   /* Muted */
   --muted: 0 0% 12%;
   --muted-foreground: 0 0% 65%;
 
-  /* Accent: #B8860B (Dark Goldenrod) */
-  --accent: 43 85% 38%;
+  /* Accent: #a66512 (Deep Orange) */
+  --accent: 34 82% 36%;
   --accent-foreground: 0 0% 100%;
 
   /* Destructive: #FF5722 */
@@ -205,17 +205,17 @@
   /* Border */
   --border: 0 0% 15%;
   --input: 0 0% 15%;
-  --ring: 38 91% 55%;
+  --ring: 34 94% 54%;
 
   /* Sidebar */
   --sidebar: 0 0% 6%;
   --sidebar-foreground: 0 0% 65%;
-  --sidebar-primary: 38 91% 55%;
+  --sidebar-primary: 34 94% 54%;
   --sidebar-primary-foreground: 0 0% 100%;
   --sidebar-accent: 0 0% 12%;
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-border: 0 0% 15%;
-  --sidebar-ring: 38 91% 55%;
+  --sidebar-ring: 34 94% 54%;
 }
 
 @layer base {
@@ -234,7 +234,7 @@
   }
   
   .text-gradient-brand {
-    @apply bg-gradient-to-r from-[#F5A623] to-[#D4881E] bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-[#f8991c] to-[#c97a16] bg-clip-text text-transparent;
   }
   
   .card-hover {

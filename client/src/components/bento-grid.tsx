@@ -59,7 +59,7 @@ function shuffleArray<T>(array: T[]): T[] {
 
 // Optimized: Moved outside component to prevent recreation on every render
 const PROJECT_CARD_COLORS = {
-  image: "border-[#F5A623]/50 hover:shadow-[#F5A623]/20",
+  image: "border-[#f8991c]/50 hover:shadow-[#f8991c]/20",
   mockup: "border-[#1A1A2E]/50 hover:shadow-[#1A1A2E]/20",
   bg: "border-[#B8860B]/50 hover:shadow-[#B8860B]/20",
 } as const;
@@ -260,11 +260,11 @@ export function BentoGrid() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="lg:col-span-3 relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#F5A623] via-[#D4881E] to-[#1A1A2E] p-8 md:p-10"
+        className="lg:col-span-3 relative overflow-hidden rounded-[24px] bg-gradient-to-br from-[#f8991c] via-[#D4881E] to-[#1A1A2E] p-8 md:p-10"
       >
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48ZyBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMzhoNDB2MmgtNDB6Ii8+PHBhdGggZD0iTTAgMGg0MHYyaC00MHoiLz48cGF0aCBkPSJNMCAwdjQwaDJWMHoiLz48cGF0aCBkPSJNMzggMHY0MGgyVjB6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30" />
         <div className="absolute -top-40 -right-40 w-[400px] h-[400px] rounded-full bg-[#B8860B]/20 blur-3xl" />
-        <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] rounded-full bg-[#F5A623]/30 blur-3xl" />
+        <div className="absolute -bottom-20 -left-20 w-[300px] h-[300px] rounded-full bg-[#f8991c]/30 blur-3xl" />
         
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="max-w-xl">
@@ -282,7 +282,7 @@ export function BentoGrid() {
           
           <div className="flex flex-wrap gap-3">
             <Link href="/image-gen">
-              <Button data-testid="button-generate-image" className="h-12 px-6 bg-white text-[#F5A623] hover:bg-white/90 rounded-xl font-semibold shadow-lg shadow-black/20">
+              <Button data-testid="button-generate-image" className="h-12 px-6 bg-white text-[#f8991c] hover:bg-white/90 rounded-xl font-semibold shadow-lg shadow-black/20">
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generate Image
               </Button>
@@ -303,8 +303,8 @@ export function BentoGrid() {
           title="Image Generator" 
           description="Create stunning visuals with AI"
           icon={Sparkles}
-          gradient="bg-gradient-to-br from-[#F5A623] to-[#D4881E]"
-          circleColor="#F5A623"
+          gradient="bg-gradient-to-br from-[#f8991c] to-[#D4881E]"
+          circleColor="#f8991c"
           badgeCount="5 AI Agents"
           delay={0.1}
           href="/image-gen"
@@ -346,7 +346,7 @@ export function BentoGrid() {
             value={stats?.images ?? 0} 
             label="Images Created" 
             trend={stats?.images ? "↑ Active" : "—"} 
-            colorClass="bg-[#F5A623]/10 text-[#F5A623] dark:bg-[#F5A623]/20 dark:text-[#D4674A]"
+            colorClass="bg-[#f8991c]/10 text-[#f8991c] dark:bg-[#f8991c]/20 dark:text-[#D4674A]"
             delay={0.4}
           />
           <StatCard 

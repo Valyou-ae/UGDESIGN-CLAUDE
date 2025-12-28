@@ -31,7 +31,7 @@ interface CalendarHistoryModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const UGLI_RUST = "#F5A623";
+const UGLI_RUST = "#f8991c";
 
 const getActivityColor = (count: number, maxCount: number): string => {
   if (count === 0) return "transparent";
@@ -138,8 +138,8 @@ export function CalendarHistoryModal({ open, onOpenChange }: CalendarHistoryModa
             <DialogHeader className="p-6 pb-4 border-b border-[#E4E4E7] dark:border-[#27272A]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#F5A623]/10 rounded-lg">
-                    <CalendarIcon className="h-5 w-5 text-[#F5A623]" />
+                  <div className="p-2 bg-[#f8991c]/10 rounded-lg">
+                    <CalendarIcon className="h-5 w-5 text-[#f8991c]" />
                   </div>
                   <DialogTitle className="text-xl font-semibold text-[#18181B] dark:text-[#FAFAFA]">
                     Generation History
@@ -199,8 +199,8 @@ export function CalendarHistoryModal({ open, onOpenChange }: CalendarHistoryModa
                       data-testid={`button-day-${dateKey}`}
                       className={cn(
                         "aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all",
-                        "hover:ring-2 hover:ring-[#F5A623]/50",
-                        isSelected && "ring-2 ring-[#F5A623]",
+                        "hover:ring-2 hover:ring-[#f8991c]/50",
+                        isSelected && "ring-2 ring-[#f8991c]",
                         isTodayDate && "font-bold",
                         count > 0 && "cursor-pointer"
                       )}
