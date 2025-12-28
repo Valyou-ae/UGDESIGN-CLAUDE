@@ -19,7 +19,7 @@ const categoryColors: Record<string, { bg: string; text: string; border: string 
   landscape: { bg: "bg-green-500/20", text: "text-green-300", border: "border-green-500/30" },
   abstract: { bg: "bg-pink-500/20", text: "text-pink-300", border: "border-pink-500/30" },
   product: { bg: "bg-purple-500/20", text: "text-purple-300", border: "border-purple-500/30" },
-  architecture: { bg: "bg-slate-500/20", text: "text-slate-300", border: "border-slate-500/30" },
+  architecture: { bg: "bg-charcoal-500/20", text: "text-charcoal-300", border: "border-charcoal-500/30" },
   nature: { bg: "bg-emerald-500/20", text: "text-emerald-300", border: "border-emerald-500/30" },
   scifi: { bg: "bg-cyan-500/20", text: "text-cyan-300", border: "border-cyan-500/30" },
   default: { bg: "bg-[#f8991c]/20", text: "text-[#f8991c]", border: "border-[#f8991c]/30" },

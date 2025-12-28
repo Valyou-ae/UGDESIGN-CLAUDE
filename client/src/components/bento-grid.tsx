@@ -178,7 +178,7 @@ function QuickAction({ icon: Icon, label, href }: any) {
   const content = (
     <div className="group flex items-center justify-between p-3.5 bg-card border border-sidebar-border/50 rounded-xl cursor-pointer hover:shadow-md hover:border-primary/30 transition-all duration-300">
       <div className="flex items-center gap-3">
-        <div className="h-8 w-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-primary/20 transition-colors">
+        <div className="h-8 w-8 rounded-lg bg-charcoal-100 dark:bg-charcoal-800 flex items-center justify-center group-hover:bg-primary/10 dark:group-hover:bg-primary/20 transition-colors">
           <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
         <span className="text-sm font-medium text-foreground/80 group-hover:text-foreground transition-colors">{label}</span>

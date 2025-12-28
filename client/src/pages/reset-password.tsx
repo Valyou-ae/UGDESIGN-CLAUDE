@@ -110,7 +110,7 @@ export default function ResetPassword() {
               </span>
             </h1>
             
-            <p className="text-lg text-zinc-400 leading-relaxed">
+            <p className="text-lg text-charcoal-400 leading-relaxed">
               Choose a strong password to keep your account safe and secure.
             </p>
           </motion.div>

@@ -184,7 +184,7 @@ function JustifiedGalleryCard({ item, rowHeight, index, onLike, isLoggedIn, onIm
               )}
             </>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-br from-charcoal-200 to-charcoal-300 dark:from-charcoal-800 dark:to-charcoal-900 animate-pulse" />
           )}
           
           {item.isGenerated && (
@@ -648,7 +648,7 @@ export default function PublicHome() {
             <div className="w-full h-full flex items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-[#f8991c] border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-400 text-sm">Loading gallery...</p>
+                <p className="text-charcoal-400 text-sm">Loading gallery...</p>
               </div>
             </div>
           )}

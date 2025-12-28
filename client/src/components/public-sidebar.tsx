@@ -38,7 +38,7 @@ function ThemeToggle({ collapsed }: { collapsed: boolean }) {
     return (
       <div 
         onClick={toggleTheme}
-        className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-200 dark:bg-zinc-800 cursor-pointer mx-auto hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+        className="flex h-6 w-6 items-center justify-center rounded-full bg-charcoal-200 dark:bg-charcoal-800 cursor-pointer mx-auto hover:bg-charcoal-300 dark:hover:bg-charcoal-700 transition-colors"
       >
         {theme === "light" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
       </div>
@@ -48,18 +48,18 @@ function ThemeToggle({ collapsed }: { collapsed: boolean }) {
   return (
     <div 
       onClick={toggleTheme}
-      className="flex h-9 w-full items-center rounded-full bg-zinc-200 dark:bg-zinc-800 p-1 cursor-pointer relative"
+      className="flex h-9 w-full items-center rounded-full bg-charcoal-200 dark:bg-charcoal-800 p-1 cursor-pointer relative"
     >
       <div 
         className={cn(
-          "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white dark:bg-zinc-600 shadow-sm transition-all duration-300 ease-out",
+          "absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-full bg-white dark:bg-charcoal-600 shadow-sm transition-all duration-300 ease-out",
           theme === "light" ? "left-1" : "left-[calc(50%)]"
         )}
       />
-      <div className="flex-1 flex justify-center items-center z-10 text-zinc-600 dark:text-zinc-400">
+      <div className="flex-1 flex justify-center items-center z-10 text-charcoal-600 dark:text-charcoal-400">
         <Sun className="h-4 w-4" />
       </div>
-      <div className="flex-1 flex justify-center items-center z-10 text-zinc-600 dark:text-zinc-400">
+      <div className="flex-1 flex justify-center items-center z-10 text-charcoal-600 dark:text-charcoal-400">
         <Moon className="h-4 w-4" />
       </div>
     </div>
@@ -238,13 +238,13 @@ export function PublicSidebar({ className }: PublicSidebarProps) {
         {isLoading ? (
           collapsed ? (
             <div className="flex flex-col items-center justify-center gap-1 py-2 px-2 mx-auto w-[52px]">
-              <div className="h-5 w-5 rounded-full bg-zinc-700/50 animate-pulse" />
-              <div className="h-2 w-8 bg-zinc-700/50 rounded animate-pulse" />
+              <div className="h-5 w-5 rounded-full bg-charcoal-700/50 animate-pulse" />
+              <div className="h-2 w-8 bg-charcoal-700/50 rounded animate-pulse" />
             </div>
           ) : (
             <div className="flex items-center gap-3 px-3.5 py-3">
-              <div className="h-5 w-5 rounded-full bg-zinc-700/50 animate-pulse" />
-              <div className="h-3 w-16 bg-zinc-700/50 rounded animate-pulse" />
+              <div className="h-5 w-5 rounded-full bg-charcoal-700/50 animate-pulse" />
+              <div className="h-3 w-16 bg-charcoal-700/50 rounded animate-pulse" />
             </div>
           )
         ) : isAuthenticated && user ? (
@@ -264,7 +264,7 @@ export function PublicSidebar({ className }: PublicSidebarProps) {
                     data-testid="img-user-avatar-sidebar"
                   />
                 ) : (
-                  <div className="h-5 w-5 rounded-full bg-zinc-700 flex items-center justify-center border border-white/30 group-hover:border-white/60 transition-all">
+                  <div className="h-5 w-5 rounded-full bg-charcoal-700 flex items-center justify-center border border-white/30 group-hover:border-white/60 transition-all">
                     <span className="text-[8px] font-semibold text-white/80">
                       {getInitials(user.displayName || user.email || "U")}
                     </span>
@@ -295,7 +295,7 @@ export function PublicSidebar({ className }: PublicSidebarProps) {
                     data-testid="img-user-avatar-sidebar"
                   />
                 ) : (
-                  <div className="h-5 w-5 rounded-full bg-zinc-700 flex items-center justify-center border border-white/30 group-hover:border-white/60 transition-all">
+                  <div className="h-5 w-5 rounded-full bg-charcoal-700 flex items-center justify-center border border-white/30 group-hover:border-white/60 transition-all">
                     <span className="text-[8px] font-semibold text-white/80">
                       {getInitials(user.displayName || user.email || "U")}
                     </span>

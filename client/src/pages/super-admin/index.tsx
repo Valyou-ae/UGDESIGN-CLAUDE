@@ -695,7 +695,7 @@ export default function SuperAdminDashboard() {
                     <div className={cn(
                       "h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
                       index === 0 ? "bg-amber-500 text-white" :
-                      index === 1 ? "bg-gray-400 text-white" :
+                      index === 1 ? "bg-charcoal-400 text-white" :
                       index === 2 ? "bg-amber-700 text-white" :
                       "bg-muted-foreground/20 text-muted-foreground"
                     )}>

@@ -209,7 +209,7 @@ const SEASONAL_THEMES: SeasonalTheme[] = [
     description: "Standard mockup without seasonal styling",
     sceneKeywords: [],
     colorPalette: [],
-    bgGradient: "from-gray-100 to-gray-200"
+    bgGradient: "from-charcoal-100 to-charcoal-200"
   },
   {
     id: "christmas",
@@ -272,7 +272,7 @@ const SEASONAL_THEMES: SeasonalTheme[] = [
     description: "Glamorous celebration and sparkle",
     sceneKeywords: ["champagne", "confetti", "sparklers", "midnight party", "gold accents", "celebration", "glamorous"],
     colorPalette: ["#FFD700", "#C0C0C0", "#000000", "#FFFFFF"],
-    bgGradient: "from-yellow-500 to-slate-800"
+    bgGradient: "from-yellow-500 to-charcoal-800"
   }
 ];
 
@@ -795,8 +795,8 @@ function ProductPreview({ uploadedImage, selectedProduct, selectedColor, isMinim
           
           {!uploadedImage && (
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
-              <ImageIcon className={cn("h-8 w-8 mb-2", isLightColor ? "text-gray-300" : "text-white/30")} />
-              <span className={cn("text-xs", isLightColor ? "text-gray-400" : "text-white/40")}>Upload a design</span>
+              <ImageIcon className={cn("h-8 w-8 mb-2", isLightColor ? "text-charcoal-300" : "text-white/30")} />
+              <span className={cn("text-xs", isLightColor ? "text-charcoal-400" : "text-white/40")}>Upload a design</span>
             </div>
           )}
         </div>
@@ -2581,8 +2581,8 @@ export default function MockupGenerator() {
                                             </>
                                           ) : (
                                             <>
-                                              <div className="absolute inset-0 transition-all duration-200 group-hover:opacity-0 bg-zinc-800" />
-                                              <div className="absolute inset-0 transition-all duration-200 opacity-0 group-hover:opacity-100 bg-zinc-700" />
+                                              <div className="absolute inset-0 transition-all duration-200 group-hover:opacity-0 bg-charcoal-800" />
+                                              <div className="absolute inset-0 transition-all duration-200 opacity-0 group-hover:opacity-100 bg-charcoal-700" />
                                             </>
                                           )}
                                         </div>
@@ -2691,7 +2691,7 @@ export default function MockupGenerator() {
                                 ) : (
                                   <div className="flex flex-wrap gap-1.5">
                                     {[
-                                      { name: "White", class: "bg-white border-gray-300" },
+                                      { name: "White", class: "bg-white border-charcoal-300" },
                                       { name: "Black", class: "bg-[#1a1a1a]" },
                                       { name: "Navy", class: "bg-[#1A237E]" },
                                       { name: "Royal", class: "bg-[#0D47A1]" },

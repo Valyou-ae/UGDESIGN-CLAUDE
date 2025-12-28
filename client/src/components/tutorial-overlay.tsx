@@ -258,7 +258,7 @@ export function TutorialOverlay({ isOpen, onClose, onComplete }: TutorialOverlay
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={cn(
               "absolute z-[102] w-[340px] max-w-[calc(100vw-32px)] bg-card border border-border rounded-2xl shadow-2xl",
-              "dark:bg-zinc-900 dark:border-zinc-800"
+              "dark:bg-charcoal-900 dark:border-charcoal-800"
             )}
             style={getTooltipPosition()}
             data-testid="tutorial-tooltip"

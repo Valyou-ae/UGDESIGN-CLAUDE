@@ -550,7 +550,7 @@ export default function MyCreations() {
     toast({
       title: `${action} ${selectedItems.length} items`,
       description: "This action has been performed successfully.",
-      className: "bg-zinc-900 text-white border-zinc-800"
+      className: "bg-charcoal-900 text-white border-charcoal-800"
     });
     setSelectMode(false);
     setSelectedItems([]);

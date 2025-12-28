@@ -92,11 +92,11 @@ export function StepColors() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center",
-                    color.category === 'light' ? "bg-gray-800" : "bg-white"
+                    color.category === 'light' ? "bg-charcoal-800" : "bg-white"
                   )}>
                     <Check className={cn(
                       "w-4 h-4",
-                      color.category === 'light' ? "text-white" : "text-gray-800"
+                      color.category === 'light' ? "text-white" : "text-charcoal-800"
                     )} />
                   </div>
                 </div>

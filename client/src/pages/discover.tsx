@@ -226,7 +226,7 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
               )}
             </>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-br from-charcoal-200 to-charcoal-300 dark:from-charcoal-800 dark:to-charcoal-900 animate-pulse" />
           )}
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-90 transition-opacity" />

@@ -78,7 +78,7 @@ export default function ForgotPassword() {
               </span>
             </h1>
             
-            <p className="text-lg text-zinc-400 leading-relaxed">
+            <p className="text-lg text-charcoal-400 leading-relaxed">
               Don't worry, it happens to the best of us. We'll help you get back to creating in no time.
             </p>
           </motion.div>

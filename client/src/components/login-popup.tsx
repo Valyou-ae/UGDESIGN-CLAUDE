@@ -207,7 +207,7 @@ function LoginPopupDialog({ isOpen, onClose, returnTo }: LoginPopupDialogProps) 
           <h2 className="text-2xl font-bold text-white text-center mb-2">
             Welcome Back
           </h2>
-          <p className="text-gray-400 text-center text-sm mb-8">
+          <p className="text-charcoal-400 text-center text-sm mb-8">
             Sign in to create stunning AI-powered images
           </p>
 
@@ -217,7 +217,7 @@ function LoginPopupDialog({ isOpen, onClose, returnTo }: LoginPopupDialogProps) 
                 <Mail className="h-8 w-8 text-[#f8991c]" />
               </div>
               <h3 className="text-lg font-semibold text-white">Check your email</h3>
-              <p className="text-gray-400 text-sm">
+              <p className="text-charcoal-400 text-sm">
                 We've sent a login link to <span className="text-white font-medium">{email}</span>
               </p>
               <Button
@@ -236,7 +236,7 @@ function LoginPopupDialog({ isOpen, onClose, returnTo }: LoginPopupDialogProps) 
                 {!googleButtonReady && (
                   <Button
                     disabled={isLoading}
-                    className="w-full h-12 bg-white hover:bg-gray-100 text-gray-900 font-medium rounded-xl shadow-sm transition-all hover:shadow-md"
+                    className="w-full h-12 bg-white hover:bg-charcoal-100 text-charcoal-900 font-medium rounded-xl shadow-sm transition-all hover:shadow-md"
                     data-testid="button-google-signin-fallback"
                   >
                     {isLoading ? (
@@ -278,21 +278,21 @@ function LoginPopupDialog({ isOpen, onClose, returnTo }: LoginPopupDialogProps) 
                   <div className="w-full border-t border-[#333]"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-[#151515] text-gray-500 text-xs uppercase tracking-wider">or continue with email</span>
+                  <span className="px-4 bg-[#151515] text-charcoal-500 text-xs uppercase tracking-wider">or continue with email</span>
                 </div>
               </div>
 
               {/* Email Form */}
               <form onSubmit={handleEmailSubmit} className="space-y-4">
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-charcoal-500" />
                   <Input
                     type="email"
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isEmailLoading}
-                    className="pl-12 h-12 bg-[#1a1a1a] border-[#333] text-white placeholder:text-gray-500 rounded-xl focus:border-[#f8991c] focus:ring-1 focus:ring-[#f8991c] transition-all"
+                    className="pl-12 h-12 bg-[#1a1a1a] border-[#333] text-white placeholder:text-charcoal-500 rounded-xl focus:border-[#f8991c] focus:ring-1 focus:ring-[#f8991c] transition-all"
                     data-testid="input-email"
                   />
                 </div>
@@ -318,7 +318,7 @@ function LoginPopupDialog({ isOpen, onClose, returnTo }: LoginPopupDialogProps) 
               )}
 
               {/* Terms */}
-              <p className="text-xs text-center text-gray-500 pt-2">
+              <p className="text-xs text-center text-charcoal-500 pt-2">
                 By continuing, you agree to our{" "}
                 <a href="/help" className="text-[#f8991c] hover:underline">
                   Terms

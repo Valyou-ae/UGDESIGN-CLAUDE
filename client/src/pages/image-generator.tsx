@@ -163,18 +163,18 @@ const AGENTS: Agent[] = [
 
 const STYLE_PRESETS = [
   { name: "Auto", id: "auto", icon: Sparkles, desc: "AI selects best style", gradient: "from-violet-500/40 via-purple-500/30 to-fuchsia-500/40", accent: "violet" },
-  { name: "Photorealistic", id: "photo", icon: Camera, desc: "DSLR quality, natural lighting", gradient: "from-slate-600/50 via-zinc-500/40 to-stone-600/50", accent: "slate" },
+  { name: "Photorealistic", id: "photo", icon: Camera, desc: "DSLR quality, natural lighting", gradient: "from-charcoal-600/50 via-charcoal-500/40 to-stone-600/50", accent: "slate" },
   { name: "Cinematic", id: "cinematic", icon: Clapperboard, desc: "Film grain, dramatic shadows", gradient: "from-amber-700/50 via-orange-900/40 to-yellow-800/50", accent: "amber" },
   { name: "Anime/Manga", id: "anime", icon: Tv, desc: "Cel shaded, vibrant colors", gradient: "from-pink-500/50 via-rose-400/40 to-red-500/50", accent: "pink" },
   { name: "Oil Painting", id: "oil", icon: Palette, desc: "Visible brushstrokes, Renaissance", gradient: "from-amber-600/50 via-yellow-700/40 to-orange-700/50", accent: "amber" },
   { name: "Watercolor", id: "watercolor", icon: Droplets, desc: "Soft edges, paper texture", gradient: "from-sky-400/40 via-cyan-300/30 to-teal-400/40", accent: "sky" },
   { name: "Digital Art", id: "digital", icon: Monitor, desc: "Trending on ArtStation", gradient: "from-blue-600/50 via-indigo-500/40 to-purple-600/50", accent: "blue" },
-  { name: "Minimalist", id: "minimal", icon: Circle, desc: "Clean lines, negative space", gradient: "from-neutral-300/30 via-gray-200/20 to-stone-300/30", accent: "gray" },
+  { name: "Minimalist", id: "minimal", icon: Circle, desc: "Clean lines, negative space", gradient: "from-charcoal-300/30 via-charcoal-200/20 to-stone-300/30", accent: "gray" },
   { name: "Retrowave", id: "retro", icon: Sunset, desc: "Neon lights, 80s aesthetic", gradient: "from-fuchsia-600/50 via-purple-500/40 to-cyan-500/50", accent: "fuchsia" },
-  { name: "Dark Fantasy", id: "fantasy", icon: Sword, desc: "Gothic, dramatic lighting", gradient: "from-slate-800/60 via-purple-900/50 to-indigo-900/60", accent: "purple" },
+  { name: "Dark Fantasy", id: "fantasy", icon: Sword, desc: "Gothic, dramatic lighting", gradient: "from-charcoal-800/60 via-purple-900/50 to-indigo-900/60", accent: "purple" },
   { name: "Pop Art", id: "pop", icon: Shapes, desc: "Bold colors, Ben-Day dots", gradient: "from-yellow-400/50 via-red-500/40 to-blue-500/50", accent: "yellow" },
   { name: "Isometric 3D", id: "iso", icon: Box, desc: "Clean geometry, soft shadows", gradient: "from-emerald-500/40 via-teal-400/30 to-cyan-500/40", accent: "emerald" },
-  { name: "Pencil Sketch", id: "sketch", icon: Pencil, desc: "Graphite, crosshatching", gradient: "from-zinc-500/40 via-neutral-400/30 to-stone-500/40", accent: "zinc" },
+  { name: "Pencil Sketch", id: "sketch", icon: Pencil, desc: "Graphite, crosshatching", gradient: "from-charcoal-500/40 via-charcoal-400/30 to-stone-500/40", accent: "zinc" },
 ];
 
 const QUALITY_PRESETS = [

@@ -1,11 +1,11 @@
 export default function TermsOfService() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-charcoal-900 via-purple-900 to-charcoal-900">
       <div className="max-w-4xl mx-auto px-4 py-16">
         <h1 className="text-4xl font-bold text-white mb-8">Terms of Service</h1>
         
-        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 space-y-6 text-gray-200">
-          <p className="text-sm text-gray-400">Last Updated: December 25, 2025</p>
+        <div className="bg-white/10 backdrop-blur-lg rounded-lg p-8 space-y-6 text-charcoal-200">
+          <p className="text-sm text-charcoal-400">Last Updated: December 25, 2025</p>
           
           <section>
             <h2 className="text-2xl font-semibold text-white mb-4">1. Acceptance of Terms</h2>
@@ -203,7 +203,7 @@ export default function TermsOfService() {
           </section>
 
           <section className="border-t border-white/20 pt-6 mt-8">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-charcoal-400">
               By using UGLI, you acknowledge that you have read, understood, and agree to be bound by these 
               Terms of Service and our Privacy Policy.
             </p>
