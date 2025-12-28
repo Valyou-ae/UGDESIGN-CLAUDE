@@ -339,8 +339,8 @@ async function applyPerspectiveTransform(
   const outputData = Buffer.alloc(canvasWidth * canvasHeight * 4);
 
   const H = computeHomography(
-    { x: 0, y: 0 }, { x: srcWidth, y: 0 },
-    { x: 0, y: srcHeight }, { x: srcWidth, y: srcHeight },
+    { x: 0, y: 0 }, { x: srcWidth - 1, y: 0 },
+    { x: 0, y: srcHeight - 1 }, { x: srcWidth - 1, y: srcHeight - 1 },
     corners.topLeft, corners.topRight,
     corners.bottomLeft, corners.bottomRight
   );
@@ -356,9 +356,9 @@ async function applyPerspectiveTransform(
     for (let x = minX; x < maxX; x++) {
       const src = applyHomography(Hinv, x, y);
       
-      if (src.x >= 0 && src.x < srcWidth && src.y >= 0 && src.y < srcHeight) {
-        const sx = Math.floor(src.x);
-        const sy = Math.floor(src.y);
+      if (src.x >= -0.5 && src.x < srcWidth && src.y >= -0.5 && src.y < srcHeight) {
+        const sx = Math.max(0, Math.min(srcWidth - 1, Math.floor(src.x)));
+        const sy = Math.max(0, Math.min(srcHeight - 1, Math.floor(src.y)));
         const srcIdx = (sy * srcWidth + sx) * srcChannels;
         const dstIdx = (y * canvasWidth + x) * 4;
 
