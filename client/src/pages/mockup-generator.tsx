@@ -150,16 +150,27 @@ import moodUrban from "@assets/generated_images/mood_image_for_urban_street_styl
 import moodNatural from "@assets/generated_images/mood_image_for_natural_organic_style.png";
 import moodBold from "@assets/generated_images/mood_image_for_bold_vibrant_style.png";
 
-// Import ethnicity face avatars
-import ethnicityWhite from "@assets/generated_images/white_ethnicity_face_avatar.png";
-import ethnicityBlack from "@assets/generated_images/black_ethnicity_face_avatar.png";
-import ethnicityHispanic from "@assets/generated_images/hispanic_ethnicity_face_avatar.png";
-import ethnicityAsian from "@assets/generated_images/asian_ethnicity_face_avatar.png";
-import ethnicityIndian from "@assets/generated_images/indian_ethnicity_face_avatar.png";
-import ethnicitySEAsian from "@assets/generated_images/se_asian_ethnicity_face_avatar.png";
-import ethnicityMidEast from "@assets/generated_images/mid_eastern_ethnicity_avatar.png";
-import ethnicityIndigenous from "@assets/generated_images/indigenous_ethnicity_avatar.png";
-import ethnicityDiverse from "@assets/generated_images/diverse_ethnicity_avatar.png";
+// Import ethnicity face avatars - Female
+import ethnicityWhiteFemale from "@assets/generated_images/white_ethnicity_face_avatar.png";
+import ethnicityBlackFemale from "@assets/generated_images/black_ethnicity_face_avatar.png";
+import ethnicityHispanicFemale from "@assets/generated_images/hispanic_ethnicity_face_avatar.png";
+import ethnicityAsianFemale from "@assets/generated_images/asian_ethnicity_face_avatar.png";
+import ethnicityIndianFemale from "@assets/generated_images/indian_ethnicity_face_avatar.png";
+import ethnicitySEAsianFemale from "@assets/generated_images/se_asian_ethnicity_face_avatar.png";
+import ethnicityMidEastFemale from "@assets/generated_images/mid_eastern_ethnicity_avatar.png";
+import ethnicityIndigenousFemale from "@assets/generated_images/indigenous_ethnicity_avatar.png";
+import ethnicityDiverseFemale from "@assets/generated_images/diverse_ethnicity_avatar.png";
+
+// Import ethnicity face avatars - Male
+import ethnicityWhiteMale from "@assets/generated_images/white_male_professional_headshot.png";
+import ethnicityBlackMale from "@assets/generated_images/black_male_professional_headshot.png";
+import ethnicityHispanicMale from "@assets/generated_images/hispanic_male_professional_headshot.png";
+import ethnicityAsianMale from "@assets/generated_images/asian_male_professional_headshot.png";
+import ethnicityIndianMale from "@assets/generated_images/indian_male_professional_headshot.png";
+import ethnicitySEAsianMale from "@assets/generated_images/se_asian_male_professional_headshot.png";
+import ethnicityMidEastMale from "@assets/generated_images/middle_eastern_male_headshot.png";
+import ethnicityIndigenousMale from "@assets/generated_images/indigenous_male_professional_headshot.png";
+import ethnicityDiverseMale from "@assets/generated_images/diverse_males_group_headshot.png";
 
 
 // Types
@@ -2862,15 +2873,15 @@ export default function MockupGenerator() {
                                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Ethnicity</label>
                                       <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2 w-full">
                                         {[
-                                          { value: "White", label: "White", image: ethnicityWhite },
-                                          { value: "Black", label: "Black", image: ethnicityBlack },
-                                          { value: "Hispanic", label: "Hispanic", image: ethnicityHispanic },
-                                          { value: "Asian", label: "Asian", image: ethnicityAsian },
-                                          { value: "Indian", label: "Indian", image: ethnicityIndian },
-                                          { value: "Southeast Asian", label: "SE Asian", image: ethnicitySEAsian },
-                                          { value: "Middle Eastern", label: "Mid Eastern", image: ethnicityMidEast },
-                                          { value: "Indigenous", label: "Indigenous", image: ethnicityIndigenous },
-                                          { value: "Diverse", label: "Diverse", image: ethnicityDiverse },
+                                          { value: "White", label: "White", imageMale: ethnicityWhiteMale, imageFemale: ethnicityWhiteFemale },
+                                          { value: "Black", label: "Black", imageMale: ethnicityBlackMale, imageFemale: ethnicityBlackFemale },
+                                          { value: "Hispanic", label: "Hispanic", imageMale: ethnicityHispanicMale, imageFemale: ethnicityHispanicFemale },
+                                          { value: "Asian", label: "Asian", imageMale: ethnicityAsianMale, imageFemale: ethnicityAsianFemale },
+                                          { value: "Indian", label: "Indian", imageMale: ethnicityIndianMale, imageFemale: ethnicityIndianFemale },
+                                          { value: "Southeast Asian", label: "SE Asian", imageMale: ethnicitySEAsianMale, imageFemale: ethnicitySEAsianFemale },
+                                          { value: "Middle Eastern", label: "Mid Eastern", imageMale: ethnicityMidEastMale, imageFemale: ethnicityMidEastFemale },
+                                          { value: "Indigenous", label: "Indigenous", imageMale: ethnicityIndigenousMale, imageFemale: ethnicityIndigenousFemale },
+                                          { value: "Diverse", label: "Diverse", imageMale: ethnicityDiverseMale, imageFemale: ethnicityDiverseFemale },
                                         ].map((option) => (
                                           <button
                                             key={option.value}
@@ -2884,7 +2895,7 @@ export default function MockupGenerator() {
                                                 : "hover:ring-2 hover:ring-muted-foreground/30 hover:ring-offset-2 hover:ring-offset-background"
                                             )}>
                                               <img 
-                                                src={option.image} 
+                                                src={modelDetails.sex === "MALE" ? option.imageMale : option.imageFemale} 
                                                 alt={option.label}
                                                 className="w-full h-full rounded-full object-cover"
                                               />
