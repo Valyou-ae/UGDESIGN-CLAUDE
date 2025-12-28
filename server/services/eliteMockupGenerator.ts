@@ -1032,7 +1032,8 @@ export async function generateSingleMockup(
   designBase64: string,
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
-  previousMockupReference?: string
+  previousMockupReference?: string,
+  batchSeed?: number
 ): Promise<GeneratedMockup | null> {
   await waitForRateLimit();
   await waitForConcurrencySlot();
@@ -1040,51 +1041,94 @@ export async function generateSingleMockup(
   try {
     const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
 
+    // PART 0: Design artwork - [IMAGE 1] (MUST come first per API spec)
+    parts.push({
+      inlineData: { data: designBase64, mimeType: "image/png" }
+    });
+
+    // PART 1: Persona headshot - [IMAGE 2] (if provided)
     if (personaHeadshot) {
       parts.push({
         inlineData: { data: personaHeadshot, mimeType: "image/png" }
       });
-      parts.push({
-        text: `===== CRITICAL IDENTITY REFERENCE - PHOTO PROVIDED =====
-[MANDATORY - HIGHEST PRIORITY - THIS IS THE PERSON TO RENDER]
-
-**IDENTITY LOCK ACTIVE** - A reference photo has been provided. You MUST render this EXACT same person.
-
-This is NOT a style reference. This is NOT optional. This IS the person who must appear in your output.
-
-FACE MATCHING (MANDATORY - PIXEL-LEVEL ACCURACY REQUIRED):
-1. BONE STRUCTURE: Copy the exact skull shape, cheekbone prominence, jawline angle
-2. NOSE: Exact same nose - bridge width, tip shape, nostril size, length
-3. MOUTH: Exact lip shape, lip thickness, philtrum length, mouth width
-4. EYES: Exact eye shape, spacing, depth, eyelid crease, brow position
-5. FOREHEAD: Same forehead height and hairline position
-6. CHIN: Exact chin shape, prominence, and width
-
-COLORING (MANDATORY - EXACT MATCH):
-1. SKIN TONE: Identical skin color, undertones, and complexion
-2. HAIR COLOR: Exact same shade - do not lighten or darken
-3. EYE COLOR: Exact same iris color
-4. HAIR STYLE: Identical cut, length, texture, and styling
-
-CONSISTENCY RULE:
-This same person must appear in ALL mockup angles (front, three-quarter, side, closeup).
-If you cannot match this face exactly, the output is INVALID.
-
-VERIFICATION CHECK:
-Before finalizing, ask: "Would someone who knows this person recognize them in my output?"
-If the answer is "no" or "maybe", regenerate with closer matching.
-
-===== END IDENTITY REFERENCE =====`
-      });
     }
 
-    // Add previous mockup as additional consistency reference
+    // PART 2: Previous mockup reference (if provided, for cross-angle consistency)
     if (previousMockupReference) {
       parts.push({
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
-      parts.push({
-        text: `===== CROSS-ANGLE CONSISTENCY REFERENCE =====
+    }
+
+    // Build the text prompt referencing [IMAGE 1] and [IMAGE 2]
+    let promptText = `===== [IMAGE 1] DESIGN ASSET - IMMUTABLE =====
+[MANDATORY - THIS IS THE EXACT ARTWORK TO APPLY]
+
+The first image provided is [IMAGE 1] - the EXACT design that MUST appear on the product.
+
+IMMUTABLE ASSET RULES:
+- [IMAGE 1] is a FINAL ASSET - do NOT redraw, recreate, or reinterpret it
+- Apply [IMAGE 1] directly to the garment's print area as-is
+- Colors must match [IMAGE 1] EXACTLY - no shifts, no filters, no alterations
+- If [IMAGE 1] has borders/outlines, KEEP them. If not, DO NOT add them.
+- Shapes, proportions, and geometry must be preserved pixel-perfect
+
+DISTORTION PHYSICS FOR FABRIC APPLICATION:
+CYLINDRICAL_MAPPING:
+- The design wraps around the body's cylindrical torso shape
+- Horizontal stretch follows body curvature (more stretch at sides)
+- Vertical lines curve with body contours
+- Design compresses in valleys (armpit, waist) and stretches on peaks (chest, shoulders)
+
+FOLD_DISTORTION:
+- Where fabric folds occur, design MUST compress proportionally
+- Fold valleys: Design compresses by 20-40%
+- Fold peaks: Design visible with natural lighting highlights
+- Creases interrupt the design naturally like real printed fabric
+
+PRINT APPLICATION:
+- Design integrates INTO the fabric, not floating above it
+- Fabric texture visible through semi-transparent areas
+- Lighting on design matches garment lighting exactly
+- Shadows fall naturally across both fabric and printed design
+
+CRITICAL: The result should look like a real professionally printed garment, 
+NOT like a design pasted on top. [IMAGE 1] must appear as if it was 
+physically printed on the fabric before the photo was taken.
+
+===== END [IMAGE 1] DESIGN ASSET =====
+`;
+
+    if (personaHeadshot) {
+      promptText += `
+===== [IMAGE 2] MODEL IDENTITY LOCK =====
+[MANDATORY - THIS IS THE PERSON WHO MUST APPEAR]
+
+The second image provided is [IMAGE 2] - the EXACT person who must appear in your output.
+
+**IDENTITY LOCK ACTIVE** - This is NOT a style reference. This IS the person to render.
+
+MODEL IDENTITY MATCHING (Rule 1: Identity Lock):
+- FACE: Copy exact bone structure, nose, mouth, eyes, chin from [IMAGE 2]
+- SKIN: Identical skin tone, undertones, complexion as [IMAGE 2]
+- HAIR: Exact same color, style, length, texture as [IMAGE 2]
+- EYES: Same iris color, eye shape, and expression
+
+CONSISTENCY ACROSS ANGLES:
+The model in [IMAGE 2] must appear in ALL shots from this batch.
+Only the camera angle changes - the person stays IDENTICAL.
+
+VERIFICATION: Would someone who knows this person recognize them?
+If "no" or "maybe", the output is INVALID.
+
+===== END [IMAGE 2] IDENTITY LOCK =====
+`;
+    }
+
+    if (previousMockupReference) {
+      const refImageNum = personaHeadshot ? 3 : 2;
+      promptText += `
+===== [IMAGE ${refImageNum}] CROSS-ANGLE CONSISTENCY REFERENCE =====
 [MANDATORY - MATCH THIS PREVIOUS SHOT]
 
 This is a mockup from a PREVIOUS ANGLE of the SAME photoshoot.
@@ -1098,56 +1142,31 @@ CONSISTENCY REQUIREMENTS:
 The person in your output must be IMMEDIATELY RECOGNIZABLE as the same individual from this reference.
 Only the CAMERA ANGLE should change - everything else stays consistent.
 
-===== END CROSS-ANGLE REFERENCE =====`
-      });
+===== END CROSS-ANGLE REFERENCE =====
+`;
     }
 
-    parts.push({
-      inlineData: { data: designBase64, mimeType: "image/png" }
+    promptText += `
+Apply [IMAGE 1] to the product as specified:
+
+${renderSpec.fullPrompt}`;
+
+    parts.push({ text: promptText });
+
+    logger.info("Calling Gemini API for mockup generation", { 
+      source: "eliteMockupGenerator", 
+      model: MODELS.IMAGE_GENERATION,
+      batchSeed,
+      partsCount: parts.length
     });
-
-    parts.push({
-      text: `===== CRITICAL DESIGN REFERENCE =====
-[MANDATORY - DO NOT MODIFY THE DESIGN]
-
-This is the EXACT design that MUST appear on the product. Use this image AS-IS.
-
-STRICT DESIGN FIDELITY REQUIREMENTS:
-1. COLORS: Keep the EXACT same colors - do not alter, shift, or recolor any part of the design
-2. BORDERS/OUTLINES: If the design has borders, strokes, or outlines - KEEP THEM. If it does NOT have borders - DO NOT ADD THEM
-3. SHAPES: Maintain the EXACT same shapes, proportions, and geometry
-4. DETAILS: Preserve ALL details, gradients, textures, and effects from the original
-5. NO REDRAWING: Do NOT redraw, recreate, or reinterpret the design - project it directly onto the garment
-6. NO FILTERS: Do NOT apply artistic filters, effects, or style changes to the design
-
-WHAT TO DO:
-- Place this EXACT image onto the product's print area
-- Scale it proportionally to fit the designated area
-- Apply natural fabric distortion based on body contours
-- Adjust lighting/shadows to match the scene
-
-WHAT NOT TO DO:
-- DO NOT add borders, outlines, or strokes that aren't in the original
-- DO NOT remove borders, outlines, or strokes that ARE in the original
-- DO NOT change any colors (even slightly)
-- DO NOT simplify or "clean up" the design
-- DO NOT recreate the design from scratch
-
-The design on the final mockup MUST be pixel-perfect identical to this reference (except for natural fabric distortion and lighting).
-
-===== END DESIGN REFERENCE =====
-
-Apply this design to the product as specified:
-
-${renderSpec.fullPrompt}`
-    });
-
-    logger.info("Calling Gemini API for mockup generation", { source: "eliteMockupGenerator", model: MODELS.IMAGE_GENERATION });
     
     const response = await genAI.models.generateContent({
       model: MODELS.IMAGE_GENERATION,
       contents: [{ role: "user", parts }],
-      config: { responseModalities: [Modality.TEXT, Modality.IMAGE] }
+      config: { 
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+        seed: batchSeed
+      }
     });
 
     logger.info("Gemini API response received", { source: "eliteMockupGenerator", hasCandidates: !!response.candidates, candidateCount: response.candidates?.length || 0 });
@@ -1205,13 +1224,14 @@ export async function generateMockupWithRetry(
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
   previousMockupReference?: string,
-  maxRetries: number = GENERATION_CONFIG.MAX_RETRIES
+  maxRetries: number = GENERATION_CONFIG.MAX_RETRIES,
+  batchSeed?: number
 ): Promise<GeneratedMockup | null> {
   let lastError: Error | null = null;
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const result = await generateSingleMockup(designBase64, renderSpec, personaHeadshot, previousMockupReference);
+      const result = await generateSingleMockup(designBase64, renderSpec, personaHeadshot, previousMockupReference, batchSeed);
       if (result) {
         return result;
       }
@@ -1252,6 +1272,11 @@ export async function generateMockupBatch(
   onStage?: (update: StageUpdate) => void
 ): Promise<MockupBatch> {
   const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // SEED STRATEGY: Generate a single seed for the entire batch for consistency
+  // This ensures consistent lighting, model features, and environment across all angles
+  const batchSeed = Math.floor(Math.random() * 2147483647);
+  logger.info("Generated batch seed for consistency", { source: "eliteMockupGenerator", batchId, batchSeed });
   
   // Helper to report stage updates
   const reportStage = (stage: GenerationStage, message: string, progress: number) => {
@@ -1445,12 +1470,14 @@ export async function generateMockupBatch(
     );
 
     // Use both headshot AND first successful mockup as references for better consistency
-    // When compositing, we still send the design for AI reference but prompt instructs green placeholder generation
+    // Pass batchSeed for consistent lighting, model features, and environment across all angles
     const result = await generateMockupWithRetry(
       request.designImage,
       renderSpec,
       personaHeadshot,
-      referenceImage
+      referenceImage,
+      GENERATION_CONFIG.MAX_RETRIES,
+      batchSeed
     );
 
     if (result) {
@@ -1485,7 +1512,8 @@ export async function generateMockupBatch(
                   renderSpec,
                   personaHeadshot,
                   referenceImage,
-                  1
+                  1,
+                  batchSeed
                 );
                 if (retryResult?.imageData) {
                   currentMockup = retryResult.imageData;
