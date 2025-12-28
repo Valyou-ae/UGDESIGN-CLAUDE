@@ -1169,12 +1169,50 @@ If the answer is "no" or "maybe", regenerate with closer matching.
     }
 
     // Add previous mockup as additional consistency reference
+    // IMPORTANT: When a personaHeadshot is provided, the reference is ONLY for environment/design/lighting
+    // NOT for face/model identity (which comes from the headshot above)
     if (previousMockupReference) {
       parts.push({
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
-      parts.push({
-        text: `===== CROSS-BATCH CONSISTENCY REFERENCE (CRITICAL) =====
+      
+      // Use different prompts based on whether we have a size-specific headshot
+      const referencePrompt = personaHeadshot 
+        ? `===== ENVIRONMENT & DESIGN CONSISTENCY REFERENCE =====
+[IMPORTANT - USE FOR BACKGROUND, DESIGN, AND LIGHTING ONLY]
+
+This reference image shows a previous mockup from the same batch. Use it ONLY for:
+
+1. BACKGROUND/ENVIRONMENT CONSISTENCY:
+   - Match the exact same background setting (studio, outdoor, etc.)
+   - Same backdrop color and style
+   - Same environmental elements
+
+2. DESIGN ARTWORK CONSISTENCY:
+   - The printed design on the garment must look IDENTICAL
+   - Same colors, proportions, and placement
+   - DO NOT reinterpret the artwork
+
+3. LIGHTING CONSISTENCY:
+   - Same lighting setup and direction
+   - Same color temperature and shadow style
+   - Same overall mood and atmosphere
+
+4. PHOTOGRAPHY STYLE:
+   - Same color grading and visual treatment
+   - Same level of realism and quality
+
+**CRITICAL - DO NOT USE THIS REFERENCE FOR:**
+- Face or facial features (use the IDENTITY REFERENCE PHOTO above instead)
+- Body type or proportions (use the somatic description in the prompt)
+- Hair style or color (use the IDENTITY REFERENCE PHOTO above instead)
+- Skin tone (use the IDENTITY REFERENCE PHOTO above instead)
+
+The MODEL/PERSON identity comes from the separate headshot reference provided above.
+This reference is ONLY for matching the environment, design, and lighting.
+
+===== END ENVIRONMENT REFERENCE =====`
+        : `===== CROSS-BATCH CONSISTENCY REFERENCE (CRITICAL) =====
 [MANDATORY - MATCH THIS REFERENCE SHOT EXACTLY]
 
 This is a mockup from the SAME batch/photoshoot. Your output MUST match this reference in ALL aspects EXCEPT the camera angle and body size.
@@ -1185,38 +1223,28 @@ MANDATORY CONSISTENCY REQUIREMENTS:
    - If reference shows gray studio backdrop, use IDENTICAL gray studio backdrop
    - If reference shows urban street, use IDENTICAL urban setting
    - DO NOT change environment type (studio to outdoor = VIOLATION)
-   - Background elements must be PIXEL-FOR-PIXEL identical where possible
 
 2. EXACT SAME DESIGN ON GARMENT:
    - The printed design must be IDENTICAL to the reference
    - Same colors, same art style, same borders/outlines
-   - DO NOT reinterpret or modify the design
 
 3. SAME MODEL IDENTITY (for wearables):
    - This is the SAME PERSON - match their face, hair, skin tone EXACTLY
    - Same facial features, same hair style, same expression type
 
 4. SAME LIGHTING CONDITIONS:
-   - Same lighting setup (if studio lighting in reference, use studio lighting)
-   - Same color temperature and shadow direction
+   - Same lighting setup and color temperature
 
 5. SAME PHOTOGRAPHY STYLE:
    - Same color grading, mood, and visual treatment
-   - Same level of realism and quality
 
 WHAT MAY DIFFER:
 - Camera angle (as specified in the prompt)
 - Body size (if rendering a different size, adjust body proportionally)
-- Garment fit (adjust for size, but same garment type)
 
-WHAT MUST NOT DIFFER:
-- Background/environment
-- Design artwork on garment
-- Model's identity/face
-- Lighting style
+===== END CROSS-BATCH REFERENCE =====`;
 
-===== END CROSS-BATCH REFERENCE =====`
-      });
+      parts.push({ text: referencePrompt });
     }
 
     parts.push({
@@ -1259,7 +1287,13 @@ Apply this design to the product as specified:
 ${renderSpec.fullPrompt}`
     });
 
-    logger.info("Calling Gemini API for mockup generation", { source: "eliteMockupGenerator", model: MODELS.IMAGE_GENERATION });
+    logger.info("Calling Gemini API for mockup generation", { 
+      source: "eliteMockupGenerator", 
+      model: MODELS.IMAGE_GENERATION,
+      hasPersonaHeadshot: !!personaHeadshot,
+      hasPreviousReference: !!previousMockupReference,
+      referenceMode: personaHeadshot ? "environment_only" : "full_consistency"
+    });
     
     const response = await genAI.models.generateContent({
       model: MODELS.IMAGE_GENERATION,
