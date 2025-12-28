@@ -145,7 +145,7 @@ export interface IStorage {
   removeItemFromBoard(itemId: string): Promise<void>;
   verifyBoardItemOwnership(userId: string, itemId: string): Promise<boolean>;
 
-  getGalleryImages(limit?: number): Promise<Omit<GalleryImage, 'imageUrl'>[]>;
+  getGalleryImages(limit?: number): Promise<(Omit<GalleryImage, 'imageUrl'> & { creatorId?: string | null })[]>;
   getGalleryImageById(imageId: string): Promise<GalleryImage | undefined>;
   getGalleryImageBySourceId(sourceImageId: string): Promise<GalleryImage | undefined>;
   createGalleryImage(data: { title: string; imageUrl: string; creator: string; category?: string; aspectRatio?: string; prompt?: string; sourceImageId?: string }): Promise<GalleryImage>;
@@ -1132,8 +1132,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(moodBoardItems).where(eq(moodBoardItems.id, itemId));
   }
 
-  async getGalleryImages(limit: number = 200): Promise<Omit<GalleryImage, 'imageUrl'>[]> {
-    return db.select({
+  async getGalleryImages(limit: number = 200): Promise<(Omit<GalleryImage, 'imageUrl'> & { creatorId?: string | null })[]> {
+    const results = await db.select({
       id: galleryImages.id,
       sourceImageId: galleryImages.sourceImageId,
       title: galleryImages.title,
@@ -1146,9 +1146,12 @@ export class DatabaseStorage implements IStorage {
       viewCount: galleryImages.viewCount,
       useCount: galleryImages.useCount,
       createdAt: galleryImages.createdAt,
+      creatorId: generatedImages.userId,
     }).from(galleryImages)
+      .leftJoin(generatedImages, eq(galleryImages.sourceImageId, generatedImages.id))
       .orderBy(desc(galleryImages.createdAt))
       .limit(limit);
+    return results;
   }
 
   async getGalleryImageById(imageId: string): Promise<GalleryImage | undefined> {

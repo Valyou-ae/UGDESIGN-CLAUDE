@@ -119,7 +119,7 @@ export function registerImageRoutes(app: Express, middleware: Middleware) {
       }
 
       // Invalidate gallery cache so new image appears immediately
-      await invalidateCache('gallery:images');
+      await invalidateCache('gallery:images:v2');
 
       res.json({ image });
     } catch (error) {
@@ -295,7 +295,7 @@ export function registerImageRoutes(app: Express, middleware: Middleware) {
         return res.status(404).json({ message: "Image not found" });
       }
       // Invalidate gallery cache to reflect visibility change
-      await invalidateCache('gallery:images');
+      await invalidateCache('gallery:images:v2');
       res.json({ image });
     } catch (error) {
       logger.error("Visibility toggle error", error, { source: "images" });
@@ -491,8 +491,9 @@ export function registerImageRoutes(app: Express, middleware: Middleware) {
 
   // Edit an image using AI - creates a new version
   app.post("/api/images/:id/edit", requireAuth, async (req: Request, res: Response) => {
+    // Define userId at handler scope for catch block access
+    const userId = getUserId(req as AuthenticatedRequest);
     try {
-      const userId = getUserId(req as AuthenticatedRequest);
       const { id } = req.params;
       const { editPrompt } = req.body;
 

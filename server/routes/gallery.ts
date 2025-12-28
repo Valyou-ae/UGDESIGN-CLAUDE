@@ -13,25 +13,48 @@ export function registerGalleryRoutes(app: Express, middleware: Middleware) {
   app.get("/api/gallery", async (req: Request, res: Response) => {
     try {
       // Cache gallery images for 5 minutes to reduce DB load
+      // Note: cached data does NOT include user-specific fields (isLiked, isFollowing)
+      // Those are computed per-request below
       const images = await getFromCache(
-        'gallery:images',
+        'gallery:images:v2',
         CACHE_TTL.GALLERY_IMAGES,
         () => storage.getGalleryImages()
       );
       const userId = (req as AuthenticatedRequest).user?.claims?.sub;
 
       let likedImageIds: string[] = [];
+      let followingUserIds: string[] = [];
       if (userId) {
-        likedImageIds = await storage.getUserLikedImages(userId);
+        // Fetch user-specific data per-request (not cached)
+        const [likedIds, followingData] = await Promise.all([
+          storage.getUserLikedImages(userId),
+          storage.getFollowing(userId, 1000, 0)
+        ]);
+        likedImageIds = likedIds;
+        followingUserIds = followingData.users.map(u => u.id);
       }
 
-      const imagesWithLikeStatus = images.map(img => ({
-        ...img,
+      // Create new response objects with user-specific status - do not mutate cached data
+      const imagesWithStatus = images.map(img => ({
+        id: img.id,
+        sourceImageId: img.sourceImageId,
+        title: img.title,
+        creator: img.creator,
+        verified: img.verified,
+        category: img.category,
+        aspectRatio: img.aspectRatio,
+        prompt: img.prompt,
+        likeCount: img.likeCount,
+        viewCount: img.viewCount,
+        useCount: img.useCount,
+        createdAt: img.createdAt,
+        creatorId: img.creatorId,
         thumbnailUrl: `/api/gallery/${img.id}/thumbnail`,
-        isLiked: likedImageIds.includes(img.id)
+        isLiked: likedImageIds.includes(img.id),
+        isFollowing: img.creatorId ? followingUserIds.includes(img.creatorId) : false
       }));
 
-      res.json({ images: imagesWithLikeStatus });
+      res.json({ images: imagesWithStatus });
     } catch (error) {
       logger.error("Gallery error", error, { source: "gallery" });
       res.status(500).json({ message: "Server error" });
@@ -44,7 +67,7 @@ export function registerGalleryRoutes(app: Express, middleware: Middleware) {
       const { imageId } = req.params;
 
       const result = await storage.likeGalleryImage(imageId, userId);
-      invalidateCache('gallery:images');
+      invalidateCache('gallery:images:v2');
       res.json(result);
     } catch (error) {
       logger.error("Like error", error, { source: "gallery" });

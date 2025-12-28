@@ -155,7 +155,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
           aspectRatio: "1:1",
           prompt,
         }),
-        invalidateCache('gallery:images')
+        invalidateCache('gallery:images:v2')
       ]);
 
       return res.json({ imageData: result.imageData, mimeType: result.mimeType });
@@ -385,7 +385,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
                       aspectRatio,
                       prompt,
                     }),
-                    invalidateCache('gallery:images')
+                    invalidateCache('gallery:images:v2')
                   ]);
                 } catch (galleryError) {
                   logger.error("Failed to add draft image to gallery", galleryError, { source: "generation" });
@@ -664,7 +664,7 @@ export async function registerGenerationRoutes(app: Express, middleware: Middlew
                       aspectRatio,
                       prompt,
                     }),
-                    invalidateCache('gallery:images')
+                    invalidateCache('gallery:images:v2')
                   ]);
                   logger.info(`[Premium Gen] Image ${index} added to public gallery`, { source: "generation" });
                 } catch (galleryError) {

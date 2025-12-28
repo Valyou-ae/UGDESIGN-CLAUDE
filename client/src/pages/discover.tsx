@@ -12,14 +12,18 @@ import {
   Search,
   X,
   Share2,
-  Link2
+  Link2,
+  UserPlus,
+  UserCheck
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/sidebar";
-import { galleryApi } from "@/lib/api";
+import { galleryApi, socialApi } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
+import { useLoginPopup } from "@/components/login-popup";
 import { useToast } from "@/hooks/use-toast";
 
 function formatCount(num: number): string {
@@ -51,6 +55,7 @@ interface InspirationItem {
   title: string;
   image: string;
   creator: string;
+  creatorId?: string | null;
   verified: boolean;
   views: number;
   likes: number;
@@ -60,6 +65,7 @@ interface InspirationItem {
   aspectRatio: "1:1" | "9:16" | "16:9" | "4:5" | "3:4";
   prompt: string;
   isLiked?: boolean;
+  isFollowing?: boolean;
   isGalleryImage?: boolean;
   createdAt?: string;
 }
@@ -76,8 +82,12 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
   const [remixed, setRemixed] = useState(false);
   const [viewTracked, setViewTracked] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(item.isFollowing || false);
+  const [followLoading, setFollowLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const { openLoginPopup } = useLoginPopup();
 
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/share/${item.id}` : '';
 
@@ -114,6 +124,33 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
     const text = `Check out this AI-generated image: "${item.prompt.slice(0, 80)}${item.prompt.length > 80 ? '...' : ''}"`;
     const url = `https://wa.me/?text=${encodeURIComponent(text + ' ' + shareUrl)}`;
     window.open(url, '_blank');
+  };
+
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!item.creatorId) return;
+    
+    if (!isAuthenticated) {
+      openLoginPopup();
+      return;
+    }
+    
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        const result = await socialApi.unfollowUser(item.creatorId);
+        setIsFollowing(result.isFollowing);
+        toast({ title: "Unfollowed", description: `You unfollowed @${item.creator}` });
+      } else {
+        const result = await socialApi.followUser(item.creatorId);
+        setIsFollowing(result.isFollowing);
+        toast({ title: "Following!", description: `You are now following @${item.creator}` });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to update follow status", variant: "destructive" });
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -240,10 +277,40 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
           
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <h3 className="text-base font-semibold text-white truncate drop-shadow-lg">{item.title}</h3>
-            <div className="flex items-center gap-2 mt-1.5">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#f8991c] to-[#B8860B]" />
-              <span className="text-xs text-white/80">@{item.creator}</span>
-              {item.verified && <BadgeCheck className="h-3 w-3 text-[#B8860B]" />}
+            <div className="flex items-center justify-between mt-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-tr from-[#f8991c] to-[#B8860B]" />
+                <span className="text-xs text-white/80">@{item.creator}</span>
+                {item.verified && <BadgeCheck className="h-3 w-3 text-[#B8860B]" />}
+              </div>
+              {item.isGalleryImage && item.creatorId && (
+                <button
+                  onClick={handleFollow}
+                  disabled={followLoading}
+                  className={cn(
+                    "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all",
+                    isFollowing 
+                      ? "bg-white/20 text-white hover:bg-red-500/80" 
+                      : "bg-[#f8991c] text-white hover:bg-[#e88a17]"
+                  )}
+                  data-testid={`button-follow-${item.id}`}
+                  title={isFollowing ? "Unfollow" : "Follow"}
+                >
+                  {followLoading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : isFollowing ? (
+                    <>
+                      <UserCheck className="h-3 w-3" />
+                      <span className="hidden sm:inline">Following</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-3 w-3" />
+                      <span className="hidden sm:inline">Follow</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
             
             <AnimatePresence>
@@ -2010,7 +2077,8 @@ export default function Discover() {
           id: img.id,
           title: img.prompt?.slice(0, 40) + (img.prompt?.length > 40 ? '...' : '') || 'Community Creation',
           image: img.thumbnailUrl || img.imageUrl,
-          creator: img.creatorName || 'anonymous',
+          creator: img.creatorName || img.creator || 'anonymous',
+          creatorId: img.creatorId || null,
           verified: false,
           views: img.viewCount || 0,
           likes: img.likeCount || 0,
@@ -2020,6 +2088,7 @@ export default function Discover() {
           aspectRatio: (img.aspectRatio as "1:1" | "9:16" | "16:9" | "4:5" | "3:4") || '1:1',
           prompt: img.prompt || '',
           isLiked: img.isLiked || false,
+          isFollowing: img.isFollowing || false,
           isGalleryImage: true,
           createdAt: img.createdAt
         }));
