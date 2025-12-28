@@ -435,6 +435,7 @@ export interface GenerationJob {
   product: Product;
   color: ProductColor;
   angle: MockupAngle;
+  size?: string;
   modelDetails?: ModelDetails;
   brandStyle: BrandStyleKey;
   lightingPreset?: string;
@@ -531,6 +532,7 @@ export interface MockupGenerationRequest {
   product: Product;
   colors: ProductColor[];
   angles: MockupAngle[];
+  sizes?: string[];
   modelDetails?: ModelDetails;
   brandStyle: BrandStyleKey;
   platform?: PlatformKey;

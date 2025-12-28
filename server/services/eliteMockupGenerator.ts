@@ -1201,24 +1201,35 @@ export async function generateMockupBatch(
   }
 
   const jobs: GenerationJob[] = [];
-  for (const color of request.colors) {
-    for (const angle of request.angles) {
-      jobs.push({
-        id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        designImage: request.designImage,
-        product: request.product,
-        color,
-        angle,
-        modelDetails: request.modelDetails,
-        brandStyle: request.brandStyle,
-        lightingPreset: request.lightingPreset,
-        materialCondition: request.materialCondition,
-        environmentPrompt: request.environmentPrompt,
-        personaLockImage: personaHeadshot,
-        status: 'pending',
-        retryCount: 0,
-        createdAt: Date.now()
-      });
+  const sizesToGenerate = request.sizes && request.sizes.length > 0 
+    ? request.sizes 
+    : [request.modelDetails?.modelSize || 'M'];
+  
+  for (const size of sizesToGenerate) {
+    for (const color of request.colors) {
+      for (const angle of request.angles) {
+        const sizeModelDetails = request.modelDetails 
+          ? { ...request.modelDetails, modelSize: size as Size }
+          : undefined;
+        
+        jobs.push({
+          id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          designImage: request.designImage,
+          product: request.product,
+          color,
+          angle,
+          size,
+          modelDetails: sizeModelDetails,
+          brandStyle: request.brandStyle,
+          lightingPreset: request.lightingPreset,
+          materialCondition: request.materialCondition,
+          environmentPrompt: request.environmentPrompt,
+          personaLockImage: personaHeadshot,
+          status: 'pending',
+          retryCount: 0,
+          createdAt: Date.now()
+        });
+      }
     }
   }
 

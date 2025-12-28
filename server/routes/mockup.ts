@@ -409,7 +409,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
 
         const sizeMap: Record<string, string> = {
           "XS": "XS", "S": "S", "M": "M", "L": "L", "XL": "XL",
-          "2XL": "XXL", "XXL": "XXL", "3XL": "XXXL", "XXXL": "XXXL", "4XL": "XXXL", "5XL": "XXXL"
+          "2XL": "XXL", "XXL": "XXL", "3XL": "XXXL", "XXXL": "XXXL", 
+          "4XL": "4XL", "5XL": "5XL"
         };
 
         const rawSizes: string[] = Array.isArray(productSizes) && productSizes.length > 0
@@ -421,100 +422,85 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         let personaLockFailed = false;
         let batchCompleted = false;
         let totalGeneratedCount = 0;
-        const totalSizes = sizesToGenerate.length;
-        const jobsPerSize = angles.length * colors.length;
-        const totalJobs = jobsPerSize * totalSizes;
+        const totalJobs = sizesToGenerate.length * angles.length * colors.length;
 
         sendEvent("status", { stage: "preparing", message: "Preparing model reference...", progress: 8 });
 
-        let sharedPersonaLock: unknown = undefined;
+        const mergedCustomization = modelDetails?.customization || modelCustomization;
 
         try {
-          for (let sizeIndex = 0; sizeIndex < sizesToGenerate.length; sizeIndex++) {
-            const currentSize = sizesToGenerate[sizeIndex];
+          logger.info("Starting batch generation with all sizes", { 
+            source: "mockup", 
+            sizes: sizesToGenerate, 
+            totalJobs,
+            colorsCount: colors.length,
+            anglesCount: angles.length
+          });
 
-            const sizeModelDetails = { ...mappedModelDetails, modelSize: currentSize };
-            const sizeLabel = totalSizes > 1 ? ` (Size ${currentSize})` : '';
+          const batch = await eliteGenerator.generateMockupBatch({
+            journey: isAopJourney ? "AOP" : "DTG",
+            designImage: base64Data,
+            isSeamlessPattern: isAopJourney ? (isSeamlessPattern ?? true) : undefined,
+            product: product,
+            colors: colors,
+            angles: angles as ("front" | "back" | "left" | "right")[],
+            sizes: sizesToGenerate,
+            modelDetails: { ...mappedModelDetails, customization: mergedCustomization } as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['modelDetails'],
+            brandStyle: mappedStyle as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['brandStyle'],
+            lightingPreset: 'three-point-classic',
+            materialCondition: 'BRAND_NEW',
+            environmentPrompt: scene,
+            patternScale: isAopJourney ? patternScale : undefined,
+            outputQuality: outputQuality
+          }, (completed, _total, job) => {
+            const progress = 10 + Math.round((completed / totalJobs) * 85);
+            const jobSize = job.size || mappedModelDetails.modelSize;
 
-            sendEvent("status", {
-              stage: "generating",
-              message: `Generating size ${currentSize}${totalSizes > 1 ? ` (${sizeIndex + 1}/${totalSizes})` : ''}...`,
-              progress: 10 + Math.round((sizeIndex / totalSizes) * 10)
-            });
+            logger.info("onProgress callback called", { source: "mockup", jobId: job.id, jobStatus: job.status, jobSize, hasResult: !!job.result, hasImageData: !!job.result?.imageData });
 
-            const mergedCustomization = modelDetails?.customization || modelCustomization;
+            const batchJob = {
+              id: job.id,
+              color: job.color.name,
+              angle: job.angle,
+              size: jobSize,
+              status: job.status as 'pending' | 'processing' | 'completed' | 'failed',
+              retryCount: job.retryCount || 0,
+              imageData: job.result?.imageData,
+              mimeType: job.result?.mimeType,
+              error: job.error
+            };
 
-            const batch = await eliteGenerator.generateMockupBatch({
-              journey: isAopJourney ? "AOP" : "DTG",
-              designImage: base64Data,
-              isSeamlessPattern: isAopJourney ? (isSeamlessPattern ?? true) : undefined,
-              product: product,
-              colors: colors,
-              angles: angles as ("front" | "back" | "left" | "right")[],
-              modelDetails: { ...sizeModelDetails, customization: mergedCustomization } as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['modelDetails'],
-              brandStyle: mappedStyle as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['brandStyle'],
-              lightingPreset: 'three-point-classic',
-              materialCondition: 'BRAND_NEW',
-              environmentPrompt: scene,
-              existingPersonaLock: sharedPersonaLock,
-              patternScale: isAopJourney ? patternScale : undefined,
-              outputQuality: outputQuality
-            }, (completed, _total, job) => {
-              const completedOverall = (sizeIndex * jobsPerSize) + completed;
-              const progress = 10 + Math.round((completedOverall / totalJobs) * 85);
-
-              logger.info("onProgress callback called", { source: "mockup", jobId: job.id, jobStatus: job.status, hasResult: !!job.result, hasImageData: !!job.result?.imageData });
-
-              const batchJob = {
-                id: job.id,
-                color: job.color.name,
-                angle: job.angle,
-                size: currentSize,
-                status: job.status as 'pending' | 'processing' | 'completed' | 'failed',
-                retryCount: job.retryCount || 0,
-                imageData: job.result?.imageData,
-                mimeType: job.result?.mimeType,
-                error: job.error
-              };
-
-              if (job.status === 'completed' && job.result) {
-                totalGeneratedCount++;
-                logger.info("Sending completed image via SSE", { source: "mockup", jobId: job.id, imageDataLength: job.result.imageData?.length || 0 });
-                sendEvent("job_update", batchJob);
-                sendEvent("image", {
-                  jobId: job.id, angle: job.angle, color: job.color.name, size: currentSize,
-                  status: 'completed', imageData: job.result.imageData, mimeType: job.result.mimeType,
-                  retryCount: job.retryCount || 0
-                });
-              } else if (job.status === 'failed') {
-                sendEvent("job_update", batchJob);
-                sendEvent("image_error", {
-                  jobId: job.id, angle: job.angle, color: job.color.name, size: currentSize,
-                  status: 'failed', error: job.error || "Generation failed", retryCount: job.retryCount || 0
-                });
-              } else if (job.status === 'processing') {
-                sendEvent("job_update", { ...batchJob, status: 'processing' });
-              }
-
-              sendEvent("status", { stage: "generating", message: `Generated ${completedOverall}/${totalJobs} mockups${sizeLabel}...`, progress });
-            }, (error) => {
-              if (error.type === 'persona_lock_failed') {
-                personaLockFailed = true;
-                sendEvent("persona_lock_failed", { message: error.message, details: error.details, suggestion: "Try again or use a different model configuration" });
-              } else {
-                sendEvent("batch_error", { type: error.type, message: error.message, details: error.details });
-              }
-            });
-
-            if (personaLockFailed) break;
-
-            if (sizeIndex === 0 && batch.personaLock) {
-              sharedPersonaLock = batch.personaLock;
+            if (job.status === 'completed' && job.result) {
+              totalGeneratedCount++;
+              logger.info("Sending completed image via SSE", { source: "mockup", jobId: job.id, jobSize, imageDataLength: job.result.imageData?.length || 0 });
+              sendEvent("job_update", batchJob);
+              sendEvent("image", {
+                jobId: job.id, angle: job.angle, color: job.color.name, size: jobSize,
+                status: 'completed', imageData: job.result.imageData, mimeType: job.result.mimeType,
+                retryCount: job.retryCount || 0
+              });
+            } else if (job.status === 'failed') {
+              sendEvent("job_update", batchJob);
+              sendEvent("image_error", {
+                jobId: job.id, angle: job.angle, color: job.color.name, size: jobSize,
+                status: 'failed', error: job.error || "Generation failed", retryCount: job.retryCount || 0
+              });
+            } else if (job.status === 'processing') {
+              sendEvent("job_update", { ...batchJob, status: 'processing' });
             }
 
-            if (sizeIndex === 0 && batch.personaLockImage) {
-              sendEvent("persona_lock", { headshotImage: batch.personaLockImage });
+            sendEvent("status", { stage: "generating", message: `Generated ${completed}/${totalJobs} mockups...`, progress });
+          }, (error) => {
+            if (error.type === 'persona_lock_failed') {
+              personaLockFailed = true;
+              sendEvent("persona_lock_failed", { message: error.message, details: error.details, suggestion: "Try again or use a different model configuration" });
+            } else {
+              sendEvent("batch_error", { type: error.type, message: error.message, details: error.details });
             }
+          });
+
+          if (batch.personaLockImage) {
+            sendEvent("persona_lock", { headshotImage: batch.personaLockImage });
           }
 
           if (!personaLockFailed) {
