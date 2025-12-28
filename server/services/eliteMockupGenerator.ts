@@ -1032,7 +1032,6 @@ export async function generateSingleMockup(
   designBase64: string,
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
-  previousMockupReference?: string,
   batchSeed?: number
 ): Promise<GeneratedMockup | null> {
   await waitForRateLimit();
@@ -1047,109 +1046,112 @@ export async function generateSingleMockup(
     });
 
     // PART 1: Persona headshot - [IMAGE 2] (if provided)
+    // NOTE: Do NOT add previous mockup reference - it confuses AI's understanding of 3D volume
+    // Use seed for cross-angle consistency instead
     if (personaHeadshot) {
       parts.push({
         inlineData: { data: personaHeadshot, mimeType: "image/png" }
       });
     }
 
-    // PART 2: Previous mockup reference (if provided, for cross-angle consistency)
-    if (previousMockupReference) {
-      parts.push({
-        inlineData: { data: previousMockupReference, mimeType: "image/png" }
-      });
-    }
+    // Extract key info from renderSpec for the technical specification prompt
+    const productDetails = renderSpec.locks.product?.details || {};
+    const colorDetails = renderSpec.locks.color?.details || {};
+    const cameraDetails = renderSpec.locks.camera?.details || {};
+    const lightingDetails = renderSpec.locks.lighting?.details || {};
+    const personaDetails = renderSpec.locks.persona?.details || {};
+    
+    const productColor = colorDetails.productColor || 'Black';
+    const productHex = colorDetails.productHex || '#000000';
+    const angle = cameraDetails.angle || 'front';
+    const focalLength = cameraDetails.focalLength || '85mm';
+    const aperture = cameraDetails.aperture || 'f/8';
+    const lightingSetup = lightingDetails.setupName || 'Three-point studio';
+    const colorTemp = lightingDetails.colorTemperature || '5500K';
 
-    // Build the text prompt referencing [IMAGE 1] and [IMAGE 2]
-    let promptText = `===== [IMAGE 1] DESIGN ASSET - IMMUTABLE =====
-[MANDATORY - THIS IS THE EXACT ARTWORK TO APPLY]
+    // Build the "Golden" Technical Specification Prompt
+    let promptText = `===== TECHNICAL SPECIFICATION DOCUMENT =====
 
-The first image provided is [IMAGE 1] - the EXACT design that MUST appear on the product.
-
-IMMUTABLE ASSET RULES:
-- [IMAGE 1] is a FINAL ASSET - do NOT redraw, recreate, or reinterpret it
-- Apply [IMAGE 1] directly to the garment's print area as-is
-- Colors must match [IMAGE 1] EXACTLY - no shifts, no filters, no alterations
-- If [IMAGE 1] has borders/outlines, KEEP them. If not, DO NOT add them.
-- Shapes, proportions, and geometry must be preserved pixel-perfect
-
-DISTORTION PHYSICS FOR FABRIC APPLICATION:
-CYLINDRICAL_MAPPING:
-- The design wraps around the body's cylindrical torso shape
-- Horizontal stretch follows body curvature (more stretch at sides)
-- Vertical lines curve with body contours
-- Design compresses in valleys (armpit, waist) and stretches on peaks (chest, shoulders)
-
-FOLD_DISTORTION:
-- Where fabric folds occur, design MUST compress proportionally
-- Fold valleys: Design compresses by 20-40%
-- Fold peaks: Design visible with natural lighting highlights
-- Creases interrupt the design naturally like real printed fabric
-
-PRINT APPLICATION:
-- Design integrates INTO the fabric, not floating above it
-- Fabric texture visible through semi-transparent areas
-- Lighting on design matches garment lighting exactly
-- Shadows fall naturally across both fabric and printed design
-
-CRITICAL: The result should look like a real professionally printed garment, 
-NOT like a design pasted on top. [IMAGE 1] must appear as if it was 
-physically printed on the fabric before the photo was taken.
-
-===== END [IMAGE 1] DESIGN ASSET =====
+===== PART A: IDENTITY LOCK (WHO) =====
 `;
 
     if (personaHeadshot) {
-      promptText += `
-===== [IMAGE 2] MODEL IDENTITY LOCK =====
-[MANDATORY - THIS IS THE PERSON WHO MUST APPEAR]
+      promptText += `RULE: The model in the final render MUST be the EXACT SAME PERSON as shown in the reference headshot [IMAGE 2].
+Ignore the background of [IMAGE 2]; use it for facial identity and build reference only.
 
-The second image provided is [IMAGE 2] - the EXACT person who must appear in your output.
+IDENTITY REQUIREMENTS:
+- FACE: The person in the output must have the EXACT same face as [IMAGE 2]
+- SKIN TONE: Must match [IMAGE 2] exactly - same ethnicity, same complexion
+- HAIR: Same color, style, length, and texture as [IMAGE 2]
+- BUILD: Same body type and proportions as [IMAGE 2]
 
-**IDENTITY LOCK ACTIVE** - This is NOT a style reference. This IS the person to render.
-
-MODEL IDENTITY MATCHING (Rule 1: Identity Lock):
-- FACE: Copy exact bone structure, nose, mouth, eyes, chin from [IMAGE 2]
-- SKIN: Identical skin tone, undertones, complexion as [IMAGE 2]
-- HAIR: Exact same color, style, length, texture as [IMAGE 2]
-- EYES: Same iris color, eye shape, and expression
-
-CONSISTENCY ACROSS ANGLES:
-The model in [IMAGE 2] must appear in ALL shots from this batch.
-Only the camera angle changes - the person stays IDENTICAL.
-
-VERIFICATION: Would someone who knows this person recognize them?
-If "no" or "maybe", the output is INVALID.
-
-===== END [IMAGE 2] IDENTITY LOCK =====
+VERIFICATION: Would someone who knows this person in [IMAGE 2] recognize them in the output?
+If "no" or "maybe", the output is INVALID and must be regenerated.
 `;
-    }
-
-    if (previousMockupReference) {
-      const refImageNum = personaHeadshot ? 3 : 2;
-      promptText += `
-===== [IMAGE ${refImageNum}] CROSS-ANGLE CONSISTENCY REFERENCE =====
-[MANDATORY - MATCH THIS PREVIOUS SHOT]
-
-This is a mockup from a PREVIOUS ANGLE of the SAME photoshoot.
-
-CONSISTENCY REQUIREMENTS:
-1. SAME MODEL: This is the SAME PERSON - match their face, hair, and body EXACTLY
-2. SAME PRODUCT: Same garment with same pattern/design coverage
-3. SAME ENVIRONMENT: Same background, lighting conditions, and studio setup
-4. SAME STYLE: Same photography style, color grading, and mood
-
-The person in your output must be IMMEDIATELY RECOGNIZABLE as the same individual from this reference.
-Only the CAMERA ANGLE should change - everything else stays consistent.
-
-===== END CROSS-ANGLE REFERENCE =====
+    } else {
+      promptText += `No specific model identity lock. Use an appropriate model for the product presentation.
 `;
     }
 
     promptText += `
-Apply [IMAGE 1] to the product as specified:
+===== PART B: PRODUCT BLUEPRINT (WHAT) =====
+Garment Specification: ${productDetails.productName || 'T-Shirt'}
+- Category: ${productDetails.category || 'Apparel'}
+- Material: ${productDetails.fabricDescription || 'Professional 100% heavy cotton'}
+- The fabric must show natural cotton weave texture
+- Fit: Regular Fit on a size ${personaDetails.size || 'Medium'} frame
 
-${renderSpec.fullPrompt}`;
+FABRIC COLOR SPECIFICATION:
+The fabric color of the garment MUST be EXACTLY ${productColor} (Hex: ${productHex}).
+Do NOT shift, tint, or alter this color under any lighting conditions.
+The garment color must read as ${productColor} in the final image.
+
+===== PART C: PHYSICS ENGINE (3D DISTORTION - THE SECRET SAUCE) =====
+Apply the provided design asset [IMAGE 1] to the garment. It must be a 1:1 pixel-perfect copy.
+The design from [IMAGE 1] must be printed at exactly 12 inches wide on the center chest.
+
+3D DISTORTION PHYSICS:
+Map the flat design from [IMAGE 1] onto the cylindrical volume of the model's torso.
+- At the side edges, the design MUST compress horizontally by 35%
+- The design must follow every fold and wrinkle of the fabric
+- If a fold appears, the design must bend and distort with it
+- Design compresses in valleys (armpit, waist) and stretches on peaks (chest, shoulders)
+
+PRINT INTEGRATION:
+- Design integrates INTO the fabric fibers, not floating above it
+- Fabric texture visible through semi-transparent areas of the design
+- Lighting on design matches garment lighting exactly
+- Shadows fall naturally across both fabric and printed design
+- The result should look like a REAL professionally printed garment
+- [IMAGE 1] must appear as if it was physically printed on the fabric BEFORE the photo was taken
+
+CRITICAL: Do NOT render the design as a flat sticker pasted on top. It must have 3D fabric integration.
+
+===== PART D: LENS & LIGHTING (HOW) =====
+Photography: ${focalLength} lens at ${aperture}, positioned 6 feet away at eye level.
+Camera Angle: ${angle} view
+Lighting Setup: ${lightingSetup} (${colorTemp}) with soft fill shadows.
+Environment: Clean studio background, professional product photography setting.
+
+===== PART E: NEGATIVE PROMPT (EXCLUSIONS) =====
+${renderSpec.negativePrompts}
+
+MUST AVOID:
+- Flat sticker appearance
+- Floating logo
+- Bad anatomy, extra fingers
+- Cartoon or illustration style
+- Watermark
+- Low resolution
+- Blurry edges
+- Design that doesn't follow fabric folds
+- Wrong person (if [IMAGE 2] provided)
+
+===== END TECHNICAL SPECIFICATION =====`;
+
+    // NOTE: We intentionally do NOT append renderSpec.fullPrompt here
+    // The Technical Specification Document above follows the AI Studio "Golden Prompt" structure
+    // and contains all necessary instructions. Adding legacy prompts would conflict with this structure.
 
     parts.push({ text: promptText });
 
@@ -1223,7 +1225,6 @@ export async function generateMockupWithRetry(
   designBase64: string,
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
-  previousMockupReference?: string,
   maxRetries: number = GENERATION_CONFIG.MAX_RETRIES,
   batchSeed?: number
 ): Promise<GeneratedMockup | null> {
@@ -1231,7 +1232,7 @@ export async function generateMockupWithRetry(
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const result = await generateSingleMockup(designBase64, renderSpec, personaHeadshot, previousMockupReference, batchSeed);
+      const result = await generateSingleMockup(designBase64, renderSpec, personaHeadshot, batchSeed);
       if (result) {
         return result;
       }
@@ -1265,11 +1266,21 @@ export interface StageUpdate {
   progress: number;
 }
 
+export interface MockupReadyEvent {
+  index: number;
+  color: string;
+  colorHex: string;
+  angle: string;
+  imageData: string;
+  mimeType: string;
+}
+
 export async function generateMockupBatch(
   request: MockupGenerationRequest,
   onProgress?: (completed: number, total: number, job: GenerationJob) => void,
   onError?: (error: BatchGenerationError) => void,
-  onStage?: (update: StageUpdate) => void
+  onStage?: (update: StageUpdate) => void,
+  onMockupReady?: (mockup: MockupReadyEvent) => void
 ): Promise<MockupBatch> {
   const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
@@ -1403,49 +1414,16 @@ export async function generateMockupBatch(
   const totalJobs = jobs.length;
 
   // For wearable products with persona lock, sequential until first success, then parallelize rest
-  // This ensures cross-angle consistency while maximizing speed after reference is established
-  let firstSuccessfulMockup: string | undefined;
-  let processedJobsCount = 0;
-  
-  if (request.product.isWearable && personaLock) {
-    // Sequential phase: process jobs one by one until we get a successful reference
-    for (let i = 0; i < jobs.length; i++) {
-      const job = jobs[i];
-      await processJobWithReference(job, undefined);
-      processedJobsCount++;
-      
-      if (job.result?.imageData) {
-        firstSuccessfulMockup = job.result.imageData;
-        logger.info(`First successful mockup captured on job ${i + 1} for cross-angle consistency reference`, { source: "eliteMockupGenerator" });
-        break; // Got reference, switch to parallel mode
-      }
-    }
-    
-    // Parallel phase: process remaining jobs using the reference
-    const remainingJobs = jobs.slice(processedJobsCount);
-    if (remainingJobs.length > 0 && firstSuccessfulMockup) {
-      const batchSize = 2; // 2 parallel to balance speed vs API limits
-      
-      for (let i = 0; i < remainingJobs.length; i += batchSize) {
-        const batchJobs = remainingJobs.slice(i, i + batchSize);
-        await Promise.all(batchJobs.map(job => processJobWithReference(job, firstSuccessfulMockup)));
-      }
-    } else if (remainingJobs.length > 0) {
-      // No reference available, continue sequentially
-      for (const job of remainingJobs) {
-        await processJobWithReference(job, undefined);
-      }
-    }
-  } else {
-    // Parallel processing for non-wearable products
-    const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
-    for (let i = 0; i < jobs.length; i += batchSize) {
-      const batchJobs = jobs.slice(i, i + batchSize);
-      await Promise.all(batchJobs.map(job => processJobWithReference(job, undefined)));
-    }
+  // PARALLEL PROCESSING: Use seed for cross-angle consistency instead of reference images
+  // Per AI Studio docs, reference images confuse AI's 3D volume understanding
+  // All jobs can run in parallel since batchSeed ensures consistent model/lighting/environment
+  const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
+  for (let i = 0; i < jobs.length; i += batchSize) {
+    const batchJobs = jobs.slice(i, i + batchSize);
+    await Promise.all(batchJobs.map(job => processJob(job)));
   }
   
-  async function processJobWithReference(job: GenerationJob, referenceImage?: string): Promise<void> {
+  async function processJob(job: GenerationJob): Promise<void> {
     job.status = 'processing';
     job.startedAt = Date.now();
 
@@ -1469,13 +1447,13 @@ export async function generateMockupBatch(
       useCompositing
     );
 
-    // Use both headshot AND first successful mockup as references for better consistency
-    // Pass batchSeed for consistent lighting, model features, and environment across all angles
+    // Pass headshot and batchSeed for consistent identity and environment across all angles
+    // NOTE: We do NOT pass previous mockup reference - per AI Studio docs, it confuses AI's 3D volume understanding
+    // Seed provides sufficient consistency for lighting, model features, and environment
     const result = await generateMockupWithRetry(
       request.designImage,
       renderSpec,
       personaHeadshot,
-      referenceImage,
       GENERATION_CONFIG.MAX_RETRIES,
       batchSeed
     );
@@ -1511,7 +1489,6 @@ export async function generateMockupBatch(
                   request.designImage,
                   renderSpec,
                   personaHeadshot,
-                  referenceImage,
                   1,
                   batchSeed
                 );
@@ -1545,6 +1522,19 @@ export async function generateMockupBatch(
         color: job.color.name,
         angle: job.angle
       };
+      
+      // PROGRESSIVE LOADING: Emit mockup immediately when ready
+      if (onMockupReady) {
+        const jobIndex = jobs.indexOf(job);
+        onMockupReady({
+          index: jobIndex,
+          color: job.color.name,
+          colorHex: job.color.hex,
+          angle: job.angle,
+          imageData: finalImageData,
+          mimeType: result.mimeType || 'image/png'
+        });
+      }
     } else {
       job.status = 'failed';
       job.error = 'Generation failed after max retries';

@@ -1,0 +1,36 @@
+1. Image Order in AI Studio
+The order is critical because the prompt explicitly references the images by their position in the stack.
+First Attachment: The Design Artwork (This becomes [IMAGE 1]).
+Second Attachment: The Persona Lock Photo (This becomes [IMAGE 2]).
+Third Attachment (Optional): A "Previous Mockup" is NOT recommended for the generation call. It confuses the AI's understanding of the current garment's 3D volume. Instead, rely on a fixed Seed value for environment consistency.
+2. Persona Photo Handling
+Method: You should upload a high-quality headshot directly to AI Studio.
+Format: PNG is preferred. JPEG is acceptable, but PNG avoids compression artifacts that can distort the facial "geometry" the AI uses for matching.
+Why not text only? Text descriptions like "Hispanic woman with brown hair" are too broad. By providing a physical image ([IMAGE 2]), you invoke the model's "Visual Identity Lock," forcing it to map specific facial landmarks from that photo onto the generated character.
+3. Design Application Reference
+The prompt must treat the design as a technical asset, not a suggestion. Use this exact syntax:
+Reference: Always use [IMAGE 1].
+Command: "Apply the provided design asset [IMAGE 1] to the garment. It must be a 1:1 pixel-perfect copy."
+Placement: You must specify physical dimensions, e.g., "The design from [IMAGE 1] must be printed at exactly 12 inches wide on the center chest."
+4. Color Specification
+AI Studio works best when you provide both a human-readable name and a hexadecimal code.
+Structure: "The fabric color of the garment MUST be EXACTLY [Color Name] (Hex: #[HexCode])."
+Example: "The fabric color of the sweatshirt MUST be EXACTLY Navy Blue (Hex: #000080)."
+AOP Rule: For All-Over-Print, tell the AI to: "Derive the garment base color from the overall perceived background color of [IMAGE 1]."
+5. The "Golden" Prompt Structure
+A successful prompt should be structured like a Technical Specification Document, not a creative story. Use the following key sections:
+Part A: The Identity Lock (Who)
+"RULE: The model in the final render MUST be the EXACT SAME PERSON as shown in the reference headshot [IMAGE 2]. Ignore the background of [IMAGE 2]; use it for facial identity and build reference only."
+Part B: The Product Blueprint (What)
+"Garment Specification: A professional 100% heavy cotton crewneck t-shirt. The fabric must show natural cotton weave texture. The fit is 'Regular Fit' on a size Medium frame."
+Part C: The Physics Engine (The Secret Sauce)
+"3D Distortion Physics: Map the flat design from [IMAGE 1] onto the cylindrical volume of the model's torso. At the side edges, the design MUST compress horizontally by 35%. The design must follow every fold and wrinkle of the fabric—if a fold appears, the design must bend and distort with it."
+Part D: The Lens & Lighting (How)
+"Photography: 85mm lens at f/8, positioned 6 feet away at eye level. Use a Three-Point Studio Lighting setup (5500K) with soft fill shadows."
+Part E: The Negative Prompt (Exclusions)
+"Negative Prompt: flat sticker appearance, floating logo, bad anatomy, extra fingers, cartoon, illustration, watermark, low resolution, blurry edges."
+Summary for Replit Debugging
+If your Replit mockups are coming out looking like "flat stickers" or the faces are changing:
+Check your index: Ensure params.designImage is at contents[0] and personaLockImage is at contents[1].
+Add the Cylinder Rule: Without the instruction to "compress horizontally at the edges," the AI will almost always render the design as a flat rectangle on top of the shirt.
+Use PNG for Persona: Low-quality JPEG headshots lead to "AI-face drift."
