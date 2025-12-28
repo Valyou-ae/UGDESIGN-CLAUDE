@@ -817,6 +817,7 @@ CONSISTENCY REQUIREMENT:
 
   const fullPrompt = `ELITE MOCKUP GENERATION - RENDER SPECIFICATION
 ================================================================
+${compositingPlaceholderBlock}
 
 ${personaLockBlock}
 
@@ -824,7 +825,7 @@ ${colorLockBlock}
 
 ${sizeFitLockBlock}
 
-${designLockBlock}
+${useDesignCompositing ? '' : designLockBlock}
 
 ${cameraLockBlock}
 
@@ -837,8 +838,6 @@ ${garmentConstructionBlock}
 ${contourDescription}
 
 ${environmentBlock}
-
-${compositingPlaceholderBlock}
 
 ===== TECHNICAL REQUIREMENTS =====
 - Output: Photorealistic commercial product photography

@@ -30,39 +30,39 @@ const PLACEHOLDER_COLOR = "#00FF00"; // Bright green for easy detection
 
 export function getPlaceholderPromptAddition(): string {
   return `
-===== PRINT AREA PLACEHOLDER (CRITICAL - READ CAREFULLY) =====
-[MANDATORY - FOR POST-PROCESSING DESIGN OVERLAY]
+!!! HIGHEST PRIORITY - OVERRIDE ALL OTHER DESIGN INSTRUCTIONS !!!
+===== MANDATORY GREEN PLACEHOLDER REQUIREMENT =====
 
-CRITICAL INSTRUCTION: Instead of placing the design on the garment, you MUST create a SOLID BRIGHT GREEN (#00FF00) FILLED RECTANGLE in the print area. 
+*** THIS IS THE MOST IMPORTANT INSTRUCTION IN THIS ENTIRE PROMPT ***
 
-ABSOLUTE REQUIREMENTS:
-- Color: EXACTLY #00FF00 (pure bright green, RGB 0,255,0)
-- SOLID FILL ONLY: The green area must be 100% SOLID - NO TEXT, NO PATTERNS, NO WORDS
-- DO NOT write "DESIGN HERE" or any text whatsoever
-- DO NOT add any logos, icons, or graphics in the green area
-- The green must be a COMPLETELY SOLID, UNIFORM color rectangle
+YOU MUST place a SOLID BRIGHT GREEN (#00FF00) FILLED RECTANGLE on the garment.
 
-SHAPE REQUIREMENTS:
-- Rectangle shape following the garment's 3D surface contours
-- Position: Centered on chest area for t-shirts/tank tops
-- Size: Approximately 8-10 inches wide, 10-12 inches tall (standard print area)
-- Apply natural fabric perspective distortion
-- Include realistic fabric folds/wrinkles affecting the green area shape
+RULE #1: NO TEXT WHATSOEVER
+- DO NOT generate the words "DESIGN HERE" 
+- DO NOT generate ANY text in the green area
+- DO NOT generate ANY letters or words
+- Text generation in the placeholder area is STRICTLY FORBIDDEN
 
-WHAT THE GREEN AREA SHOULD LOOK LIKE:
-Imagine a solid green rectangle of fabric sewn onto the shirt. It should:
-1. Be completely filled with solid #00FF00 green
-2. Follow the body curves and fabric drape
-3. Have NO text, labels, or markings of any kind
-4. Have clean edges that can be detected by color
+RULE #2: PURE SOLID GREEN ONLY
+- Color: EXACTLY #00FF00 (RGB 0,255,0) - pure bright green
+- The ENTIRE rectangle must be SOLID GREEN - no gradients, no patterns
+- Think of it as if someone printed a bright green rectangle and stuck it on the shirt
 
-FORBIDDEN (DO NOT DO ANY OF THESE):
-- Writing "DESIGN HERE" or similar text
-- Adding placeholder text of any kind
-- Adding any graphics or patterns
-- Any color other than #00FF00 in the print area
+RULE #3: PLACEMENT AND SIZE
+- Position: Centered on chest/front of garment
+- Size: Large enough to be clearly visible (8-12 inches)
+- Shape: Rectangular, following fabric contours
 
-===== END PLACEHOLDER =====`;
+FAILURE CONDITIONS (your output will be REJECTED if):
+- Any text appears in the green area
+- The green is not pure #00FF00
+- No green rectangle is present
+- "DESIGN HERE" or similar text appears
+
+SUCCESS CONDITION:
+A large, solid, pure green (#00FF00) rectangle on the garment with ZERO text.
+
+===== END MANDATORY PLACEHOLDER =====`;
 }
 
 export async function detectPrintAreaCorners(
