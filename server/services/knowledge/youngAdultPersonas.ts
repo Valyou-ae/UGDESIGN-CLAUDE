@@ -1,364 +1,200 @@
-import { UnifiedPersona } from '@shared/mockupTypes';
+import { UnifiedPersona, Ethnicity, Size, ETHNICITY_CODES } from '@shared/mockupTypes';
 
-export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
-  {
-    id: 'young-adult-female-white-s-01',
-    name: 'Emma',
-    age: '21',
-    sex: 'Female',
-    ethnicity: 'White',
-    size: 'S',
-    height: "5'4\"",
-    weight: '115 lbs',
-    build: 'slim athletic',
-    facialFeatures: 'heart-shaped face, bright eyes',
-    hairStyle: 'long beachy waves',
-    hairColor: 'light brown',
-    eyeColor: 'blue',
-    skinTone: 'fair',
-    fullDescription: 'Vibrant 21-year-old woman with a slim athletic build from regular yoga. Her long beachy waves of light brown hair frame a heart-shaped face with bright blue eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_white_female_s_headshot.png'
+const FEMALE_NAMES: Record<string, string[]> = {
+  'White': ['Ashley', 'Brittany', 'Jessica', 'Stephanie', 'Nicole', 'Samantha'],
+  'Black': ['Brianna', 'Kiara', 'Jazmine', 'Alicia', 'Shayla', 'Diamond'],
+  'Hispanic': ['Daniela', 'Alejandra', 'Valeria', 'Fernanda', 'Andrea', 'Paula'],
+  'Asian': ['Michelle', 'Christina', 'Angela', 'Tiffany', 'Grace', 'Amy'],
+  'Indian': ['Neha', 'Pooja', 'Sneha', 'Shruti', 'Nikita', 'Pallavi'],
+  'Southeast Asian': ['Thao', 'Kim', 'Hanh', 'Sumalee', 'Nari', 'Soraya'],
+  'Indigenous': ['Sierra', 'Autumn', 'Willow', 'Raven', 'River', 'Sky'],
+  'Middle Eastern': ['Aisha', 'Dina', 'Lina', 'Mira', 'Rana', 'Salma']
+};
+
+const MALE_NAMES: Record<string, string[]> = {
+  'White': ['Brandon', 'Tyler', 'Ryan', 'Justin', 'Kyle', 'Derek'],
+  'Black': ['DeShawn', 'Tyrell', 'Marquis', 'Rashad', 'Jalen', 'Terrence'],
+  'Hispanic': ['Alejandro', 'Fernando', 'Eduardo', 'Javier', 'Pablo', 'Sergio'],
+  'Asian': ['Kevin', 'Brian', 'Daniel', 'Eric', 'Jason', 'Andrew'],
+  'Indian': ['Rahul', 'Nikhil', 'Karan', 'Siddharth', 'Varun', 'Aryan'],
+  'Southeast Asian': ['Tran', 'Vinh', 'Dao', 'Prem', 'Arun', 'Sak'],
+  'Indigenous': ['Hunter', 'Hawk', 'Bear', 'Wolf', 'Storm', 'River'],
+  'Middle Eastern': ['Ali', 'Rami', 'Sami', 'Nabil', 'Kareem', 'Jamal']
+};
+
+const FEMALE_SIZE_SPECS: Record<string, { height: string; weight: string; build: string }> = {
+  'XS': { height: '155cm (5\'1")', weight: '48kg (106lbs)', build: 'Petite slim frame' },
+  'S': { height: '160cm (5\'3")', weight: '54kg (119lbs)', build: 'Slim athletic frame' },
+  'M': { height: '165cm (5\'5")', weight: '61kg (134lbs)', build: 'Average athletic frame' },
+  'L': { height: '170cm (5\'7")', weight: '70kg (154lbs)', build: 'Sturdy athletic frame' },
+  'XL': { height: '173cm (5\'8")', weight: '82kg (181lbs)', build: 'Large athletic frame' },
+  '2XL': { height: '175cm (5\'9")', weight: '95kg (209lbs)', build: 'Plus size frame' }
+};
+
+const MALE_SIZE_SPECS: Record<string, { height: string; weight: string; build: string }> = {
+  'XS': { height: '163cm (5\'4")', weight: '57kg (126lbs)', build: 'Slim lean frame' },
+  'S': { height: '168cm (5\'6")', weight: '65kg (143lbs)', build: 'Slim athletic frame' },
+  'M': { height: '175cm (5\'9")', weight: '75kg (165lbs)', build: 'Average athletic frame' },
+  'L': { height: '180cm (5\'11")', weight: '86kg (190lbs)', build: 'Sturdy muscular frame' },
+  'XL': { height: '183cm (6\'0")', weight: '98kg (216lbs)', build: 'Large muscular frame' },
+  '2XL': { height: '185cm (6\'1")', weight: '113kg (249lbs)', build: 'Very large frame' }
+};
+
+const SKIN_TONES: Record<string, string> = {
+  'White': 'Fair with fresh glow',
+  'Black': 'Rich brown with vibrant glow',
+  'Hispanic': 'Warm olive with fresh glow',
+  'Asian': 'Fair with golden undertones',
+  'Indian': 'Warm brown with healthy glow',
+  'Southeast Asian': 'Light tan with warm glow',
+  'Indigenous': 'Warm reddish-brown',
+  'Middle Eastern': 'Olive with warm vibrant glow'
+};
+
+const EYE_COLORS: Record<string, string> = {
+  'White': 'Blue-green',
+  'Black': 'Dark brown',
+  'Hispanic': 'Warm brown',
+  'Asian': 'Dark brown',
+  'Indian': 'Dark brown',
+  'Southeast Asian': 'Dark brown',
+  'Indigenous': 'Dark brown',
+  'Middle Eastern': 'Dark brown'
+};
+
+const HAIR_COLORS: Record<string, string> = {
+  'White': 'Light brown',
+  'Black': 'Black',
+  'Hispanic': 'Dark brown',
+  'Asian': 'Black',
+  'Indian': 'Black',
+  'Southeast Asian': 'Black',
+  'Indigenous': 'Black',
+  'Middle Eastern': 'Dark brown'
+};
+
+const FACIAL_FEATURES: Record<string, { female: string; male: string }> = {
+  'White': {
+    female: 'Fresh youthful features, bright eyes, clear complexion',
+    male: 'Young defined features, bright eyes, clean jawline'
   },
-  {
-    id: 'young-adult-female-black-s-01',
-    name: 'Aaliyah',
-    age: '19',
-    sex: 'Female',
-    ethnicity: 'Black',
-    size: 'S',
-    height: "5'5\"",
-    weight: '120 lbs',
-    build: 'slender',
-    facialFeatures: 'high cheekbones, radiant smile',
-    hairStyle: 'long box braids',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'rich brown',
-    fullDescription: 'Radiant 19-year-old woman with a slender build and confident presence. Her long box braids frame high cheekbones and a dazzling smile, with expressive dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_black_female_s_headshot.png'
+  'Black': {
+    female: 'Vibrant youthful glow, full lips, bright expressive eyes',
+    male: 'Strong young features, confident expression, bright eyes'
   },
-  {
-    id: 'young-adult-female-hispanic-m-01',
-    name: 'Valentina',
-    age: '23',
-    sex: 'Female',
-    ethnicity: 'Hispanic',
-    size: 'M',
-    height: "5'5\"",
-    weight: '135 lbs',
-    build: 'toned curves',
-    facialFeatures: 'warm features, expressive eyes',
-    hairStyle: 'long curly',
-    hairColor: 'dark brown',
-    eyeColor: 'brown',
-    skinTone: 'warm olive',
-    fullDescription: 'Charismatic 23-year-old woman with toned curves and natural beauty. Her long curly dark brown hair cascades beautifully, with warm features and expressive brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_hispanic_female_m_headshot.png'
+  'Hispanic': {
+    female: 'Fresh warm glow, expressive eyes, youthful beauty',
+    male: 'Young strong features, warm expression, defined jaw'
   },
-  {
-    id: 'young-adult-female-asian-m-01',
-    name: 'Jessica',
-    age: '22',
-    sex: 'Female',
-    ethnicity: 'Asian',
-    size: 'M',
-    height: "5'4\"",
-    weight: '125 lbs',
-    build: 'balanced',
-    facialFeatures: 'delicate features, warm smile',
-    hairStyle: 'medium length with highlights',
-    hairColor: 'black with brown highlights',
-    eyeColor: 'dark brown',
-    skinTone: 'light golden',
-    fullDescription: 'Friendly 22-year-old woman with a balanced build and approachable demeanor. Her medium-length black hair with brown highlights frames delicate features and a warm smile.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_asian_female_m_headshot.png'
+  'Asian': {
+    female: 'Fresh youthful features, almond eyes, porcelain skin',
+    male: 'Clean young features, almond eyes, smooth complexion'
   },
-  {
-    id: 'young-adult-female-indian-l-01',
-    name: 'Priya',
-    age: '24',
-    sex: 'Female',
-    ethnicity: 'Indian',
-    size: 'L',
-    height: "5'5\"",
-    weight: '150 lbs',
-    build: 'curvy',
-    facialFeatures: 'expressive eyes, bright smile',
-    hairStyle: 'long straight',
-    hairColor: 'dark brown',
-    eyeColor: 'brown',
-    skinTone: 'warm caramel',
-    fullDescription: 'Confident 24-year-old woman with beautiful curves and radiant presence. Her long straight dark brown hair and warm caramel skin complement expressive brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_indian_female_l_headshot.png'
+  'Indian': {
+    female: 'Fresh glow, expressive dark eyes, elegant young features',
+    male: 'Young strong features, expressive eyes, confident presence'
   },
-  {
-    id: 'young-adult-female-southeast-asian-s-01',
-    name: 'Kim',
-    age: '20',
-    sex: 'Female',
-    ethnicity: 'Southeast Asian',
-    size: 'S',
-    height: "5'2\"",
-    weight: '105 lbs',
-    build: 'petite',
-    facialFeatures: 'youthful features, gentle expression',
-    hairStyle: 'long straight',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'light tan',
-    fullDescription: 'Sweet 20-year-old woman with a petite build and gentle demeanor. Her long straight black hair is sleek and shiny, with youthful features and kind dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young-adult-female-southeast-asian-s-01_kim_headshot.png'
+  'Southeast Asian': {
+    female: 'Fresh soft features, warm eyes, gentle youthful beauty',
+    male: 'Young warm features, friendly eyes, approachable expression'
   },
-  {
-    id: 'young-adult-female-indigenous-m-01',
-    name: 'Nina',
-    age: '22',
-    sex: 'Female',
-    ethnicity: 'Indigenous',
-    size: 'M',
-    height: "5'4\"",
-    weight: '130 lbs',
-    build: 'athletic',
-    facialFeatures: 'strong features, warm expression',
-    hairStyle: 'long straight',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'warm brown',
-    fullDescription: 'Athletic 22-year-old woman with a strong presence and warm spirit. Her long straight black hair frames strong beautiful features and deep warm dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_indigenous_female_m_headshot.png'
+  'Indigenous': {
+    female: 'High cheekbones, youthful strength, natural vibrant beauty',
+    male: 'High cheekbones, strong young features, confident bearing'
   },
-  {
-    id: 'young-adult-female-white-l-01',
-    name: 'Rachel',
-    age: '24',
-    sex: 'Female',
-    ethnicity: 'White',
-    size: 'L',
-    height: "5'7\"",
-    weight: '160 lbs',
-    build: 'curvy athletic',
-    facialFeatures: 'soft features, confident smile',
-    hairStyle: 'medium layered',
-    hairColor: 'auburn',
-    eyeColor: 'green',
-    skinTone: 'fair with freckles',
-    fullDescription: 'Confident 24-year-old woman with curvy athletic build and natural charm. Her medium auburn hair with layers frames soft features, freckled fair skin, and bright green eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_white_female_l_headshot.png'
-  },
-  {
-    id: 'young-adult-male-white-s-01',
-    name: 'Tyler',
-    age: '20',
-    sex: 'Male',
-    ethnicity: 'White',
-    size: 'S',
-    height: "5'9\"",
-    weight: '150 lbs',
-    build: 'lean',
-    facialFeatures: 'youthful face, light stubble',
-    hairStyle: 'medium textured',
-    hairColor: 'blonde',
-    eyeColor: 'blue',
-    skinTone: 'fair',
-    fullDescription: 'Energetic 20-year-old man with a lean build and youthful appearance. His medium textured blonde hair is casually styled, with light stubble and bright blue eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_white_male_s_headshot.png'
-  },
-  {
-    id: 'young-adult-male-black-m-01',
-    name: 'Jaylen',
-    age: '22',
-    sex: 'Male',
-    ethnicity: 'Black',
-    size: 'M',
-    height: "5'11\"",
-    weight: '175 lbs',
-    build: 'athletic',
-    facialFeatures: 'defined features, confident expression',
-    hairStyle: 'short twist',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'dark brown',
-    fullDescription: 'Athletic 22-year-old man with a confident presence and easy charisma. His short twist hairstyle is neatly maintained, with defined features and focused dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_black_male_m_headshot.png'
-  },
-  {
-    id: 'young-adult-male-hispanic-m-01',
-    name: 'Marco',
-    age: '23',
-    sex: 'Male',
-    ethnicity: 'Hispanic',
-    size: 'M',
-    height: "5'10\"",
-    weight: '170 lbs',
-    build: 'toned',
-    facialFeatures: 'warm smile, trimmed beard',
-    hairStyle: 'short wavy',
-    hairColor: 'dark brown',
-    eyeColor: 'brown',
-    skinTone: 'tan',
-    fullDescription: 'Friendly 23-year-old man with a toned build and warm personality. His short wavy dark brown hair and neatly trimmed beard complement his tan skin and warm brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_hispanic_male_m_headshot.png'
-  },
-  {
-    id: 'young-adult-male-asian-s-01',
-    name: 'Kevin',
-    age: '21',
-    sex: 'Male',
-    ethnicity: 'Asian',
-    size: 'S',
-    height: "5'8\"",
-    weight: '145 lbs',
-    build: 'slim',
-    facialFeatures: 'clean-cut, friendly expression',
-    hairStyle: 'short styled',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'light',
-    fullDescription: 'Studious 21-year-old man with a slim build and clean-cut appearance. His short styled black hair is neatly groomed, with a friendly expression and attentive dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_asian_male_s_headshot.png'
-  },
-  {
-    id: 'young-adult-male-indian-l-01',
-    name: 'Rohan',
-    age: '24',
-    sex: 'Male',
-    ethnicity: 'Indian',
-    size: 'L',
-    height: "5'11\"",
-    weight: '185 lbs',
-    build: 'solid muscular',
-    facialFeatures: 'strong features, short beard',
-    hairStyle: 'short with wave',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'medium brown',
-    fullDescription: 'Strong 24-year-old man with a solid muscular build. His short black hair with natural wave and short beard frame strong features and confident dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_indian_male_l_headshot.png'
-  },
-  {
-    id: 'young-adult-male-southeast-asian-m-01',
-    name: 'Daniel',
-    age: '22',
-    sex: 'Male',
-    ethnicity: 'Southeast Asian',
-    size: 'M',
-    height: "5'7\"",
-    weight: '155 lbs',
-    build: 'compact muscular',
-    facialFeatures: 'round face, easy smile',
-    hairStyle: 'short cropped',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'medium tan',
-    fullDescription: 'Friendly 22-year-old man with a compact muscular build. His short cropped black hair is low-maintenance, with a round face and an easy-going smile and warm dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young-adult-male-southeast-asian-m-01_daniel_headshot.png'
-  },
-  {
-    id: 'young-adult-male-indigenous-l-01',
-    name: 'Kai',
-    age: '23',
-    sex: 'Male',
-    ethnicity: 'Indigenous',
-    size: 'L',
-    height: "6'0\"",
-    weight: '190 lbs',
-    build: 'athletic broad',
-    facialFeatures: 'strong jaw, focused expression',
-    hairStyle: 'long tied back',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'warm reddish-brown',
-    fullDescription: 'Athletic 23-year-old man with a broad build and quiet confidence. His long black hair is tied back, with a strong jaw and focused dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_indigenous_male_l_headshot.png'
-  },
-  {
-    id: 'young-adult-male-white-l-01',
-    name: 'Brandon',
-    age: '24',
-    sex: 'Male',
-    ethnicity: 'White',
-    size: 'L',
-    height: "6'1\"",
-    weight: '195 lbs',
-    build: 'muscular',
-    facialFeatures: 'rugged features, full beard',
-    hairStyle: 'short textured',
-    hairColor: 'brown',
-    eyeColor: 'hazel',
-    skinTone: 'light tan',
-    fullDescription: 'Strong 24-year-old man with a muscular build and rugged appeal. His short textured brown hair and full beard give him a mature look, with warm hazel eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_white_male_l_headshot.png'
-  },
-  {
-    id: 'young-adult-male-middle-eastern-m-01',
-    name: 'Tariq',
-    age: '22',
-    sex: 'Male',
-    ethnicity: 'Middle Eastern',
-    size: 'M',
-    height: "5'10\"",
-    weight: '165 lbs',
-    build: 'athletic lean',
-    facialFeatures: 'strong jawline, defined brows, short groomed beard',
-    hairStyle: 'short and styled',
-    hairColor: 'dark brown',
-    eyeColor: 'deep brown',
-    skinTone: 'warm olive',
-    fullDescription: 'Athletic 22-year-old man with a lean muscular build and confident presence. His short styled dark brown hair and groomed beard frame a strong jawline, with striking deep brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_middle_eastern_male_m_headshot.png'
-  },
-  {
-    id: 'young-adult-female-middle-eastern-m-01',
-    name: 'Leila',
-    age: '21',
-    sex: 'Female',
-    ethnicity: 'Middle Eastern',
-    size: 'M',
-    height: "5'5\"",
-    weight: '130 lbs',
-    build: 'graceful slender',
-    facialFeatures: 'elegant features, arched brows, warm smile',
-    hairStyle: 'long wavy',
-    hairColor: 'dark brown',
-    eyeColor: 'dark brown',
-    skinTone: 'warm olive',
-    fullDescription: 'Graceful 21-year-old woman with a slender build and elegant presence. Her long wavy dark brown hair frames elegant features with arched brows, warm olive skin, and expressive dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/young_adult_middle_eastern_female_m_headshot.png'
+  'Middle Eastern': {
+    female: 'Striking dark eyes, fresh elegant features, vibrant beauty',
+    male: 'Strong young features, dark expressive eyes, confident presence'
   }
+};
+
+function generateYoungAdultPersona(
+  ethnicity: Ethnicity,
+  sex: 'Female' | 'Male',
+  size: Size,
+  sizeIndex: number
+): UnifiedPersona {
+  const names = sex === 'Female' ? FEMALE_NAMES[ethnicity] : MALE_NAMES[ethnicity];
+  const name = names[sizeIndex];
+  const specs = sex === 'Female' ? FEMALE_SIZE_SPECS[size] : MALE_SIZE_SPECS[size];
+  const skinTone = SKIN_TONES[ethnicity];
+  const eyeColor = EYE_COLORS[ethnicity];
+  const hairColor = HAIR_COLORS[ethnicity];
+  const facialFeatures = FACIAL_FEATURES[ethnicity][sex.toLowerCase() as 'female' | 'male'];
+
+  const prefix = ETHNICITY_CODES[ethnicity];
+  const sexCode = sex === 'Female' ? 'F' : 'M';
+  const sizeCode = size === '2XL' ? '2XL' : size;
+  const id = `${prefix}_YA_${sexCode}_${sizeCode}_001`;
+
+  const hairStyle = sex === 'Female' ? 'Long flowing contemporary style' : 'Short modern styled';
+  const age = 18 + sizeIndex;
+  const pronoun = sex === 'Female' ? 'She' : 'He';
+  const possessive = sex === 'Female' ? 'Her' : 'His';
+
+  const fullDescription = `${name} is a ${age}-year-old young adult ${sex.toLowerCase()} of ${ethnicity} heritage, standing ${specs.height} tall and weighing approximately ${specs.weight}. ${pronoun} has a ${specs.build} with youthful proportions. ${possessive} face shows ${facialFeatures}. ${pronoun} has ${hairStyle.toLowerCase()} ${hairColor.toLowerCase()} hair and ${eyeColor.toLowerCase()} eyes. ${possessive} ${skinTone.toLowerCase()} skin is fresh and vibrant. ${name} exudes youthful energy and contemporary style.`;
+
+  return {
+    id,
+    name,
+    age: String(age),
+    ageGroup: 'Young Adult',
+    ageRange: '18-24',
+    sex,
+    ethnicity,
+    size,
+    height: specs.height,
+    weight: specs.weight,
+    build: specs.build,
+    facialFeatures,
+    hairStyle,
+    hairColor,
+    eyeColor,
+    skinTone,
+    fullDescription,
+    version: '2.0',
+    createdDate: '2025-12-28'
+  };
+}
+
+const SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+const ETHNICITIES: Ethnicity[] = [
+  'White', 'Black', 'Hispanic', 'Asian',
+  'Indian', 'Southeast Asian', 'Indigenous', 'Middle Eastern'
 ];
+
+export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [];
+
+ETHNICITIES.forEach(ethnicity => {
+  (['Female', 'Male'] as const).forEach(sex => {
+    SIZES.forEach((size, index) => {
+      YOUNG_ADULT_PERSONAS.push(
+        generateYoungAdultPersona(ethnicity, sex, size, index)
+      );
+    });
+  });
+});
+
+export function getYoungAdultPersona(
+  ethnicity: Ethnicity,
+  sex: 'Female' | 'Male',
+  size: Size
+): UnifiedPersona | undefined {
+  return YOUNG_ADULT_PERSONAS.find(
+    p => p.ethnicity === ethnicity && p.sex === sex && p.size === size
+  );
+}
+
+export function getYoungAdultPersonasByEthnicity(ethnicity: Ethnicity): UnifiedPersona[] {
+  return YOUNG_ADULT_PERSONAS.filter(p => p.ethnicity === ethnicity);
+}
+
+export function getYoungAdultPersonasBySex(sex: 'Female' | 'Male'): UnifiedPersona[] {
+  return YOUNG_ADULT_PERSONAS.filter(p => p.sex === sex);
+}
+
+export function getYoungAdultPersonasBySize(size: Size): UnifiedPersona[] {
+  return YOUNG_ADULT_PERSONAS.filter(p => p.size === size);
+}
+
+export default YOUNG_ADULT_PERSONAS;

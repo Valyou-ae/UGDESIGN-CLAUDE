@@ -1,284 +1,200 @@
-import { UnifiedPersona } from '@shared/mockupTypes';
+import { UnifiedPersona, Ethnicity, Size, ETHNICITY_CODES } from '@shared/mockupTypes';
 
-export const TEEN_PERSONAS: UnifiedPersona[] = [
-  {
-    id: 'teen-female-white-s-01',
-    name: 'Emma',
-    age: '15',
-    sex: 'Female',
-    ethnicity: 'White',
-    size: 'S',
-    height: "5'3\"",
-    weight: '110 lbs',
-    build: 'slim',
-    facialFeatures: 'youthful face, clear skin',
-    hairStyle: 'long straight',
-    hairColor: 'blonde',
-    eyeColor: 'blue',
-    skinTone: 'fair',
-    fullDescription: 'Bright 15-year-old girl with a slim build and youthful energy. Her long straight blonde hair frames a fresh face with clear skin and bright blue eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_white_female_s_headshot.png'
+const FEMALE_NAMES: Record<string, string[]> = {
+  'White': ['Emma', 'Olivia', 'Sophia', 'Ava', 'Isabella', 'Mia'],
+  'Black': ['Aaliyah', 'Imani', 'Zara', 'Nia', 'Destiny', 'Jasmine'],
+  'Hispanic': ['Sofia', 'Valentina', 'Camila', 'Luna', 'Mariana', 'Isabella'],
+  'Asian': ['Mei', 'Sakura', 'Yuki', 'Hana', 'Lily', 'Jade'],
+  'Indian': ['Aanya', 'Ishita', 'Kavya', 'Riya', 'Saanvi', 'Diya'],
+  'Southeast Asian': ['Mai', 'Linh', 'Thuy', 'Anh', 'Dara', 'Srey'],
+  'Indigenous': ['Kaya', 'Nova', 'Aiyana', 'Winona', 'Dakota', 'Chenoa'],
+  'Middle Eastern': ['Leila', 'Mariam', 'Sara', 'Noor', 'Hana', 'Rania']
+};
+
+const MALE_NAMES: Record<string, string[]> = {
+  'White': ['Ethan', 'Liam', 'Noah', 'Mason', 'Lucas', 'Oliver'],
+  'Black': ['Jordan', 'Jayden', 'Malik', 'Darius', 'Xavier', 'Elijah'],
+  'Hispanic': ['Diego', 'Mateo', 'Santiago', 'Sebastian', 'Adrian', 'Gabriel'],
+  'Asian': ['Kai', 'Ryu', 'Jin', 'Hiro', 'Tao', 'Ken'],
+  'Indian': ['Arjun', 'Dev', 'Rohan', 'Aditya', 'Vivaan', 'Krishna'],
+  'Southeast Asian': ['Lian', 'Minh', 'Thanh', 'Phan', 'Bao', 'Duc'],
+  'Indigenous': ['Takoda', 'Koda', 'Chayton', 'Elan', 'Nikan', 'Ahanu'],
+  'Middle Eastern': ['Adam', 'Zaid', 'Karim', 'Amir', 'Faisal', 'Bilal']
+};
+
+const FEMALE_SIZE_SPECS: Record<string, { height: string; weight: string; build: string }> = {
+  'XS': { height: '150cm (4\'11")', weight: '42kg (93lbs)', build: 'Petite teen frame' },
+  'S': { height: '155cm (5\'1")', weight: '48kg (106lbs)', build: 'Slim teen frame' },
+  'M': { height: '160cm (5\'3")', weight: '54kg (119lbs)', build: 'Average teen frame' },
+  'L': { height: '165cm (5\'5")', weight: '62kg (137lbs)', build: 'Sturdy teen frame' },
+  'XL': { height: '168cm (5\'6")', weight: '72kg (159lbs)', build: 'Large teen frame' },
+  '2XL': { height: '170cm (5\'7")', weight: '82kg (181lbs)', build: 'Plus size teen frame' }
+};
+
+const MALE_SIZE_SPECS: Record<string, { height: string; weight: string; build: string }> = {
+  'XS': { height: '155cm (5\'1")', weight: '45kg (99lbs)', build: 'Slim lanky teen frame' },
+  'S': { height: '163cm (5\'4")', weight: '52kg (115lbs)', build: 'Slim athletic teen frame' },
+  'M': { height: '170cm (5\'7")', weight: '61kg (134lbs)', build: 'Average teen frame' },
+  'L': { height: '175cm (5\'9")', weight: '70kg (154lbs)', build: 'Sturdy teen frame' },
+  'XL': { height: '180cm (5\'11")', weight: '82kg (181lbs)', build: 'Large athletic teen frame' },
+  '2XL': { height: '183cm (6\'0")', weight: '95kg (209lbs)', build: 'Very large teen frame' }
+};
+
+const SKIN_TONES: Record<string, string> = {
+  'White': 'Fair with youthful glow',
+  'Black': 'Rich brown with youthful glow',
+  'Hispanic': 'Warm olive with youthful glow',
+  'Asian': 'Fair with golden undertones',
+  'Indian': 'Warm brown with youthful glow',
+  'Southeast Asian': 'Light tan with youthful glow',
+  'Indigenous': 'Warm reddish-brown',
+  'Middle Eastern': 'Olive with warm youthful glow'
+};
+
+const EYE_COLORS: Record<string, string> = {
+  'White': 'Blue',
+  'Black': 'Dark brown',
+  'Hispanic': 'Warm brown',
+  'Asian': 'Dark brown',
+  'Indian': 'Dark brown',
+  'Southeast Asian': 'Dark brown',
+  'Indigenous': 'Dark brown',
+  'Middle Eastern': 'Dark brown'
+};
+
+const HAIR_COLORS: Record<string, string> = {
+  'White': 'Light brown',
+  'Black': 'Black',
+  'Hispanic': 'Dark brown',
+  'Asian': 'Black',
+  'Indian': 'Black',
+  'Southeast Asian': 'Black',
+  'Indigenous': 'Black',
+  'Middle Eastern': 'Dark brown'
+};
+
+const FACIAL_FEATURES: Record<string, { female: string; male: string }> = {
+  'White': {
+    female: 'Youthful features, bright eyes, clear skin',
+    male: 'Youthful features, developing jawline, bright eyes'
   },
-  {
-    id: 'teen-female-black-s-01',
-    name: 'Zoe',
-    age: '14',
-    sex: 'Female',
-    ethnicity: 'Black',
-    size: 'S',
-    height: "5'2\"",
-    weight: '105 lbs',
-    build: 'slender',
-    facialFeatures: 'bright eyes, cheerful expression',
-    hairStyle: 'curly natural',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'medium brown',
-    fullDescription: 'Energetic 14-year-old girl with a slender build and infectious enthusiasm. Her natural curly black hair bounces with movement, with bright dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_black_female_s_headshot.png'
+  'Black': {
+    female: 'Youthful glow, full lips, bright expressive eyes',
+    male: 'Youthful features, strong emerging features, bright eyes'
   },
-  {
-    id: 'teen-female-hispanic-m-01',
-    name: 'Isabella',
-    age: '16',
-    sex: 'Female',
-    ethnicity: 'Hispanic',
-    size: 'M',
-    height: "5'4\"",
-    weight: '125 lbs',
-    build: 'average',
-    facialFeatures: 'warm smile, expressive features',
-    hairStyle: 'medium wavy',
-    hairColor: 'dark brown',
-    eyeColor: 'brown',
-    skinTone: 'olive',
-    fullDescription: 'Friendly 16-year-old girl with an average build and warm personality. Her medium-length wavy dark brown hair complements her olive skin and expressive brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_hispanic_female_m_headshot.png'
+  'Hispanic': {
+    female: 'Warm youthful glow, expressive eyes, soft features',
+    male: 'Youthful warmth, developing features, warm brown eyes'
   },
-  {
-    id: 'teen-female-asian-m-01',
-    name: 'Lily',
-    age: '15',
-    sex: 'Female',
-    ethnicity: 'Asian',
-    size: 'M',
-    height: "5'3\"",
-    weight: '115 lbs',
-    build: 'petite athletic',
-    facialFeatures: 'delicate features, studious look',
-    hairStyle: 'long straight with bangs',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'light',
-    fullDescription: 'Studious 15-year-old girl with a petite athletic build. Her long straight black hair with bangs frames delicate features and thoughtful dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_asian_female_m_headshot.png'
+  'Asian': {
+    female: 'Delicate youthful features, almond eyes, clear skin',
+    male: 'Clean youthful features, almond eyes, smooth skin'
   },
-  {
-    id: 'teen-female-indian-m-01',
-    name: 'Asha',
-    age: '17',
-    sex: 'Female',
-    ethnicity: 'Indian',
-    size: 'M',
-    height: "5'4\"",
-    weight: '120 lbs',
-    build: 'slim',
-    facialFeatures: 'bright smile, soft features',
-    hairStyle: 'long braided',
-    hairColor: 'dark brown',
-    eyeColor: 'brown',
-    skinTone: 'warm brown',
-    fullDescription: 'Cheerful 17-year-old girl with a slim build and bright smile. Her long dark brown hair is often worn in a neat braid, with soft features and warm brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_indian_female_m_headshot.png'
+  'Indian': {
+    female: 'Youthful glow, expressive dark eyes, soft features',
+    male: 'Youthful features, expressive eyes, developing frame'
   },
-  {
-    id: 'teen-female-southeast-asian-s-01',
-    name: 'Mai',
-    age: '14',
-    sex: 'Female',
-    ethnicity: 'Southeast Asian',
-    size: 'S',
-    height: "5'1\"",
-    weight: '100 lbs',
-    build: 'petite',
-    facialFeatures: 'round face, sweet expression',
-    hairStyle: 'medium straight',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'light tan',
-    fullDescription: 'Sweet 14-year-old girl with a petite build and gentle demeanor. Her medium-length straight black hair frames a round face with a kind expression and dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen-female-southeast-asian-s-01_mai_headshot.png'
+  'Southeast Asian': {
+    female: 'Soft youthful features, warm eyes, gentle smile',
+    male: 'Youthful warm features, friendly eyes, developing frame'
   },
-  {
-    id: 'teen-male-white-s-01',
-    name: 'Jake',
-    age: '14',
-    sex: 'Male',
-    ethnicity: 'White',
-    size: 'S',
-    height: "5'4\"",
-    weight: '115 lbs',
-    build: 'lean',
-    facialFeatures: 'youthful features, light freckles',
-    hairStyle: 'short messy',
-    hairColor: 'light brown',
-    eyeColor: 'hazel',
-    skinTone: 'fair with freckles',
-    fullDescription: 'Energetic 14-year-old boy with a lean build and youthful enthusiasm. His short messy light brown hair and light freckles give him a boyish charm, with curious hazel eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_white_male_s_headshot.png'
+  'Indigenous': {
+    female: 'High cheekbones, youthful strength, natural beauty',
+    male: 'High cheekbones, developing strong features, proud bearing'
   },
-  {
-    id: 'teen-male-black-m-01',
-    name: 'Marcus',
-    age: '16',
-    sex: 'Male',
-    ethnicity: 'Black',
-    size: 'M',
-    height: "5'8\"",
-    weight: '145 lbs',
-    build: 'athletic',
-    facialFeatures: 'confident expression, defined jaw',
-    hairStyle: 'short fade',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'dark brown',
-    fullDescription: 'Confident 16-year-old boy with an athletic build from sports. His clean short fade is neatly maintained, with a defined jaw and focused dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_black_male_m_headshot.png'
-  },
-  {
-    id: 'teen-male-hispanic-m-01',
-    name: 'Diego',
-    age: '15',
-    sex: 'Male',
-    ethnicity: 'Hispanic',
-    size: 'M',
-    height: "5'6\"",
-    weight: '135 lbs',
-    build: 'average',
-    facialFeatures: 'friendly face, easy smile',
-    hairStyle: 'medium wavy',
-    hairColor: 'dark brown',
-    eyeColor: 'brown',
-    skinTone: 'tan',
-    fullDescription: 'Friendly 15-year-old boy with an average build and easy-going nature. His medium wavy dark brown hair has natural volume, with warm brown eyes and an easy smile.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_hispanic_male_m_headshot.png'
-  },
-  {
-    id: 'teen-male-asian-s-01',
-    name: 'Ryan',
-    age: '13',
-    sex: 'Male',
-    ethnicity: 'Asian',
-    size: 'S',
-    height: "5'2\"",
-    weight: '100 lbs',
-    build: 'slim',
-    facialFeatures: 'youthful, bright expression',
-    hairStyle: 'short straight',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'light',
-    fullDescription: 'Curious 13-year-old boy with a slim build and bright expression. His short straight black hair is neatly styled, with alert dark brown eyes full of curiosity.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_asian_male_s_headshot.png'
-  },
-  {
-    id: 'teen-male-indian-m-01',
-    name: 'Arjun',
-    age: '17',
-    sex: 'Male',
-    ethnicity: 'Indian',
-    size: 'M',
-    height: "5'9\"",
-    weight: '150 lbs',
-    build: 'lean athletic',
-    facialFeatures: 'angular features, focused look',
-    hairStyle: 'short textured',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'medium brown',
-    fullDescription: 'Focused 17-year-old boy with a lean athletic build. His short textured black hair is casually styled, with angular features and determined dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_indian_male_m_headshot.png'
-  },
-  {
-    id: 'teen-male-indigenous-m-01',
-    name: 'Noah',
-    age: '16',
-    sex: 'Male',
-    ethnicity: 'Indigenous',
-    size: 'M',
-    height: "5'7\"",
-    weight: '140 lbs',
-    build: 'solid',
-    facialFeatures: 'strong features, thoughtful expression',
-    hairStyle: 'medium straight',
-    hairColor: 'black',
-    eyeColor: 'dark brown',
-    skinTone: 'warm brown',
-    fullDescription: 'Thoughtful 16-year-old boy with a solid build and quiet strength. His medium-length straight black hair frames strong features and deep thoughtful dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_indigenous_male_m_headshot.png'
-  },
-  {
-    id: 'teen-female-middle-eastern-m-01',
-    name: 'Yasmine',
-    age: '15',
-    sex: 'Female',
-    ethnicity: 'Middle Eastern',
-    size: 'M',
-    height: "5'4\"",
-    weight: '115 lbs',
-    build: 'slim',
-    facialFeatures: 'elegant features, warm expression',
-    hairStyle: 'long wavy',
-    hairColor: 'dark brown',
-    eyeColor: 'dark brown',
-    skinTone: 'warm olive',
-    fullDescription: 'A 15-year-old Middle Eastern teen with a slim build and graceful presence. Her long wavy dark brown hair frames elegant features with warm olive skin and expressive dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_middle_eastern_female_m_headshot.png'
-  },
-  {
-    id: 'teen-male-middle-eastern-m-01',
-    name: 'Amir',
-    age: '16',
-    sex: 'Male',
-    ethnicity: 'Middle Eastern',
-    size: 'M',
-    height: "5'8\"",
-    weight: '145 lbs',
-    build: 'lean athletic',
-    facialFeatures: 'olive skin, defined brows, expressive dark eyes',
-    hairStyle: 'short textured',
-    hairColor: 'dark brown',
-    eyeColor: 'dark brown',
-    skinTone: 'warm olive',
-    fullDescription: 'A 16-year-old Middle Eastern teen with a lean athletic build and confident demeanor. His short textured dark brown hair is neatly styled, with defined brows and expressive dark brown eyes.',
-    version: '1.0',
-    createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/teen_middle_eastern_male_m_headshot.png'
+  'Middle Eastern': {
+    female: 'Striking dark eyes, youthful glow, elegant features',
+    male: 'Developing strong features, dark expressive eyes, youthful presence'
   }
+};
+
+function generateTeenPersona(
+  ethnicity: Ethnicity,
+  sex: 'Female' | 'Male',
+  size: Size,
+  sizeIndex: number
+): UnifiedPersona {
+  const names = sex === 'Female' ? FEMALE_NAMES[ethnicity] : MALE_NAMES[ethnicity];
+  const name = names[sizeIndex];
+  const specs = sex === 'Female' ? FEMALE_SIZE_SPECS[size] : MALE_SIZE_SPECS[size];
+  const skinTone = SKIN_TONES[ethnicity];
+  const eyeColor = EYE_COLORS[ethnicity];
+  const hairColor = HAIR_COLORS[ethnicity];
+  const facialFeatures = FACIAL_FEATURES[ethnicity][sex.toLowerCase() as 'female' | 'male'];
+
+  const prefix = ETHNICITY_CODES[ethnicity];
+  const sexCode = sex === 'Female' ? 'F' : 'M';
+  const sizeCode = size === '2XL' ? '2XL' : size;
+  const id = `${prefix}_TN_${sexCode}_${sizeCode}_001`;
+
+  const hairStyle = sex === 'Female' ? 'Long trendy style' : 'Short trendy cut';
+  const age = 13 + sizeIndex;
+  const pronoun = sex === 'Female' ? 'She' : 'He';
+  const possessive = sex === 'Female' ? 'Her' : 'His';
+
+  const fullDescription = `${name} is a ${age}-year-old teen ${sex.toLowerCase()} of ${ethnicity} heritage, standing ${specs.height} tall and weighing approximately ${specs.weight}. ${pronoun} has a ${specs.build} with developing teen proportions. ${possessive} face shows ${facialFeatures}. ${pronoun} has ${hairStyle.toLowerCase()} ${hairColor.toLowerCase()} hair and bright ${eyeColor.toLowerCase()} eyes. ${possessive} ${skinTone.toLowerCase()} skin is clear and youthful. ${name} has an energetic teen presence.`;
+
+  return {
+    id,
+    name,
+    age: String(age),
+    ageGroup: 'Teen',
+    ageRange: '13-17',
+    sex,
+    ethnicity,
+    size,
+    height: specs.height,
+    weight: specs.weight,
+    build: specs.build,
+    facialFeatures,
+    hairStyle,
+    hairColor,
+    eyeColor,
+    skinTone,
+    fullDescription,
+    version: '2.0',
+    createdDate: '2025-12-28'
+  };
+}
+
+const SIZES: Size[] = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+const ETHNICITIES: Ethnicity[] = [
+  'White', 'Black', 'Hispanic', 'Asian',
+  'Indian', 'Southeast Asian', 'Indigenous', 'Middle Eastern'
 ];
+
+export const TEEN_PERSONAS: UnifiedPersona[] = [];
+
+ETHNICITIES.forEach(ethnicity => {
+  (['Female', 'Male'] as const).forEach(sex => {
+    SIZES.forEach((size, index) => {
+      TEEN_PERSONAS.push(
+        generateTeenPersona(ethnicity, sex, size, index)
+      );
+    });
+  });
+});
+
+export function getTeenPersona(
+  ethnicity: Ethnicity,
+  sex: 'Female' | 'Male',
+  size: Size
+): UnifiedPersona | undefined {
+  return TEEN_PERSONAS.find(
+    p => p.ethnicity === ethnicity && p.sex === sex && p.size === size
+  );
+}
+
+export function getTeenPersonasByEthnicity(ethnicity: Ethnicity): UnifiedPersona[] {
+  return TEEN_PERSONAS.filter(p => p.ethnicity === ethnicity);
+}
+
+export function getTeenPersonasBySex(sex: 'Female' | 'Male'): UnifiedPersona[] {
+  return TEEN_PERSONAS.filter(p => p.sex === sex);
+}
+
+export function getTeenPersonasBySize(size: Size): UnifiedPersona[] {
+  return TEEN_PERSONAS.filter(p => p.size === size);
+}
+
+export default TEEN_PERSONAS;
