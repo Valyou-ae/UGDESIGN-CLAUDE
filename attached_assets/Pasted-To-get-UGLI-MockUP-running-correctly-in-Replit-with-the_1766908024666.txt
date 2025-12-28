@@ -1,0 +1,49 @@
+To get UGLI MockUP running correctly in Replit with the level of consistency and realism you see in the spec, you need to understand the "Three-Lock" architecture. Gemini 3 Pro doesn't inherently "remember" your character or understand product physics unless you strictly enforce it through a specific data structure.
+Here are the critical technical details on how the personas are linked, how artwork is called, and how the prompt engine works.
+1. The "Visual Anchor" System (Persona Linking)
+The "Persona Lock" is the secret to getting the same model in every shot.
+Step 1: The Character Description: We generate a consistentDescription in promptBuilder.ts. This isn't just "a woman." It's a "Somatic Profile" (Height, Weight, Build, Ethnicity, and specific facial features) based on the matrix in somaticProfiles.ts.
+Step 2: The Anchor Generation: Before any mockups are made, we call generatePersonaLockImage. This creates a neutral, passport-style headshot.
+Step 3: The Multi-Part Content Array: This is the most important part. When calling the final mockup, the contents array sent to Gemini contains two images:
+Part 0: The Design Artwork ([IMAGE 1])
+Part 1: The Persona Lock Headshot ([IMAGE 2])
+Part 2: The Text Prompt referencing both.
+Gemini's Role: By seeing the headshot in the same request as the generation instructions, Gemini uses it as a visual reference (Rule 1: Model Identity Lock).
+2. The Artwork "Call & Place" Logic
+In standard AI generation, the AI often "interprets" your art. To prevent this, the prompt uses Immutable Asset Rules:
+Asset References: The prompt refers to the artwork explicitly as [IMAGE 1].
+Distortion Physics: We don't just say "put it on the shirt." We provide CYLINDRICAL_MAPPING and FOLD_DISTORTION instructions. This tells the AI: "If a fold happens at coordinate X, the design must compress by 30%."
+Print Method Logic: The materialRealism.ts file provides "Texture Blueprints." For DTG, it tells the AI the ink should be "absorbed into the fibers" (matte). For AOP, it tells the AI the pattern is "molecularly bonded" (vibrant/smooth).
+3. The AOP (All-Over-Print) Two-Stage Pipeline
+Replicating AOP is harder because you can't just slap a logo on a shirt.
+Stage 1 (Patternization): If the user doesn't have a seamless file, generateAiCreativePattern is called. It analyzes the user's logo and returns a new square, tileable .png.
+Stage 2 (Pattern as Source of Truth): In AOP mode, the Pattern becomes [IMAGE 1].
+The "Trim" Logic: The prompt builder analyzes the pattern to pick a "Solid Trim Color." It looks at the most prominent accent color in the pattern and tells the AI: "Make the waistband/collar exactly this hex code." This ensures that even if the angle changes, the trim color stays locked.
+4. Replit-Specific Implementation Hurdles
+If Replit is "getting it wrong," check these three things:
+MIME Type Handling: When converting the File to inlineData, ensure you are stripping the metadata prefix correctly:
+code
+TypeScript
+// Must remove "data:image/png;base64,"
+const data = (reader.result as string).split(',')[1];
+The Seed Strategy: In store.ts, we generate a single characterSeed for the entire batch. This seed is passed to every single API call in that generation run. Without a fixed seed, the lighting and model features will drift even with the reference image.
+Model Selection: You must use gemini-3-pro-image-preview. The flash models are not capable of the complex spatial reasoning required to map a 2D texture to a 3D body contour while following a reference headshot.
+5. The "Knowledge Base" (KB) Injection
+The promptBuilder.ts doesn't write prompts from scratch. It's a "Composer" that pulls snippets from the services/knowledge/ folder:
+Product Blueprints: Defines what a "Legging" actually is (High-waisted, flatlock seams).
+Lighting Setups: Defines the light ratio (e.g., 3:1 key-to-fill).
+Negative Prompts: A massive list of exclusions (e.g., "extra limbs," "blurry," "cartoon").
+Summary of the API Call Structure
+code
+JSON
+{
+  "model": "gemini-3-pro-image-preview",
+  "contents": {
+    "parts": [
+      { "inlineData": { "mimeType": "image/png", "data": "BASE64_ARTWORK" } }, 
+      { "inlineData": { "mimeType": "image/png", "data": "BASE64_HEADSHOT" } },
+      { "text": "Apply [IMAGE 1] to the shirt. The model must be the same as [IMAGE 2]..." }
+    ]
+  },
+  "config": { "seed": 12345 }
+}
