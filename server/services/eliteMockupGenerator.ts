@@ -167,7 +167,28 @@ Respond with JSON:
 }
 
 export async function generatePersonaLock(modelDetails: ModelDetails): Promise<PersonaLock> {
+  const ageGroupMap: Record<string, 'Baby' | 'Toddler' | 'Kids' | 'Teen' | 'Young Adult' | 'Adult' | 'Senior'> = {
+    'Baby': 'Baby',
+    'Toddler': 'Toddler',
+    'Kids': 'Kids',
+    'Teen': 'Teen',
+    'Young Adult': 'Young Adult',
+    'Adult': 'Adult',
+    'Senior': 'Senior'
+  };
+  
+  const ageGroup = ageGroupMap[modelDetails.age] || 'Adult';
+  
+  logger.info("Selecting persona with filters", { 
+    source: "eliteMockupGenerator", 
+    ageGroup, 
+    sex: modelDetails.sex, 
+    ethnicity: modelDetails.ethnicity, 
+    size: modelDetails.modelSize 
+  });
+  
   const persona = getRandomPersona({
+    ageGroup,
     sex: modelDetails.sex,
     ethnicity: modelDetails.ethnicity,
     size: modelDetails.modelSize

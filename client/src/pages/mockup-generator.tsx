@@ -180,7 +180,7 @@ type WizardStep =
   | "customize" // Sizes + Colors + Model + Scene
   | "output";   // Angles + Quality + Generate
 
-type AgeGroup = "ADULT" | "YOUNG_ADULT" | "TEEN";
+type AgeGroup = "Baby" | "Toddler" | "Kids" | "Teen" | "Young Adult" | "Adult" | "Senior";
 type Sex = "MALE" | "FEMALE";
 type Ethnicity = "White" | "Black" | "Hispanic" | "Asian" | "Indian" | "Southeast Asian" | "Middle Eastern" | "Indigenous" | "Diverse";
 type ModelSize = "XS" | "S" | "M" | "L" | "XL" | "XXL";
@@ -863,7 +863,7 @@ export default function MockupGenerator() {
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["M"]);
   const [selectedAngles, setSelectedAngles] = useState<string[]>(["front"]);
   const [modelDetails, setModelDetails] = useState<ModelDetails>({
-    age: "ADULT",
+    age: "Adult",
     sex: "MALE",
     ethnicity: "White",
     modelSize: "M"
@@ -2816,26 +2816,34 @@ export default function MockupGenerator() {
                                     {/* Age Group Section */}
                                     <div className="mt-2">
                                       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Age Group</label>
-                                      <div className="grid grid-cols-3 gap-2">
+                                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                                         {[
-                                          { value: "TEEN", label: "Teen", description: "13-17 years", icon: "🧒" },
-                                          { value: "YOUNG_ADULT", label: "Young Adult", description: "18-24 years", icon: "🧑" },
-                                          { value: "ADULT", label: "Adult", description: "25-45 years", icon: "👨" },
+                                          { value: "Baby", label: "Baby", description: "0-1 yr", icon: "👶", available: false },
+                                          { value: "Toddler", label: "Toddler", description: "1-4 yrs", icon: "💒", available: false },
+                                          { value: "Kids", label: "Kids", description: "4-12 yrs", icon: "💧", available: false },
+                                          { value: "Teen", label: "Teen", description: "13-17 yrs", icon: "🧒", available: true },
+                                          { value: "Young Adult", label: "Young Adult", description: "18-24 yrs", icon: "🧑", available: true },
+                                          { value: "Adult", label: "Adult", description: "25-55 yrs", icon: "👨", available: true },
+                                          { value: "Senior", label: "Senior", description: "56+ yrs", icon: "👴", available: false },
                                         ].map((option) => (
                                           <button
                                             key={option.value}
-                                            onClick={() => setModelDetails({...modelDetails, age: option.value as AgeGroup})}
+                                            onClick={() => option.available && setModelDetails({...modelDetails, age: option.value as AgeGroup})}
+                                            disabled={!option.available}
                                             className={cn(
                                               "flex flex-col items-center justify-center gap-0.5 py-2 px-1 rounded-lg border transition-all",
-                                              modelDetails.age === option.value
-                                                ? "bg-primary/10 border-primary text-primary"
-                                                : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"
+                                              !option.available
+                                                ? "bg-muted/20 border-border/50 text-muted-foreground/50 cursor-not-allowed opacity-50"
+                                                : modelDetails.age === option.value
+                                                  ? "bg-primary/10 border-primary text-primary"
+                                                  : "bg-muted/30 border-border text-muted-foreground hover:border-primary/30"
                                             )}
-                                            data-testid={`button-age-${option.value.toLowerCase()}`}
+                                            data-testid={`button-age-${option.value.toLowerCase().replace(' ', '-')}`}
                                           >
                                             <span className="text-lg">{option.icon}</span>
-                                            <span className="text-xs font-medium">{option.label}</span>
-                                            <span className="text-[10px] text-muted-foreground">{option.description}</span>
+                                            <span className="text-[10px] font-medium leading-tight">{option.label}</span>
+                                            <span className="text-[9px] text-muted-foreground">{option.description}</span>
+                                            {!option.available && <span className="text-[8px] text-muted-foreground/70">Coming soon</span>}
                                           </button>
                                         ))}
                                       </div>
@@ -3119,23 +3127,29 @@ export default function MockupGenerator() {
 
                                 {/* Batch Summary */}
                                 <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl p-4 sm:p-6 border border-primary/20">
-                                  <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
-                                    <div className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 border">
+                                  <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-4">
+                                    <div className="flex items-center gap-1.5 bg-card rounded-lg px-2 sm:px-3 py-2 border">
                                       <Palette className="h-4 w-4 text-primary" />
-                                      <span className="text-lg font-bold text-primary">{journey === "AOP" ? 1 : selectedColors.length}</span>
-                                      <span className="text-xs text-muted-foreground">Colors</span>
+                                      <span className="text-base sm:text-lg font-bold text-primary">{journey === "AOP" ? 1 : selectedColors.length}</span>
+                                      <span className="text-[10px] sm:text-xs text-muted-foreground">Colors</span>
                                     </div>
-                                    <span className="text-lg font-bold text-muted-foreground">×</span>
-                                    <div className="flex items-center gap-2 bg-card rounded-lg px-3 py-2 border">
+                                    <span className="text-base sm:text-lg font-bold text-muted-foreground">×</span>
+                                    <div className="flex items-center gap-1.5 bg-card rounded-lg px-2 sm:px-3 py-2 border">
                                       <Camera className="h-4 w-4 text-secondary" />
-                                      <span className="text-lg font-bold text-secondary">{selectedAngles.length || 1}</span>
-                                      <span className="text-xs text-muted-foreground">Angles</span>
+                                      <span className="text-base sm:text-lg font-bold text-secondary">{selectedAngles.length || 1}</span>
+                                      <span className="text-[10px] sm:text-xs text-muted-foreground">Angles</span>
                                     </div>
-                                    <span className="text-lg font-bold text-muted-foreground">=</span>
-                                    <div className="flex items-center gap-2 bg-gradient-to-r from-primary to-secondary rounded-lg px-3 py-2 text-white">
+                                    <span className="text-base sm:text-lg font-bold text-muted-foreground">×</span>
+                                    <div className="flex items-center gap-1.5 bg-card rounded-lg px-2 sm:px-3 py-2 border">
+                                      <Maximize2 className="h-4 w-4 text-amber-500" />
+                                      <span className="text-base sm:text-lg font-bold text-amber-500">{selectedSizes.length || 1}</span>
+                                      <span className="text-[10px] sm:text-xs text-muted-foreground">Sizes</span>
+                                    </div>
+                                    <span className="text-base sm:text-lg font-bold text-muted-foreground">=</span>
+                                    <div className="flex items-center gap-1.5 bg-gradient-to-r from-primary to-secondary rounded-lg px-2 sm:px-3 py-2 text-white">
                                       <Sparkles className="h-4 w-4" />
-                                      <span className="text-lg font-bold">{Math.max(1, selectedAngles.length * (journey === "AOP" ? 1 : selectedColors.length))}</span>
-                                      <span className="text-xs">Mockups</span>
+                                      <span className="text-base sm:text-lg font-bold">{Math.max(1, selectedAngles.length * (journey === "AOP" ? 1 : selectedColors.length) * (selectedSizes.length || 1))}</span>
+                                      <span className="text-[10px] sm:text-xs">Mockups</span>
                                     </div>
                                   </div>
                                   
