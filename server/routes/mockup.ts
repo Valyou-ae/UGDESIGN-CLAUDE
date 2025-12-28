@@ -179,16 +179,10 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
 
       res.end();
     } catch (error) {
-      // Refund credits on error
-      try {
-        await storage.addCredits(userId, creditCost);
-      } catch (refundError) {
-        logger.error("Failed to refund credits", refundError, { source: "mockup" });
-      }
       logger.error("Mockup generation error", error, { source: "mockup" });
       const errorMessage = (error as Error).message === 'Generation timeout' 
-        ? "Mockup generation timed out after 60 seconds. Credits refunded."
-        : "Mockup generation failed. Credits refunded.";
+        ? "Mockup generation timed out after 60 seconds."
+        : "Mockup generation failed.";
       res.write(`event: error\ndata: ${JSON.stringify({ message: errorMessage })}\n\n`);
       res.end();
     }
