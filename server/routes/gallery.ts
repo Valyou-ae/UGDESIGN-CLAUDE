@@ -26,12 +26,18 @@ export function registerGalleryRoutes(app: Express, middleware: Middleware) {
       let followingUserIds: string[] = [];
       if (userId) {
         // Fetch user-specific data per-request (not cached)
-        const [likedIds, followingData] = await Promise.all([
-          storage.getUserLikedImages(userId),
-          storage.getFollowing(userId, 1000, 0)
-        ]);
-        likedImageIds = likedIds;
-        followingUserIds = followingData.users.map(u => u.id);
+        // Wrap in try-catch to handle edge cases with empty tables
+        try {
+          const [likedIds, followingData] = await Promise.all([
+            storage.getUserLikedImages(userId).catch(() => []),
+            storage.getFollowing(userId, 1000, 0).catch(() => ({ users: [], total: 0 }))
+          ]);
+          likedImageIds = likedIds || [];
+          followingUserIds = (followingData?.users || []).map(u => u.id);
+        } catch {
+          // If fetching user data fails, continue with empty arrays
+          logger.warn("Failed to fetch user-specific gallery data", { userId, source: "gallery" });
+        }
       }
 
       // Create new response objects with user-specific status - do not mutate cached data

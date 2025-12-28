@@ -2099,53 +2099,93 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFollowers(userId: string, limit = 20, offset = 0): Promise<{ users: (User & { followedAt: Date })[]; total: number }> {
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(userFollows)
-      .where(eq(userFollows.followingId, userId));
-    const total = countResult?.count || 0;
+    // Use raw SQL to avoid Neon driver issues with empty inner joins
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as count FROM user_follows WHERE following_id = $1`,
+      [userId]
+    );
+    const total = parseInt(countResult.rows[0]?.count || '0', 10);
 
-    const followers = await db
-      .select({
-        user: users,
-        followedAt: userFollows.createdAt,
-      })
-      .from(userFollows)
-      .innerJoin(users, eq(userFollows.followerId, users.id))
-      .where(eq(userFollows.followingId, userId))
-      .orderBy(desc(userFollows.createdAt))
-      .limit(limit)
-      .offset(offset);
+    const followersResult = await pool.query(
+      `SELECT u.*, uf.created_at as followed_at
+       FROM user_follows uf
+       INNER JOIN users u ON uf.follower_id = u.id
+       WHERE uf.following_id = $1
+       ORDER BY uf.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
+    );
 
-    return {
-      users: followers.map(f => ({ ...f.user, followedAt: f.followedAt })),
-      total,
-    };
+    const followers = (followersResult.rows || []).map(row => ({
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      displayName: row.display_name,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      bio: row.bio,
+      profileImageUrl: row.profile_image_url,
+      socialLinks: row.social_links || [],
+      role: row.role,
+      credits: row.credits,
+      affiliateCode: row.affiliate_code,
+      referredBy: row.referred_by,
+      stripeCustomerId: row.stripe_customer_id,
+      stripeSubscriptionId: row.stripe_subscription_id,
+      passwordResetToken: row.password_reset_token,
+      passwordResetExpires: row.password_reset_expires ? new Date(row.password_reset_expires) : null,
+      createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+      updatedAt: row.updated_at ? new Date(row.updated_at) : null,
+      followedAt: row.followed_at ? new Date(row.followed_at) : new Date(),
+    } as User & { followedAt: Date }));
+
+    return { users: followers, total };
   }
 
   async getFollowing(userId: string, limit = 20, offset = 0): Promise<{ users: (User & { followedAt: Date })[]; total: number }> {
-    const [countResult] = await db
-      .select({ count: count() })
-      .from(userFollows)
-      .where(eq(userFollows.followerId, userId));
-    const total = countResult?.count || 0;
+    // Use raw SQL to avoid Neon driver issues with empty inner joins
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as count FROM user_follows WHERE follower_id = $1`,
+      [userId]
+    );
+    const total = parseInt(countResult.rows[0]?.count || '0', 10);
 
-    const following = await db
-      .select({
-        user: users,
-        followedAt: userFollows.createdAt,
-      })
-      .from(userFollows)
-      .innerJoin(users, eq(userFollows.followingId, users.id))
-      .where(eq(userFollows.followerId, userId))
-      .orderBy(desc(userFollows.createdAt))
-      .limit(limit)
-      .offset(offset);
+    const followingResult = await pool.query(
+      `SELECT u.*, uf.created_at as followed_at
+       FROM user_follows uf
+       INNER JOIN users u ON uf.following_id = u.id
+       WHERE uf.follower_id = $1
+       ORDER BY uf.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [userId, limit, offset]
+    );
 
-    return {
-      users: following.map(f => ({ ...f.user, followedAt: f.followedAt })),
-      total,
-    };
+    const following = (followingResult.rows || []).map(row => ({
+      id: row.id,
+      username: row.username,
+      email: row.email,
+      password: row.password,
+      displayName: row.display_name,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      bio: row.bio,
+      profileImageUrl: row.profile_image_url,
+      socialLinks: row.social_links || [],
+      role: row.role,
+      credits: row.credits,
+      affiliateCode: row.affiliate_code,
+      referredBy: row.referred_by,
+      stripeCustomerId: row.stripe_customer_id,
+      stripeSubscriptionId: row.stripe_subscription_id,
+      passwordResetToken: row.password_reset_token,
+      passwordResetExpires: row.password_reset_expires ? new Date(row.password_reset_expires) : null,
+      createdAt: row.created_at ? new Date(row.created_at) : new Date(),
+      updatedAt: row.updated_at ? new Date(row.updated_at) : null,
+      followedAt: row.followed_at ? new Date(row.followed_at) : new Date(),
+    } as User & { followedAt: Date }));
+
+    return { users: following, total };
   }
 
   async getFollowerCount(userId: string): Promise<number> {
