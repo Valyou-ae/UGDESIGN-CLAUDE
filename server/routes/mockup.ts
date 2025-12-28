@@ -223,10 +223,18 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       const kbConfig: KnowledgeConfig = knowledgeConfig || {};
 
       // SINGLE SOURCE OF TRUTH: Size normalization computed once and used for both billing and generation
+      // Maps all product sizes to somatic profile sizes for body measurement calculations
       const sizeNormMap: Record<string, string> = {
+        // Standard adult sizes (direct mapping)
         "XS": "XS", "S": "S", "M": "M", "L": "L", "XL": "XL",
         "2XL": "XXL", "XXL": "XXL", "3XL": "XXXL", "XXXL": "XXXL", 
-        "4XL": "4XL", "5XL": "5XL"
+        "4XL": "4XL", "5XL": "5XL",
+        // Baby sizes (map to S for smaller infants, M for larger)
+        "NB": "S", "3M": "S", "6M": "S", "12M": "M", "18M": "M", "24M": "M",
+        // Toddler sizes (map to S for younger, M for older)
+        "2T": "S", "3T": "S", "4T": "M",
+        // Youth/One-Size (map to M as default)
+        "Youth": "M", "OS": "M"
       };
 
       // Compute normalized sizes - same logic used for BOTH billing AND generation
