@@ -18,7 +18,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair',
     fullDescription: 'Vibrant 21-year-old woman with a slim athletic build from regular yoga. Her long beachy waves of light brown hair frame a heart-shaped face with bright blue eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-white-s-01_emma_headshot.png'
   },
   {
     id: 'young-adult-female-black-s-01',
@@ -37,7 +38,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'rich brown',
     fullDescription: 'Radiant 19-year-old woman with a slender build and confident presence. Her long box braids frame high cheekbones and a dazzling smile, with expressive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-black-s-01_aaliyah_headshot.png'
   },
   {
     id: 'young-adult-female-hispanic-m-01',
@@ -56,7 +58,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'Charismatic 23-year-old woman with toned curves and natural beauty. Her long curly dark brown hair cascades beautifully, with warm features and expressive brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-hispanic-m-01_valentina_headshot.png'
   },
   {
     id: 'young-adult-female-asian-m-01',
@@ -75,7 +78,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light golden',
     fullDescription: 'Friendly 22-year-old woman with a balanced build and approachable demeanor. Her medium-length black hair with brown highlights frames delicate features and a warm smile.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-asian-m-01_jessica_headshot.png'
   },
   {
     id: 'young-adult-female-indian-l-01',
@@ -94,7 +98,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm caramel',
     fullDescription: 'Confident 24-year-old woman with beautiful curves and radiant presence. Her long straight dark brown hair and warm caramel skin complement expressive brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-indian-l-01_priya_headshot.png'
   },
   {
     id: 'young-adult-female-southeast-asian-s-01',
@@ -113,7 +118,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light tan',
     fullDescription: 'Sweet 20-year-old woman with a petite build and gentle demeanor. Her long straight black hair is sleek and shiny, with youthful features and kind dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-southeast-asian-s-01_kim_headshot.png'
   },
   {
     id: 'young-adult-female-indigenous-m-01',
@@ -132,7 +138,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm brown',
     fullDescription: 'Athletic 22-year-old woman with a strong presence and warm spirit. Her long straight black hair frames strong beautiful features and deep warm dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-indigenous-m-01_nina_headshot.png'
   },
   {
     id: 'young-adult-female-white-l-01',
@@ -151,7 +158,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair with freckles',
     fullDescription: 'Confident 24-year-old woman with curvy athletic build and natural charm. Her medium auburn hair with layers frames soft features, freckled fair skin, and bright green eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-white-l-01_rachel_headshot.png'
   },
   {
     id: 'young-adult-male-white-s-01',
@@ -170,7 +178,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair',
     fullDescription: 'Energetic 20-year-old man with a lean build and youthful appearance. His medium textured blonde hair is casually styled, with light stubble and bright blue eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-white-s-01_tyler_headshot.png'
   },
   {
     id: 'young-adult-male-black-m-01',
@@ -189,7 +198,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'dark brown',
     fullDescription: 'Athletic 22-year-old man with a confident presence and easy charisma. His short twist hairstyle is neatly maintained, with defined features and focused dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-black-m-01_jaylen_headshot.png'
   },
   {
     id: 'young-adult-male-hispanic-m-01',
@@ -208,7 +218,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'tan',
     fullDescription: 'Friendly 23-year-old man with a toned build and warm personality. His short wavy dark brown hair and neatly trimmed beard complement his tan skin and warm brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-hispanic-m-01_marco_headshot.png'
   },
   {
     id: 'young-adult-male-asian-s-01',
@@ -227,7 +238,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light',
     fullDescription: 'Studious 21-year-old man with a slim build and clean-cut appearance. His short styled black hair is neatly groomed, with a friendly expression and attentive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-asian-s-01_kevin_headshot.png'
   },
   {
     id: 'young-adult-male-indian-l-01',
@@ -246,7 +258,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'medium brown',
     fullDescription: 'Strong 24-year-old man with a solid muscular build. His short black hair with natural wave and short beard frame strong features and confident dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-indian-l-01_rohan_headshot.png'
   },
   {
     id: 'young-adult-male-southeast-asian-m-01',
@@ -265,7 +278,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'medium tan',
     fullDescription: 'Friendly 22-year-old man with a compact muscular build. His short cropped black hair is low-maintenance, with a round face and an easy-going smile and warm dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-southeast-asian-m-01_daniel_headshot.png'
   },
   {
     id: 'young-adult-male-indigenous-l-01',
@@ -284,7 +298,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm reddish-brown',
     fullDescription: 'Athletic 23-year-old man with a broad build and quiet confidence. His long black hair is tied back, with a strong jaw and focused dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-indigenous-l-01_kai_headshot.png'
   },
   {
     id: 'young-adult-male-white-l-01',
@@ -303,7 +318,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light tan',
     fullDescription: 'Strong 24-year-old man with a muscular build and rugged appeal. His short textured brown hair and full beard give him a mature look, with warm hazel eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-white-l-01_brandon_headshot.png'
   },
   {
     id: 'young-adult-male-middle-eastern-m-01',
@@ -322,7 +338,8 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'Athletic 22-year-old man with a lean muscular build and confident presence. His short styled dark brown hair and groomed beard frame a strong jawline, with striking deep brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-male-middle-eastern-m-01_tariq_headshot.png'
   },
   {
     id: 'young-adult-female-middle-eastern-m-01',
@@ -341,6 +358,7 @@ export const YOUNG_ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'Graceful 21-year-old woman with a slender build and elegant presence. Her long wavy dark brown hair frames elegant features with arched brows, warm olive skin, and expressive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/young-adult-female-middle-eastern-m-01_leila_headshot.png'
   }
 ];

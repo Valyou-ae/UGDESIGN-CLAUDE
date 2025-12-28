@@ -19,7 +19,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Athletic 32-year-old man with an approachable demeanor. Light stubble frames his defined jaw, with short textured dark brown hair and attentive green eyes.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-male-white-m-01.png'
+    headshotUrl: 'attached_assets/personas/adult-male-white-m-01_marcus_headshot.png'
   },
   {
     id: 'adult-male-black-m-01',
@@ -39,7 +39,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Confident 35-year-old man with strong cheekbones and a clean-shaven face. His short fade haircut is meticulously groomed, complementing his warm dark brown eyes.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-male-black-m-01.png'
+    headshotUrl: 'attached_assets/personas/adult-male-black-m-01_darius_headshot.png'
   },
   {
     id: 'adult-male-hispanic-m-01',
@@ -59,7 +59,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     fullDescription: 'Friendly 38-year-old with a warm smile and neatly trimmed goatee. His wavy dark brown hair frames his face naturally, with expressive brown eyes that convey openness.',
     version: '1.0',
     createdDate: '2024-01-15',
-    headshotUrl: 'attached_assets/personas/adult-male-hispanic-m-01.png'
+    headshotUrl: 'attached_assets/personas/adult-male-hispanic-m-01_carlos_headshot.png'
   },
   {
     id: 'adult-female-white-m-01',
@@ -78,7 +78,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair with light freckles',
     fullDescription: 'Poised 34-year-old woman with soft features and natural beauty. Her auburn shoulder-length hair has gentle layers, framing bright blue eyes and light freckles.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-white-m-01_sarah_headshot.png'
   },
   {
     id: 'adult-female-black-m-01',
@@ -97,7 +98,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'deep brown',
     fullDescription: 'Elegant 31-year-old woman with striking high cheekbones and full lips. Her beautiful natural curls frame her face, highlighting deep brown eyes that radiate warmth.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-black-m-01_jasmine_headshot.png'
   },
   {
     id: 'adult-female-asian-m-01',
@@ -116,7 +118,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light golden',
     fullDescription: 'Graceful 29-year-old woman with delicate features and beautiful almond-shaped eyes. Her long straight black hair cascades down her back, complementing her light golden complexion.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-asian-m-01_mei_headshot.png'
   },
   {
     id: 'adult-male-asian-l-01',
@@ -135,7 +138,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'medium tan',
     fullDescription: 'Strong 40-year-old man with a square jaw and perpetually friendly expression. His neatly side-parted black hair gives him a professional appearance, with warm dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-asian-l-01_kevin_headshot.png'
   },
   {
     id: 'adult-male-indian-l-01',
@@ -154,7 +158,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm brown',
     fullDescription: 'Distinguished 42-year-old man with broad shoulders and commanding presence. Salt-and-pepper stubble adds maturity to his face, with expressive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-indian-l-01_raj_headshot.png'
   },
   {
     id: 'adult-female-indian-l-01',
@@ -173,7 +178,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm caramel',
     fullDescription: 'Radiant 36-year-old woman with curves and confidence. Her long wavy dark brown hair frames expressive eyes and a warm smile that lights up her face.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-indian-l-01_priya_headshot.png'
   },
   {
     id: 'adult-female-hispanic-l-01',
@@ -192,7 +198,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'olive',
     fullDescription: 'Vivacious 33-year-old woman with a bright smile and defined features. Her long curly dark brown hair bounces naturally, with captivating hazel eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-hispanic-l-01_sofia_headshot.png'
   },
   {
     id: 'adult-male-white-l-01',
@@ -211,7 +218,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair',
     fullDescription: 'Rugged 45-year-old man with a solid build and full well-groomed beard. His medium-length textured light brown hair has natural volume, with piercing blue eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-white-l-01_thomas_headshot.png'
   },
   {
     id: 'adult-female-southeast-asian-l-01',
@@ -230,7 +238,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light brown',
     fullDescription: 'Warm 30-year-old woman with a round face and gentle smile. Her medium-length straight black hair is sleek and polished, with kind dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-southeast-asian-l-01_linh_headshot.png'
   },
   {
     id: 'adult-male-southeast-asian-xl-01',
@@ -249,7 +258,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'medium brown',
     fullDescription: 'Cheerful 37-year-old man with a stocky muscular build. His broad face often breaks into a friendly grin, with short cropped black hair and warm dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-southeast-asian-xl-01_arjun_headshot.png'
   },
   {
     id: 'adult-male-black-xl-01',
@@ -268,7 +278,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'dark brown',
     fullDescription: 'Powerful 41-year-old man with an imposing yet approachable presence. His strong jaw is framed by a neatly trimmed short beard, with a clean buzz cut and deep dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-black-xl-01_marcus_headshot.png'
   },
   {
     id: 'adult-female-white-xl-01',
@@ -287,7 +298,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair pink',
     fullDescription: 'Confident 39-year-old woman with a full-figured build and warm features. Her long layered blonde hair frames bright green eyes and a welcoming smile.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-white-xl-01_jennifer_headshot.png'
   },
   {
     id: 'adult-female-black-xl-01',
@@ -306,7 +318,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'rich brown',
     fullDescription: 'Radiant 35-year-old woman with beautiful curves and confident presence. Her elegant braided updo showcases defined cheekbones, with warm dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-black-xl-01_keisha_headshot.png'
   },
   {
     id: 'adult-male-indigenous-xl-01',
@@ -325,7 +338,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm reddish-brown',
     fullDescription: 'Strong 44-year-old man with a broad solid build and commanding presence. His long straight black hair and weathered complexion speak to outdoor experience, with deep dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-indigenous-xl-01_caleb_headshot.png'
   },
   {
     id: 'adult-female-indigenous-xl-01',
@@ -344,7 +358,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm brown',
     fullDescription: 'Nurturing 40-year-old woman with a full-figured build and serene presence. Her long straight black hair frames a round face with gentle dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-indigenous-xl-01_maya_headshot.png'
   },
   {
     id: 'adult-male-hispanic-xl-01',
@@ -363,7 +378,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'tan',
     fullDescription: 'Welcoming 48-year-old man with a stocky build and kind demeanor. His thick mustache adds character to his round face, with distinguished gray at the temples.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-hispanic-xl-01_miguel_headshot.png'
   },
   {
     id: 'adult-female-asian-xl-01',
@@ -382,7 +398,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light tan',
     fullDescription: 'Warm 43-year-old woman with a full-figured build and maternal presence. Her shoulder-length bob with subtle highlights frames a round face with kind dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-asian-xl-01_linda_headshot.png'
   },
   {
     id: 'adult-male-middle-eastern-m-01',
@@ -401,7 +418,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'Confident 34-year-old man with an athletic lean build and refined appearance. His well-groomed short beard frames a defined jawline, with short textured black hair and attentive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-middle-eastern-m-01_omar_headshot.png'
   },
   {
     id: 'adult-female-middle-eastern-l-01',
@@ -420,7 +438,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'Elegant 32-year-old woman with graceful curves and striking beauty. Her long thick wavy dark brown hair frames defined cheekbones and full expressive eyebrows, with captivating deep brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-middle-eastern-l-01_layla_headshot.png'
   },
   {
     id: 'adult-male-middle-eastern-xl-01',
@@ -439,7 +458,8 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light brown',
     fullDescription: 'Distinguished 41-year-old man with a broad muscular build and commanding presence. His full well-maintained beard adds gravitas to strong features, with striking hazel eyes and distinguished gray streaks in his black hair.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-male-middle-eastern-xl-01_khalid_headshot.png'
   },
   {
     id: 'adult-female-middle-eastern-xxl-01',
@@ -458,6 +478,7 @@ export const ADULT_PERSONAS: UnifiedPersona[] = [
     skinTone: 'olive',
     fullDescription: 'Radiant 38-year-old woman with a full-figured build and nurturing presence. Her long straight black hair frames a warm round face with beautifully arched eyebrows and captivating green eyes that convey kindness.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/adult-female-middle-eastern-xxl-01_fatima_headshot.png'
   }
 ];

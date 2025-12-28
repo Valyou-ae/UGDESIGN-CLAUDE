@@ -18,7 +18,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair',
     fullDescription: 'Bright 15-year-old girl with a slim build and youthful energy. Her long straight blonde hair frames a fresh face with clear skin and bright blue eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-white-s-01_emma_headshot.png'
   },
   {
     id: 'teen-female-black-s-01',
@@ -37,7 +38,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'medium brown',
     fullDescription: 'Energetic 14-year-old girl with a slender build and infectious enthusiasm. Her natural curly black hair bounces with movement, with bright dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-black-s-01_zoe_headshot.png'
   },
   {
     id: 'teen-female-hispanic-m-01',
@@ -56,7 +58,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'olive',
     fullDescription: 'Friendly 16-year-old girl with an average build and warm personality. Her medium-length wavy dark brown hair complements her olive skin and expressive brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-hispanic-m-01_isabella_headshot.png'
   },
   {
     id: 'teen-female-asian-m-01',
@@ -75,7 +78,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light',
     fullDescription: 'Studious 15-year-old girl with a petite athletic build. Her long straight black hair with bangs frames delicate features and thoughtful dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-asian-m-01_lily_headshot.png'
   },
   {
     id: 'teen-female-indian-m-01',
@@ -94,7 +98,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm brown',
     fullDescription: 'Cheerful 17-year-old girl with a slim build and bright smile. Her long dark brown hair is often worn in a neat braid, with soft features and warm brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-indian-m-01_asha_headshot.png'
   },
   {
     id: 'teen-female-southeast-asian-s-01',
@@ -113,7 +118,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light tan',
     fullDescription: 'Sweet 14-year-old girl with a petite build and gentle demeanor. Her medium-length straight black hair frames a round face with a kind expression and dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-southeast-asian-s-01_mai_headshot.png'
   },
   {
     id: 'teen-male-white-s-01',
@@ -132,7 +138,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'fair with freckles',
     fullDescription: 'Energetic 14-year-old boy with a lean build and youthful enthusiasm. His short messy light brown hair and light freckles give him a boyish charm, with curious hazel eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-white-s-01_jake_headshot.png'
   },
   {
     id: 'teen-male-black-m-01',
@@ -151,7 +158,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'dark brown',
     fullDescription: 'Confident 16-year-old boy with an athletic build from sports. His clean short fade is neatly maintained, with a defined jaw and focused dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-black-m-01_marcus_headshot.png'
   },
   {
     id: 'teen-male-hispanic-m-01',
@@ -170,7 +178,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'tan',
     fullDescription: 'Friendly 15-year-old boy with an average build and easy-going nature. His medium wavy dark brown hair has natural volume, with warm brown eyes and an easy smile.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-hispanic-m-01_diego_headshot.png'
   },
   {
     id: 'teen-male-asian-s-01',
@@ -189,7 +198,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'light',
     fullDescription: 'Curious 13-year-old boy with a slim build and bright expression. His short straight black hair is neatly styled, with alert dark brown eyes full of curiosity.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-asian-s-01_ryan_headshot.png'
   },
   {
     id: 'teen-male-indian-m-01',
@@ -208,7 +218,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'medium brown',
     fullDescription: 'Focused 17-year-old boy with a lean athletic build. His short textured black hair is casually styled, with angular features and determined dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-indian-m-01_arjun_headshot.png'
   },
   {
     id: 'teen-male-indigenous-m-01',
@@ -227,7 +238,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm brown',
     fullDescription: 'Thoughtful 16-year-old boy with a solid build and quiet strength. His medium-length straight black hair frames strong features and deep thoughtful dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-indigenous-m-01_noah_headshot.png'
   },
   {
     id: 'teen-female-middle-eastern-m-01',
@@ -246,7 +258,8 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'A 15-year-old Middle Eastern teen with a slim build and graceful presence. Her long wavy dark brown hair frames elegant features with warm olive skin and expressive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-female-middle-eastern-m-01_yasmine_headshot.png'
   },
   {
     id: 'teen-male-middle-eastern-m-01',
@@ -265,6 +278,7 @@ export const TEEN_PERSONAS: UnifiedPersona[] = [
     skinTone: 'warm olive',
     fullDescription: 'A 16-year-old Middle Eastern teen with a lean athletic build and confident demeanor. His short textured dark brown hair is neatly styled, with defined brows and expressive dark brown eyes.',
     version: '1.0',
-    createdDate: '2024-01-15'
+    createdDate: '2024-01-15',
+    headshotUrl: 'attached_assets/personas/teen-male-middle-eastern-m-01_amir_headshot.png'
   }
 ];
