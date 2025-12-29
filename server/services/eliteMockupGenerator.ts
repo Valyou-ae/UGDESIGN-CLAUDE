@@ -1135,157 +1135,70 @@ export async function generateSingleMockup(
         inlineData: { data: personaHeadshot, mimeType: "image/png" }
       });
       parts.push({
-        text: `===== CRITICAL IDENTITY REFERENCE - PHOTO PROVIDED =====
-[MANDATORY - HIGHEST PRIORITY - THIS IS THE PERSON TO RENDER]
-
-**IDENTITY LOCK ACTIVE** - A reference photo has been provided. You MUST render this EXACT same person.
-
-This is NOT a style reference. This is NOT optional. This IS the person who must appear in your output.
-
-FACE MATCHING (MANDATORY - PIXEL-LEVEL ACCURACY REQUIRED):
-1. BONE STRUCTURE: Copy the exact skull shape, cheekbone prominence, jawline angle
-2. NOSE: Exact same nose - bridge width, tip shape, nostril size, length
-3. MOUTH: Exact lip shape, lip thickness, philtrum length, mouth width
-4. EYES: Exact eye shape, spacing, depth, eyelid crease, brow position
-5. FOREHEAD: Same forehead height and hairline position
-6. CHIN: Exact chin shape, prominence, and width
-
-COLORING (MANDATORY - EXACT MATCH):
-1. SKIN TONE: Identical skin color, undertones, and complexion
-2. HAIR COLOR: Exact same shade - do not lighten or darken
-3. EYE COLOR: Exact same iris color
-4. HAIR STYLE: Identical cut, length, texture, and styling
-
-CONSISTENCY RULE:
-This same person must appear in ALL mockup angles (front, three-quarter, side, closeup).
-If you cannot match this face exactly, the output is INVALID.
-
-VERIFICATION CHECK:
-Before finalizing, ask: "Would someone who knows this person recognize them in my output?"
-If the answer is "no" or "maybe", regenerate with closer matching.
-
-===== END IDENTITY REFERENCE =====`
+        text: `[MODEL REFERENCE PHOTO]
+This is the person who should wear the shirt. Match their face, skin tone, and hair exactly.`
       });
     }
 
-    // Add previous mockup as additional consistency reference
-    // IMPORTANT: When a personaHeadshot is provided, the reference is ONLY for environment/design/lighting
-    // NOT for face/model identity (which comes from the headshot above)
+    // Add previous mockup as consistency reference for background/lighting
     if (previousMockupReference) {
       parts.push({
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
-      
-      // Use different prompts based on whether we have a size-specific headshot
-      const referencePrompt = personaHeadshot 
-        ? `===== ENVIRONMENT & DESIGN CONSISTENCY REFERENCE =====
-[IMPORTANT - USE FOR BACKGROUND, DESIGN, AND LIGHTING ONLY]
-
-This reference image shows a previous mockup from the same batch. Use it ONLY for:
-
-1. BACKGROUND/ENVIRONMENT CONSISTENCY:
-   - Match the exact same background setting (studio, outdoor, etc.)
-   - Same backdrop color and style
-   - Same environmental elements
-
-2. DESIGN ARTWORK CONSISTENCY:
-   - The printed design on the garment must look IDENTICAL
-   - Same colors, proportions, and placement
-   - DO NOT reinterpret the artwork
-
-3. LIGHTING CONSISTENCY:
-   - Same lighting setup and direction
-   - Same color temperature and shadow style
-   - Same overall mood and atmosphere
-
-4. PHOTOGRAPHY STYLE:
-   - Same color grading and visual treatment
-   - Same level of realism and quality
-
-**CRITICAL - DO NOT USE THIS REFERENCE FOR:**
-- Face or facial features (use the IDENTITY REFERENCE PHOTO above instead)
-- Body type or proportions (use the somatic description in the prompt)
-- Hair style or color (use the IDENTITY REFERENCE PHOTO above instead)
-- Skin tone (use the IDENTITY REFERENCE PHOTO above instead)
-
-The MODEL/PERSON identity comes from the separate headshot reference provided above.
-This reference is ONLY for matching the environment, design, and lighting.
-
-===== END ENVIRONMENT REFERENCE =====`
-        : `===== CROSS-BATCH CONSISTENCY REFERENCE (CRITICAL) =====
-[MANDATORY - MATCH THIS REFERENCE SHOT EXACTLY]
-
-This is a mockup from the SAME batch/photoshoot. Your output MUST match this reference in ALL aspects EXCEPT the camera angle and body size.
-
-MANDATORY CONSISTENCY REQUIREMENTS:
-
-1. EXACT SAME BACKGROUND:
-   - If reference shows gray studio backdrop, use IDENTICAL gray studio backdrop
-   - If reference shows urban street, use IDENTICAL urban setting
-   - DO NOT change environment type (studio to outdoor = VIOLATION)
-
-2. EXACT SAME DESIGN ON GARMENT:
-   - The printed design must be IDENTICAL to the reference
-   - Same colors, same art style, same borders/outlines
-
-3. SAME MODEL IDENTITY (for wearables):
-   - This is the SAME PERSON - match their face, hair, skin tone EXACTLY
-   - Same facial features, same hair style, same expression type
-
-4. SAME LIGHTING CONDITIONS:
-   - Same lighting setup and color temperature
-
-5. SAME PHOTOGRAPHY STYLE:
-   - Same color grading, mood, and visual treatment
-
-WHAT MAY DIFFER:
-- Camera angle (as specified in the prompt)
-- Body size (if rendering a different size, adjust body proportionally)
-
-===== END CROSS-BATCH REFERENCE =====`;
-
-      parts.push({ text: referencePrompt });
+      parts.push({
+        text: `[STYLE REFERENCE]
+Match the background, lighting, and photography style from this reference image. Keep the same environment and mood.`
+      });
     }
 
     parts.push({
       inlineData: { data: designBase64, mimeType: "image/png" }
     });
 
-    parts.push({
-      text: `===== CRITICAL DESIGN REFERENCE =====
-[MANDATORY - DO NOT MODIFY THE DESIGN]
+    // Build a focused prompt with essential locks and material physics
+    const productInfo = renderSpec.productDescription || "t-shirt";
+    const personaInfo = renderSpec.personaDescription || "";
+    const materialInfo = renderSpec.materialDescription || "";
+    const lightingInfo = renderSpec.lightingDescription || "natural lighting";
+    const environmentInfo = renderSpec.environmentDescription || "lifestyle setting";
+    const cameraInfo = renderSpec.cameraDescription || "front view";
+    const contourInfo = renderSpec.contourDescription || "";
+    const negatives = renderSpec.negativePrompts || "";
+    
+    const simplePrompt = `[DESIGN IMAGE - COMPOSITE ONTO SHIRT]
+This is the exact design artwork to print on the shirt. Place this image directly onto the fabric - do not redraw, recreate, or reinterpret it.
 
-This is the EXACT design that MUST appear on the product. Use this image AS-IS.
+TASK: Create a photorealistic product mockup photo.
 
-STRICT DESIGN FIDELITY REQUIREMENTS:
-1. COLORS: Keep the EXACT same colors - do not alter, shift, or recolor any part of the design
-2. BORDERS/OUTLINES: If the design has borders, strokes, or outlines - KEEP THEM. If it does NOT have borders - DO NOT ADD THEM
-3. SHAPES: Maintain the EXACT same shapes, proportions, and geometry
-4. DETAILS: Preserve ALL details, gradients, textures, and effects from the original
-5. NO REDRAWING: Do NOT redraw, recreate, or reinterpret the design - project it directly onto the garment
-6. NO FILTERS: Do NOT apply artistic filters, effects, or style changes to the design
+PRODUCT: ${productInfo}
+CAMERA: ${cameraInfo}
 
-WHAT TO DO:
-- Place this EXACT image onto the product's print area
-- Scale it proportionally to fit the designated area
-- Apply natural fabric distortion based on body contours
-- Adjust lighting/shadows to match the scene
+${personaInfo ? `MODEL: ${personaInfo}` : ''}
 
-WHAT NOT TO DO:
-- DO NOT add borders, outlines, or strokes that aren't in the original
-- DO NOT remove borders, outlines, or strokes that ARE in the original
-- DO NOT change any colors (even slightly)
-- DO NOT simplify or "clean up" the design
-- DO NOT recreate the design from scratch
+DESIGN PLACEMENT:
+- Composite this exact design image onto the shirt's print area
+- Keep the original colors, shapes, and details unchanged
+- Scale to fit the print area proportionally
+- The design artwork must be identical to the provided image
 
-The design on the final mockup MUST be pixel-perfect identical to this reference (except for natural fabric distortion and lighting).
+MATERIAL PHYSICS (realistic fabric rendering):
+- Design follows natural fabric folds and body contours
+- Subtle wrinkles and creases at joints and movement points
+- Realistic shadows within fabric folds
+- Slight stretching over curves (chest, shoulders, back)
+- Fabric texture visible through the print
+- Natural compression in seated/bent poses
+${materialInfo ? `- ${materialInfo}` : ''}
+${contourInfo ? `- Body contours: ${contourInfo}` : ''}
 
-===== END DESIGN REFERENCE =====
+LIGHTING: ${lightingInfo}
+ENVIRONMENT: ${environmentInfo}
 
-Apply this design to the product as specified:
+OUTPUT: Professional product photography showing model wearing the shirt with the printed design. Photorealistic quality, natural pose, authentic fabric behavior.
 
-${renderSpec.fullPrompt}`
-    });
+${negatives ? `AVOID: ${negatives}` : ''}`;
+
+    parts.push({ text: simplePrompt });
 
     logger.info("Calling Gemini API for mockup generation", { 
       source: "eliteMockupGenerator", 
