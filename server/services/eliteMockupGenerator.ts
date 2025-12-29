@@ -52,7 +52,8 @@ import {
   get3DDistortionPhysicsBlock,
   getGarmentConditionBlock,
   getRenderingEngineFraming,
-  getImageAssetRules
+  getImageAssetRules,
+  getDesignAsFabricBlock
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 
@@ -1276,6 +1277,7 @@ Match the background, lighting, camera angle, and photography style from this re
     // Get the new physics-based blocks
     const renderingFraming = getRenderingEngineFraming();
     const imageAssetRules = getImageAssetRules();
+    const designAsFabric = getDesignAsFabricBlock();
     const distortionPhysics = get3DDistortionPhysicsBlock(productName);
     const garmentCondition = getGarmentConditionBlock();
     const printRealism = getPrintRealismBlock();
@@ -1283,6 +1285,8 @@ Match the background, lighting, camera angle, and photography style from this re
     const technicalPrompt = `${renderingFraming}
 
 ${imageAssetRules}
+
+${designAsFabric}
 
 ===== SECTION 2: RENDER PARAMETERS =====
 

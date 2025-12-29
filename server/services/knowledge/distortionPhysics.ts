@@ -133,6 +133,40 @@ You are a photorealistic rendering engine. Your task is to generate a single moc
 This is NOT a creative illustration task. This is a TECHNICAL RENDERING task with precise specifications that must be followed exactly.`;
 }
 
+export function getDesignAsFabricBlock(): string {
+  return `
+===== DESIGN-AS-FABRIC MATERIAL DEFINITION =====
+[CRITICAL: This reframes how the design integrates with the garment]
+
+The design asset [IMAGE 1] is NOT a flat digital image. It is a PRE-PRINTED FABRIC PANEL.
+
+【DESIGN FABRIC PROPERTIES】
+The design file should be treated as if it were already printed onto fabric:
+- It has the same cotton weave texture as the garment
+- The ink has already saturated into fabric fibers (not sitting on top)
+- Slight thread variation is visible through the printed colors
+- Natural fabric imperfections exist within the design area
+- The design has the same material flexibility as the garment
+
+【FABRIC-TO-FABRIC FUSION】
+When the design is applied to the garment, you are FUSING two compatible fabric surfaces:
+- The design fabric panel bonds seamlessly to the garment fabric
+- Both materials respond IDENTICALLY to physics (folds, stretches, lighting)
+- There is no "application" - they become ONE unified fabric surface
+- The boundary between design area and blank fabric is invisible
+
+【WHY THIS MATTERS】
+Because both the design and garment are the same material:
+- Folds in the garment naturally carry through the design
+- Lighting affects both surfaces uniformly
+- No "sticker effect" or "overlay" appearance is possible
+- The design IS the fabric - they cannot be separated
+
+This is the mental model: The design was printed onto this exact piece of fabric BEFORE the garment was cut and sewn. It's not applied after - it's part of the original material.
+
+===== END DESIGN-AS-FABRIC =====`;
+}
+
 export function getImageAssetRules(): string {
   return `
 ===== CORE ASSETS & UNBREAKABLE RULES =====
@@ -142,6 +176,7 @@ The design on the garment MUST be a PERFECT, 1:1, PIXEL-PERFECT, STYLISTICALLY I
 - It must not be redrawn, re-interpreted, or have its style changed
 - Every detail, color, and element must match exactly
 - The design is the SOURCE OF TRUTH for artwork appearance
+- IMPORTANT: Treat [IMAGE 1] as a pre-printed fabric panel, not a flat digital overlay
 
 RULE 2: MODEL IDENTITY LOCK (NON-NEGOTIABLE)
 If a reference headshot [IMAGE 2] is provided, the model in the final render MUST be the EXACT SAME PERSON.
