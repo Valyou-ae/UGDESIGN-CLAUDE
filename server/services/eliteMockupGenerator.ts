@@ -1938,14 +1938,12 @@ export async function generateMockupBatch(
     );
 
     // Use two-stage pipeline for exact design preservation
-    // Stage 1: Generate blank garment, Stage 2: Composite exact design via ImageMagick
-    // Default ON for DTG journey only (AOP uses different approach)
-    const isDTGJourney = request.journey === 'DTG' || !request.journey;
-    const useTwoStagePipeline = request.useTwoStagePipeline ?? (isDTGJourney && request.product.isWearable);
+    // Stage 1: Generate blank garment, Stage 2: Composite exact design
+    const useTwoStagePipeline = request.useTwoStagePipeline ?? false;
     
     let result: GeneratedMockup | null = null;
     
-    if (useTwoStagePipeline && request.product.isWearable && isDTGJourney) {
+    if (useTwoStagePipeline && request.product.isWearable) {
       logger.info("Using two-stage pipeline for exact design preservation", { 
         source: "eliteMockupGenerator",
         jobId: job.id,

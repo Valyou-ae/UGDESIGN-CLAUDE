@@ -191,12 +191,7 @@ async function applyPerspectiveWarpWithImageMagick(
   const baseHeight = baseMeta.height || targetHeight;
   
   if (perspectiveSkew <= 0 && curvature.type === 'flat') {
-    // No perspective transform needed, but still return the placement position
-    return { 
-      buffer: baseDesign, 
-      offsetX: Math.round(placement.x), 
-      offsetY: Math.round(placement.y) 
-    };
+    return { buffer: baseDesign, offsetX: 0, offsetY: 0 };
   }
   
   const timestamp = Date.now();
