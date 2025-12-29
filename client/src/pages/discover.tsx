@@ -2583,29 +2583,29 @@ export default function Discover() {
                   </div>
 
                   {/* Stats Row */}
-                  <div className="flex items-center justify-between py-2 px-1 bg-muted/20 rounded-lg">
-                    <div className="flex items-center gap-1.5 text-center flex-1">
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex items-center justify-between py-3 px-4 bg-muted/30 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-[#f8991c]" />
                       <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.views)}</span>
-                      <span className="text-xs text-muted-foreground">views</span>
+                      <span className="text-sm text-muted-foreground">Views</span>
                     </div>
                     <div className="w-px h-4 bg-border" />
-                    <div className="flex items-center gap-1.5 text-center flex-1 justify-center">
+                    <div className="flex items-center gap-2">
                       <Heart className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.likes)}</span>
-                      <span className="text-xs text-muted-foreground">likes</span>
+                      <span className="text-sm text-muted-foreground">Likes</span>
                     </div>
                     <div className="w-px h-4 bg-border" />
-                    <div className="flex items-center gap-1.5 text-center flex-1 justify-center">
+                    <div className="flex items-center gap-2">
                       <Shuffle className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.uses)}</span>
-                      <span className="text-xs text-muted-foreground">remix</span>
+                      <span className="text-sm text-muted-foreground">Remix</span>
                     </div>
                     <div className="w-px h-4 bg-border" />
-                    <div className="flex items-center gap-1.5 text-center flex-1 justify-end">
+                    <div className="flex items-center gap-2">
                       <UserPlus className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium text-foreground">--</span>
-                      <span className="text-xs text-muted-foreground">followers</span>
+                      <span className="text-sm text-muted-foreground">Followers</span>
                     </div>
                   </div>
 
