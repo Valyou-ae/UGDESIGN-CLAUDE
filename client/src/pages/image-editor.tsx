@@ -59,7 +59,7 @@ type RecentImage = {
   createdAt: string;
 };
 
-type EditStatus = "idle" | "uploading" | "editing" | "complete" | "error";
+type EditStatus = "idle" | "preview" | "uploading" | "editing" | "complete" | "error";
 
 export default function ImageEditor() {
   const { user } = useAuth();
@@ -82,6 +82,8 @@ export default function ImageEditor() {
   const [isLoadingVersions, setIsLoadingVersions] = useState(false);
   const loadedImageIdRef = useRef<string | null>(null);
   const recentScrollRef = useRef<HTMLDivElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
 
   const { data: recentImages, isLoading: isLoadingRecent } = useQuery<RecentImage[]>({
     queryKey: ["recent-images-for-editor"],
@@ -169,45 +171,54 @@ export default function ImageEditor() {
       return;
     }
 
+    // Show preview first instead of uploading immediately
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const imageUrl = e.target?.result as string;
+      setPreviewImage(imageUrl);
+      setPreviewFile(file);
+      setStatus("preview");
+    };
+    reader.readAsDataURL(file);
+  }, [toast]);
+
+  const handleProceedToEdit = useCallback(async () => {
+    if (!previewFile) return;
+    
     setStatus("uploading");
     setErrorMessage(null);
 
     try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageUrl = e.target?.result as string;
-        setCurrentImage(imageUrl);
-        
-        const formData = new FormData();
-        formData.append("image", file);
+      const formData = new FormData();
+      formData.append("image", previewFile);
 
-        const response = await fetch("/api/image-editor/upload", {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
+      const response = await fetch("/api/image-editor/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
 
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || "Upload failed");
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Upload failed");
+      }
 
-        const data = await response.json();
-        const imageApiUrl = `/api/images/${data.imageId}/image`;
-        setCurrentImageId(data.imageId);
-        setCurrentImage(imageApiUrl);
-        setRootImageId(data.imageId);
-        
-        await fetchVersions(data.imageId);
-        
-        setStatus("idle");
-        
-        toast({
-          title: "Image uploaded",
-          description: "You can now edit your image with prompts",
-        });
-      };
-      reader.readAsDataURL(file);
+      const data = await response.json();
+      const imageApiUrl = `/api/images/${data.imageId}/image`;
+      setCurrentImageId(data.imageId);
+      setCurrentImage(imageApiUrl);
+      setRootImageId(data.imageId);
+      setPreviewImage(null);
+      setPreviewFile(null);
+      
+      await fetchVersions(data.imageId);
+      
+      setStatus("idle");
+      
+      toast({
+        title: "Image uploaded",
+        description: "You can now edit your image with prompts",
+      });
     } catch (error) {
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : "Upload failed");
@@ -217,7 +228,13 @@ export default function ImageEditor() {
         variant: "destructive",
       });
     }
-  }, [toast, fetchVersions]);
+  }, [previewFile, toast, fetchVersions]);
+
+  const handleCancelPreview = useCallback(() => {
+    setPreviewImage(null);
+    setPreviewFile(null);
+    setStatus("idle");
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -447,19 +464,21 @@ export default function ImageEditor() {
           {!currentImage ? (
             /* Upload State with Recent Images */
             <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
-              {/* Upload Zone */}
+              {/* Upload Zone / Preview Zone */}
               <div
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all cursor-pointer min-h-0",
-                  isDragging
-                    ? "border-primary"
-                    : "border-border hover:border-primary/50"
+                  "flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all min-h-0",
+                  status === "preview" 
+                    ? "border-primary cursor-default"
+                    : isDragging
+                      ? "border-primary cursor-pointer"
+                      : "border-border hover:border-primary/50 cursor-pointer"
                 )}
                 style={{ backgroundColor: isDragging ? '#434344' : '#3d3d3e' }}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onClick={() => fileInputRef.current?.click()}
+                onDrop={status !== "preview" ? handleDrop : undefined}
+                onDragOver={status !== "preview" ? handleDragOver : undefined}
+                onDragLeave={status !== "preview" ? handleDragLeave : undefined}
+                onClick={status !== "preview" ? () => fileInputRef.current?.click() : undefined}
                 data-testid="upload-zone"
               >
                 <input
@@ -474,29 +493,66 @@ export default function ImageEditor() {
                   data-testid="input-file"
                 />
                 
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="flex flex-col items-center gap-3"
-                >
-                  <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#f8991c]/20 to-[#B8860B]/20 flex items-center justify-center">
-                    <Upload className="h-8 w-8 text-primary" />
-                  </div>
-                  <div className="text-center">
-                    <h3 className="text-base font-medium text-foreground">
-                      Drop your image here
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      or click to browse (PNG, JPG, WEBP up to 10MB)
-                    </p>
-                  </div>
-                </motion.div>
-                
-                {status === "uploading" && (
-                  <div className="mt-4 flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                {status === "preview" && previewImage ? (
+                  /* Preview State - Show selected image with Next/Cancel buttons */
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="flex flex-col items-center gap-4 p-4 w-full h-full"
+                  >
+                    <div className="flex-1 flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={previewImage} 
+                        alt="Preview" 
+                        className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                        data-testid="img-preview"
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="outline"
+                        onClick={handleCancelPreview}
+                        className="gap-2"
+                        data-testid="button-cancel-preview"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Choose Different
+                      </Button>
+                      <Button
+                        onClick={handleProceedToEdit}
+                        className="gap-2 bg-gradient-to-r from-[#f8991c] to-[#B8860B] hover:from-[#e88a10] hover:to-[#a67909]"
+                        data-testid="button-proceed-edit"
+                      >
+                        Next Step
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : status === "uploading" ? (
+                  /* Uploading State */
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <span className="text-sm text-muted-foreground">Uploading...</span>
                   </div>
+                ) : (
+                  /* Default Upload State */
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="flex flex-col items-center gap-3"
+                  >
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-[#f8991c]/20 to-[#B8860B]/20 flex items-center justify-center">
+                      <Upload className="h-8 w-8 text-primary" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-base font-medium text-foreground">
+                        Drop your image here
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        or click to browse (PNG, JPG, WEBP up to 10MB)
+                      </p>
+                    </div>
+                  </motion.div>
                 )}
               </div>
 
