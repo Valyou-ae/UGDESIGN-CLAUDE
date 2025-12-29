@@ -2577,28 +2577,28 @@ export default function Discover() {
                   </div>
 
                   {/* Stats Row */}
-                  <div className="flex items-center py-3 px-3 bg-muted/30 rounded-lg overflow-x-auto">
-                    <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center justify-between py-3 px-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center gap-1">
                       <Eye className="h-3.5 w-3.5 text-[#f8991c]" />
-                      <span className="text-xs font-medium text-foreground">{formatCount(selectedItem.views)}</span>
+                      <span className="text-xs font-medium">{formatCount(selectedItem.views)}</span>
                       <span className="text-xs text-muted-foreground">Views</span>
                     </div>
-                    <div className="w-px h-3 bg-border mx-2 shrink-0" />
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="w-px h-3 bg-border" />
+                    <div className="flex items-center gap-1">
                       <Heart className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-medium text-foreground">{formatCount(selectedItem.likes)}</span>
+                      <span className="text-xs font-medium">{formatCount(selectedItem.likes)}</span>
                       <span className="text-xs text-muted-foreground">Likes</span>
                     </div>
-                    <div className="w-px h-3 bg-border mx-2 shrink-0" />
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="w-px h-3 bg-border" />
+                    <div className="flex items-center gap-1">
                       <Shuffle className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-medium text-foreground">{formatCount(selectedItem.uses)}</span>
+                      <span className="text-xs font-medium">{formatCount(selectedItem.uses)}</span>
                       <span className="text-xs text-muted-foreground">Remix</span>
                     </div>
-                    <div className="w-px h-3 bg-border mx-2 shrink-0" />
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="w-px h-3 bg-border" />
+                    <div className="flex items-center gap-1">
                       <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-medium text-foreground">--</span>
+                      <span className="text-xs font-medium">--</span>
                       <span className="text-xs text-muted-foreground">Followers</span>
                     </div>
                   </div>
