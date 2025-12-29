@@ -55,7 +55,13 @@ import {
   getImageAssetRules,
   getDesignAsFabricBlock,
   getSeamIntegrationBlock,
-  getPositiveFabricRequirements
+  getPositiveFabricRequirements,
+  buildStreamlinedPrompt,
+  getDefaultDistortionSpec,
+  type PromptConfig,
+  type ModelSpec,
+  type GarmentSpec,
+  type SceneSpec
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 import { compositeDesignOntoGarment, getBlankGarmentPrompt } from "./designCompositor";
@@ -1227,122 +1233,143 @@ export async function generateSingleMockup(
   try {
     const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
 
+    // Extract data from renderSpec locks for streamlined prompt
+    const productLock = renderSpec.locks?.product?.details || {};
+    const colorLock = renderSpec.locks?.color?.details || {};
+    const personaLock = renderSpec.locks?.persona?.details || {};
+    const cameraLock = renderSpec.locks?.camera?.details || {};
+    const lightingLock = renderSpec.locks?.lighting?.details || {};
+    
+    const productName = (productLock.productName as string) || "t-shirt";
+    const isAOP = (productLock.printMethod as string) === 'AOP';
+    
+    // Build model spec from persona lock (if available)
+    // Extract persona details from personaDescription for richer guidance
+    const facialFeaturesMatch = renderSpec.personaDescription?.match(/Facial features: ([^\n]+)/);
+    const facialFeatures = facialFeaturesMatch ? facialFeaturesMatch[1].trim() : '';
+    const expressionMatch = renderSpec.personaDescription?.match(/Expression: ([^\n]+)/);
+    const expression = expressionMatch ? expressionMatch[1].trim() : undefined;
+    const poseMatch = renderSpec.personaDescription?.match(/Pose Style: ([^\n]+)/);
+    const pose = poseMatch ? poseMatch[1].trim() : undefined;
+    
+    // Extract somatic description from personaDescription for physical details
+    const somaticMatch = renderSpec.personaDescription?.match(/SIZE-SPECIFIC BODY TYPE[^]*?(?=={5}|$)/);
+    const somaticDescription = somaticMatch ? somaticMatch[0].replace(/^[=\s]+|[=\s]+$/g, '').trim() : undefined;
+    
+    const modelSpec: ModelSpec | undefined = personaLock.personaId ? {
+      personaId: personaLock.personaId as string,
+      name: personaLock.name as string || '',
+      age: personaLock.age as number || 25,
+      sex: (personaLock.sex as 'Male' | 'Female') || 'Male',
+      ethnicity: personaLock.ethnicity as string || '',
+      height: personaLock.height as string || '',
+      weight: personaLock.weight as string || '',
+      build: personaLock.build as string || '',
+      hairStyle: personaLock.hairStyle as string || '',
+      hairColor: personaLock.hairColor as string || '',
+      eyeColor: personaLock.eyeColor as string || '',
+      skinTone: personaLock.skinTone as string || '',
+      facialFeatures: facialFeatures,
+      size: renderSpec.locks?.sizeFit?.details?.size as string || 'M',
+      expression,
+      pose,
+      somaticDescription
+    } : undefined;
+    
+    // Extract print dimensions from design lock or use product-specific defaults
+    const designLock = renderSpec.locks?.design?.details || {};
+    const distortionParams = getDefaultDistortionSpec(productName);
+    
+    // Try to extract print dimensions from designDescription if available
+    const printDimensionsMatch = renderSpec.designDescription?.match(/(\d+(?:\.\d+)?)"?\s*[x×]\s*(\d+(?:\.\d+)?)"/);
+    const printAreaWidth = printDimensionsMatch ? parseFloat(printDimensionsMatch[1]) : distortionParams.printWidthInches;
+    const printAreaHeight = printDimensionsMatch ? parseFloat(printDimensionsMatch[2]) : Math.round(distortionParams.printWidthInches * 1.14); // Default aspect ratio
+    
+    // Build garment spec
+    const garmentSpec: GarmentSpec = {
+      productName,
+      category: (productLock.category as string) || 'apparel',
+      subcategory: productLock.subcategory as string,
+      color: (colorLock.productColor as string) || 'White',
+      colorHex: (colorLock.productHex as string) || '#FFFFFF',
+      printMethod: isAOP ? 'AOP' : 'DTG',
+      materialDescription: renderSpec.materialDescription || 'Premium cotton',
+      wearCondition: 'lightly_worn',
+      size: renderSpec.locks?.sizeFit?.details?.size as string || 'M',
+      printAreaWidth,
+      printAreaHeight
+    };
+    
+    // Build scene spec
+    const sceneSpec: SceneSpec = {
+      environment: renderSpec.environmentDescription || 'Professional studio setting',
+      lightingSetup: (lightingLock.setupName as string) || 'Three-point studio',
+      lightingDescription: renderSpec.lightingDescription || 'Professional three-point lighting',
+      cameraAngle: (cameraLock.angle as 'front' | 'three-quarter' | 'side' | 'closeup' | 'back') || 'front',
+      lensType: (cameraLock.lensType as string) || '85mm portrait',
+      focalLength: (cameraLock.focalLength as string) || '85mm',
+      aperture: (cameraLock.aperture as string) || 'f/2.8'
+    };
+    
+    // Use distortion params already extracted above
+    const distortionSpec = distortionParams;
+    
+    // Build prompt config - include all renderSpec fields to preserve fidelity
+    const promptConfig: PromptConfig = {
+      model: modelSpec,
+      garment: garmentSpec,
+      scene: sceneSpec,
+      distortion: distortionSpec,
+      designColors: (colorLock.designColors as string[]) || [],
+      hasHeadshot: !!personaHeadshot,
+      hasPreviousReference: !!previousMockupReference,
+      isAOP,
+      aopAccentColor: colorLock.aopAccentColor as string,
+      // Preserve FULL description blocks from renderSpec for maximum fidelity
+      fullPersonaDescription: renderSpec.personaDescription,
+      fullDesignDescription: renderSpec.designDescription,
+      contourDescription: renderSpec.contourDescription,
+      printIntegrationDescription: renderSpec.printIntegrationDescription,
+      humanRealismDescription: renderSpec.humanRealismDescription,
+      additionalNegatives: renderSpec.negativePrompts
+    };
+    
+    // Build streamlined prompt
+    const { imageLabels, promptText } = buildStreamlinedPrompt(promptConfig);
+
     // IMPORTANT: Design image comes FIRST as [IMAGE 1]
     parts.push({
       inlineData: { data: designBase64, mimeType: "image/png" }
     });
     parts.push({
-      text: `[IMAGE 1] - DESIGN ASSET (SOURCE MATERIAL - DO NOT REDRAW)
-This is the EXACT artwork to TRANSFER onto the garment fabric.
-- COPY this image exactly - do NOT generate new artwork inspired by it
-- Every letter, every color, every detail must match this source exactly
-- This is a TECHNICAL TRANSFER operation, not creative interpretation`
+      text: imageLabels[0].label
     });
 
-    // Headshot comes SECOND as [IMAGE 2]
-    if (personaHeadshot) {
+    // Headshot comes SECOND as [IMAGE 2] if available
+    if (personaHeadshot && imageLabels.length > 1) {
       parts.push({
         inlineData: { data: personaHeadshot, mimeType: "image/png" }
       });
       parts.push({
-        text: `[IMAGE 2] - MODEL IDENTITY REFERENCE
-This is the person who must wear the garment. Match their face, skin tone, hair, and body build EXACTLY.
-IGNORE the background and lighting of this photo - use only for identity matching.`
+        text: imageLabels[1].label
       });
     }
 
-    // Add previous mockup as consistency reference for background/lighting
+    // Add previous mockup as consistency reference
     if (previousMockupReference) {
-      parts.push({
-        inlineData: { data: previousMockupReference, mimeType: "image/png" }
-      });
-      parts.push({
-        text: `[IMAGE 3] - STYLE/ENVIRONMENT REFERENCE
-Match the background, lighting, camera angle, and photography style from this reference image exactly.`
-      });
+      const refIndex = personaHeadshot ? 2 : 1;
+      if (imageLabels[refIndex]) {
+        parts.push({
+          inlineData: { data: previousMockupReference, mimeType: "image/png" }
+        });
+        parts.push({
+          text: imageLabels[refIndex].label
+        });
+      }
     }
 
-    // Extract product name for distortion physics
-    const productName = renderSpec.locks?.product?.details?.productName as string || "t-shirt";
-    
-    // Build the comprehensive technical prompt - include ALL renderSpec lock descriptions
-    const productInfo = renderSpec.productDescription || "t-shirt";
-    const personaInfo = renderSpec.personaDescription || "";
-    const materialInfo = renderSpec.materialDescription || "";
-    const lightingInfo = renderSpec.lightingDescription || "natural lighting";
-    const environmentInfo = renderSpec.environmentDescription || "lifestyle setting";
-    const cameraInfo = renderSpec.cameraDescription || "front view";
-    const negatives = renderSpec.negativePrompts || "";
-    
-    // Critical lock blocks that must be preserved
-    const designLock = renderSpec.designDescription || "";
-    const contourLock = renderSpec.contourDescription || "";
-    const printIntegration = renderSpec.printIntegrationDescription || "";
-    const humanRealism = renderSpec.humanRealismDescription || "";
-    
-    // Get the new physics-based blocks
-    const renderingFraming = getRenderingEngineFraming();
-    const imageAssetRules = getImageAssetRules();
-    const designAsFabric = getDesignAsFabricBlock();
-    const distortionPhysics = get3DDistortionPhysicsBlock(productName);
-    const garmentCondition = getGarmentConditionBlock();
-    const printRealism = getPrintRealismBlock();
-    const seamIntegration = getSeamIntegrationBlock();
-    const positiveFabricReqs = getPositiveFabricRequirements();
-    
-    const technicalPrompt = `${renderingFraming}
-
-${imageAssetRules}
-
-${designAsFabric}
-
-${seamIntegration}
-
-===== SECTION 2: RENDER PARAMETERS =====
-
-【GARMENT SPECIFICATION】
-${productInfo}
-${materialInfo ? `Material: ${materialInfo}` : ''}
-${contourLock ? `Body Contours: ${contourLock}` : ''}
-${garmentCondition}
-
-【MODEL SPECIFICATION】
-${personaInfo ? personaInfo : 'Generate an appropriate model for the garment.'}
-${personaHeadshot ? 'VERIFICATION: The final rendered person must match [IMAGE 2] visually.' : ''}
-${humanRealism ? `\n【HUMAN REALISM REQUIREMENTS】\n${humanRealism}` : ''}
-
-【DESIGN LOCK - CRITICAL】
-${designLock ? designLock : 'The design from [IMAGE 1] must be reproduced exactly as provided.'}
-
-【SCENE & CAMERA】
-Environment: ${environmentInfo}
-Lighting: ${lightingInfo}
-Camera: ${cameraInfo}
-
-===== END RENDER PARAMETERS =====
-
-${distortionPhysics}
-
-${positiveFabricReqs}
-
-${printRealism}
-
-${printIntegration ? `【PRINT INTEGRATION LOCK】\n${printIntegration}` : ''}
-
-===== NEGATIVE PROMPT (MANDATORY EXCLUSIONS) =====
-${negatives}
-
-blurry, out of focus, soft focus, motion blur, unfocused, grainy, noisy, pixelated, 
-jpeg artifacts, overexposed, underexposed, wrong white balance, incorrect skin tones,
-design that remains rigid while fabric folds around it, design with different lighting than fabric,
-perfectly smooth fabric with no natural creases, design edges that don't follow fabric curves,
-printed area that looks separate from the garment material, unnaturally crisp design boundaries,
-design that is redrawn or reinterpreted instead of copied exactly from source image
-===== END NEGATIVES =====
-
-FINAL OUTPUT: Generate a single photorealistic product photograph. TRANSFER the exact artwork from [IMAGE 1] onto the garment - do not redraw or reinterpret it. The design IS the fabric - it naturally drapes, folds, and curves with the garment because they are the same material.`;
-
-    parts.push({ text: technicalPrompt });
+    // Add the streamlined prompt text
+    parts.push({ text: promptText });
 
     logger.info("Calling Gemini API for mockup generation", { 
       source: "eliteMockupGenerator", 

@@ -516,3 +516,16 @@ export * as SubjectSpecificHyper from './subjectSpecificHyper';
 
 // Forensic Standards
 export * as ForensicStandards from './forensicStandards';
+
+// ============================================================================
+// STREAMLINED PROMPT SYSTEM
+// ============================================================================
+export {
+  buildStreamlinedPrompt,
+  getDefaultDistortionSpec,
+  type ModelSpec,
+  type GarmentSpec,
+  type SceneSpec,
+  type DistortionSpec,
+  type PromptConfig
+} from './streamlinedPrompt';
