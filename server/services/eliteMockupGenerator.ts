@@ -976,12 +976,14 @@ ENVIRONMENT VIOLATION EXAMPLES (DO NOT DO THESE):
 
   const baseNegatives = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
   const printRealismNegatives = getPrintRealismNegatives();
-  // Add product-specific negatives and print realism negatives
-  const negativePrompts = [
-    baseNegatives,
-    ...productSpecificNegatives,
-    ...printRealismNegatives
-  ].filter(Boolean).join(', ');
+  // Add product-specific negatives and print realism negatives - append cleanly
+  const additionalNegatives = [...productSpecificNegatives, ...printRealismNegatives].filter(Boolean);
+  const negativePrompts = additionalNegatives.length > 0 
+    ? `${baseNegatives}
+
+PRINT REALISM NEGATIVES:
+${additionalNegatives.map(neg => `• ${neg}`).join('\n')}`
+    : baseNegatives;
   
   // Get the print realism block
   const printRealismBlock = getPrintRealismBlock();
