@@ -1,0 +1,323 @@
+# 🎨 Artwork Print Realism Knowledge Base
+## For Gemini Image Generation - Lovable Integration
+
+---
+
+## ❌ The Problem
+
+The design appears **"pasted on"** or **"floating"** on the apparel instead of looking like a real print.
+
+![Problem visualization]
+- Design is flat, ignores fabric folds
+- Colors too saturated/digital
+- No fabric texture showing through
+- Lighting on design doesn't match environment
+- Design doesn't follow body contours
+
+---
+
+## ✅ The Solution
+
+Add these **mandatory instructions** to your Gemini image generation prompt to ensure the artwork integrates realistically with the fabric.
+
+---
+
+## 📋 COPY-PASTE PROMPT BLOCK
+
+Add this entire block to your generation prompt **before** or **after** your design description:
+
+```
+═══════════════════════════════════════════════════════════════════════════════
+                    ⚠️ CRITICAL: PRINT REALISM REQUIREMENTS ⚠️
+═══════════════════════════════════════════════════════════════════════════════
+
+The design/artwork MUST appear as a REAL PHYSICAL PRINT on the fabric:
+
+【FABRIC INTEGRATION】
+• The design is PRINTED INTO the fabric fibers using screen-print/DTG printing
+• Subtle fabric weave texture is visible THROUGH the printed ink areas
+• The ink is ABSORBED into the material, NOT sitting on top like a sticker
+• Print has the characteristics of real ink on real textile
+
+【FABRIC PHYSICS - DESIGN FOLLOWS THE FABRIC】
+• Design follows EVERY fold, wrinkle, and crease in the garment
+• Design stretches and compresses over body contours (chest, shoulders, stomach)
+• Where fabric bunches up, the design bunches up identically
+• Where fabric pulls tight, the design stretches with it
+• The design is NOT flat - it exists in 3D space on the garment
+• Design warps naturally with the cylindrical shape of the torso
+
+【LIGHTING MUST BE CONSISTENT】  
+• The SAME light source illuminates both the garment AND the printed design
+• Shadows from folds fall ACROSS the design, darkening those areas
+• Highlights on raised/stretched fabric areas also brighten the design
+• The print does NOT have its own separate lighting
+• No "glowing" or "backlit" appearance on the design
+
+【COLOR ACCURACY FOR REAL PRINTS】
+• Print colors appear as REAL INK on fabric (slightly less saturated than digital file)
+• Colors are subtly muted compared to the original digital artwork
+• On white fabric: colors appear close to original but with fabric texture
+• On dark fabric: colors may appear slightly different as ink interacts with base
+• No "neon" or "glowing" colors unless it's actual reflective ink
+
+【3D PERSPECTIVE】
+• Design follows the 3D curvature of the human torso
+• Slight perspective distortion toward edges (design wraps around body)
+• Design is NOT perfectly rectangular - it curves with the body shape
+• Top of design may appear slightly smaller than bottom due to chest curve
+
+【WHAT TO AVOID】
+✗ Design appearing perfectly flat like a digital overlay
+✗ Design edges that are too sharp/digital looking
+✗ Design that ignores wrinkles and folds in the fabric
+✗ Design with different lighting than the rest of the image
+✗ Colors that are too vibrant/saturated for real printing
+✗ Design that looks like a sticker or iron-on transfer
+✗ Any "floating" or "hovering" appearance
+
+【WHAT TO ACHIEVE】
+✓ Design looks like it was professionally printed at a print shop
+✓ You cannot tell where fabric ends and print begins
+✓ Design and garment share identical lighting and shadows
+✓ Fabric texture subtly shows through printed areas
+✓ Natural imperfections consistent with real screen printing
+✓ Looks like a real photo of a real printed shirt
+
+═══════════════════════════════════════════════════════════════════════════════
+```
+
+---
+
+## 🔧 Integration Examples
+
+### Example 1: Basic Integration
+
+```javascript
+const prompt = `
+Generate a photorealistic image of a person wearing a white t-shirt.
+
+${PRINT_REALISM_BLOCK}  // ← Insert the block above
+
+The shirt has a printed design showing: A tropical skull with palm trees, 
+sunset, waves, and hibiscus flowers in orange, teal, and dark green colors.
+The print is centered on the chest, medium size.
+
+[...rest of your prompt for model, environment, etc...]
+`;
+```
+
+### Example 2: With Design Description Variable
+
+```javascript
+const generateMockupPrompt = (designDescription, shirtColor) => `
+Create a photorealistic product photo of a model wearing a ${shirtColor} long-sleeve shirt.
+
+═══════════════════════════════════════════════════════════════════════════════
+⚠️ CRITICAL: PRINT REALISM REQUIREMENTS ⚠️
+═══════════════════════════════════════════════════════════════════════════════
+
+The design/artwork MUST appear as a REAL PHYSICAL PRINT on the fabric:
+
+【FABRIC INTEGRATION】
+• The design is PRINTED INTO the fabric fibers using screen-print/DTG printing
+• Subtle fabric weave texture is visible THROUGH the printed ink areas
+• The ink is ABSORBED into the material, NOT sitting on top like a sticker
+
+【FABRIC PHYSICS】
+• Design follows EVERY fold, wrinkle, and crease in the garment
+• Design stretches over body contours (chest, shoulders)
+• Where fabric bunches, the design bunches identically
+• The design is NOT flat - it exists in 3D space on the garment
+
+【LIGHTING CONSISTENCY】  
+• Same light source illuminates both garment AND printed design
+• Shadows from folds fall ACROSS the design
+• The print does NOT have separate lighting
+
+【COLOR ACCURACY】
+• Print colors appear as REAL INK on fabric (slightly less saturated than digital)
+• Fabric texture subtly visible through printed areas
+
+【3D PERSPECTIVE】
+• Design follows the curvature of the torso
+• Design wraps around the body naturally
+
+═══════════════════════════════════════════════════════════════════════════════
+
+PRINTED DESIGN: ${designDescription}
+PLACEMENT: Centered on chest
+PRINT SIZE: Medium
+
+[...rest of prompt...]
+`;
+```
+
+---
+
+## 📊 Quick Reference Card
+
+### Must Include Keywords/Phrases:
+
+| Category | Key Phrases to Include |
+|----------|----------------------|
+| **Fabric Integration** | "printed into fabric fibers", "ink absorbed into material", "fabric texture visible through print" |
+| **Physics** | "follows folds and wrinkles", "stretches over contours", "design not flat" |
+| **Lighting** | "same light source", "shadows fall across design", "no separate lighting" |
+| **Color** | "real ink on fabric", "slightly less saturated", "not neon or glowing" |
+| **Perspective** | "follows 3D curvature", "wraps around body", "perspective distortion" |
+
+### Must Avoid Keywords/Phrases:
+
+| ❌ Avoid | ✅ Use Instead |
+|----------|---------------|
+| "overlay the design" | "print the design" |
+| "place the artwork" | "the artwork is printed" |
+| "add the graphic" | "the graphic is screen-printed" |
+| "put the design on" | "the design is embedded in the fabric" |
+| "digital design" | "printed design" |
+
+---
+
+## 🎯 Condensed Version (Minimum Viable)
+
+If you need a shorter version, use this minimum block:
+
+```
+【PRINT REALISM - MANDATORY】
+The design is PHYSICALLY PRINTED on the fabric, NOT digitally overlaid:
+• Fabric texture visible through printed areas
+• Design follows ALL folds, wrinkles, and body contours  
+• Same lighting affects both garment and print (shadows cross over design)
+• Colors appear as real ink (slightly less saturated than digital)
+• Design wraps around 3D body shape with natural perspective
+• Must look like a real photograph of a real printed garment
+```
+
+---
+
+## 🧪 Testing Checklist
+
+After generation, verify these points:
+
+| Check | Pass/Fail |
+|-------|-----------|
+| Can you see fabric texture through the design? | ☐ |
+| Does the design follow visible folds/wrinkles? | ☐ |
+| Do shadows fall naturally across the design? | ☐ |
+| Does the design wrap around the body curve? | ☐ |
+| Are colors realistic (not overly saturated)? | ☐ |
+| Does it look like a real photo, not a mockup? | ☐ |
+
+---
+
+## 🔄 Iterative Improvement Prompts
+
+If initial results aren't realistic enough, add these reinforcement phrases:
+
+### For flat-looking designs:
+```
+"The design must show the natural undulation of the fabric surface - 
+it cannot appear flat or 2D. Every micro-wrinkle affects the design."
+```
+
+### For colors too bright:
+```
+"The print colors should appear as they would from a real DTG printer - 
+slightly muted by the fabric absorption, not digital-perfect colors."
+```
+
+### For missing fabric texture:
+```
+"The cotton weave pattern of the shirt must be subtly visible through 
+the printed ink, especially in lighter colored areas of the design."
+```
+
+### For lighting mismatch:
+```
+"The printed design receives light from the exact same source as the 
+rest of the garment - there should be zero lighting difference between 
+printed and non-printed areas of the fabric."
+```
+
+---
+
+## 📁 File: promptBlocks.js
+
+```javascript
+// Ready-to-use prompt blocks for your Lovable app
+
+export const PRINT_REALISM_FULL = `
+═══════════════════════════════════════════════════════════════════════════════
+⚠️ CRITICAL: PRINT REALISM REQUIREMENTS ⚠️
+═══════════════════════════════════════════════════════════════════════════════
+
+The design/artwork MUST appear as a REAL PHYSICAL PRINT on the fabric:
+
+【FABRIC INTEGRATION】
+• The design is PRINTED INTO the fabric fibers using screen-print/DTG printing
+• Subtle fabric weave texture is visible THROUGH the printed ink areas
+• The ink is ABSORBED into the material, NOT sitting on top like a sticker
+• Print has the characteristics of real ink on real textile
+
+【FABRIC PHYSICS - DESIGN FOLLOWS THE FABRIC】
+• Design follows EVERY fold, wrinkle, and crease in the garment
+• Design stretches and compresses over body contours (chest, shoulders, stomach)
+• Where fabric bunches up, the design bunches up identically
+• Where fabric pulls tight, the design stretches with it
+• The design is NOT flat - it exists in 3D space on the garment
+• Design warps naturally with the cylindrical shape of the torso
+
+【LIGHTING MUST BE CONSISTENT】  
+• The SAME light source illuminates both the garment AND the printed design
+• Shadows from folds fall ACROSS the design, darkening those areas
+• Highlights on raised/stretched fabric areas also brighten the design
+• The print does NOT have its own separate lighting
+• No "glowing" or "backlit" appearance on the design
+
+【COLOR ACCURACY FOR REAL PRINTS】
+• Print colors appear as REAL INK on fabric (slightly less saturated than digital file)
+• Colors are subtly muted compared to the original digital artwork
+• Fabric texture subtly visible through printed areas
+• No "neon" or "glowing" colors unless it's actual reflective ink
+
+【3D PERSPECTIVE】
+• Design follows the 3D curvature of the human torso
+• Slight perspective distortion toward edges (design wraps around body)
+• Design is NOT perfectly rectangular - it curves with the body shape
+
+═══════════════════════════════════════════════════════════════════════════════
+`;
+
+export const PRINT_REALISM_COMPACT = `
+【PRINT REALISM - MANDATORY】
+The design is PHYSICALLY PRINTED on the fabric, NOT digitally overlaid:
+• Fabric texture visible through printed areas
+• Design follows ALL folds, wrinkles, and body contours  
+• Same lighting affects both garment and print (shadows cross over design)
+• Colors appear as real ink (slightly less saturated than digital)
+• Design wraps around 3D body shape with natural perspective
+• Must look like a real photograph of a real printed garment
+`;
+
+export const PRINT_REALISM_MINIMAL = `
+CRITICAL: Design must be PRINTED on fabric (not overlaid). 
+Shows fabric texture, follows folds/wrinkles, has consistent lighting, 
+realistic ink colors, and 3D body curvature. Real print, not digital mockup.
+`;
+
+// Usage in your generation function:
+// prompt = `...your prompt... ${PRINT_REALISM_FULL} ...design description...`
+```
+
+---
+
+## ✅ Summary
+
+1. **Copy** the prompt block from this document
+2. **Paste** it into your Gemini generation prompt
+3. **Place** it before or after your design description
+4. **Test** using the checklist
+5. **Iterate** with reinforcement phrases if needed
+
+The key is explicitly telling the model that this is a **REAL PHYSICAL PRINT** and describing exactly how real prints behave on real fabric.
