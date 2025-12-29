@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { 
   Scissors, 
   Upload, 
@@ -59,6 +59,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useImages } from "@/hooks/use-images";
+import { useAuth } from "@/hooks/use-auth";
 import { getTransferredImage, clearTransferredImage, fetchImageAsDataUrl } from "@/lib/image-transfer";
 import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
@@ -196,8 +198,20 @@ export default function BackgroundRemover() {
   const mode: ProcessingMode = batchImages.length > 0 ? "batch" : "single";
   
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { images: userImages, isLoading: isLoadingImages } = useImages();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const comparisonRef = useRef<HTMLDivElement>(null);
+  
+  // Get recent images for quick selection (up to 6)
+  const recentImages = useMemo(() => {
+    if (!user || !userImages || userImages.length === 0) return [];
+    return userImages.slice(0, 6).map(img => ({
+      id: img.id,
+      src: `/api/images/${img.id}/image`,
+      prompt: img.prompt
+    }));
+  }, [user, userImages]);
 
   const currentCredits = QUALITY_LEVELS.find(q => q.id === quality)?.credits || 1;
   const totalBatchCredits = batchImages.length * currentCredits;
@@ -798,19 +812,40 @@ export default function BackgroundRemover() {
         </div>
 
         <div className="mt-6 md:mt-10">
-          <p className="text-[13px] text-muted-foreground font-medium mb-3 md:mb-4 text-center">Try with a sample</p>
-          <div className="flex flex-wrap justify-center gap-2 md:gap-3 px-2">
-            {[samplePortrait, sampleProduct, sampleAnimal, sampleCar, sampleLogo, sampleFood].map((img, i) => (
-              <button 
-                key={i}
-                onClick={() => handleSampleSelect(img)}
-                className="h-10 w-10 md:h-14 md:w-14 rounded-full border-2 border-transparent hover:border-primary hover:scale-110 transition-all overflow-hidden shadow-sm"
-                data-testid={`sample-image-${i}`}
-              >
-                <img src={img} alt="Sample" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
+          {user && recentImages.length > 0 ? (
+            <>
+              <p className="text-[13px] text-muted-foreground font-medium mb-3 md:mb-4 text-center">Use a recent creation</p>
+              <div className="flex flex-wrap justify-center gap-2 md:gap-3 px-2">
+                {recentImages.map((img, i) => (
+                  <button 
+                    key={img.id}
+                    onClick={() => handleSampleSelect(img.src)}
+                    className="h-10 w-10 md:h-14 md:w-14 rounded-full border-2 border-transparent hover:border-primary hover:scale-110 transition-all overflow-hidden shadow-sm"
+                    data-testid={`recent-image-${i}`}
+                    title={img.prompt || 'Recent creation'}
+                  >
+                    <img src={img.src} alt={img.prompt || 'Recent creation'} className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-[13px] text-muted-foreground font-medium mb-3 md:mb-4 text-center">Try with a sample</p>
+              <div className="flex flex-wrap justify-center gap-2 md:gap-3 px-2">
+                {[samplePortrait, sampleProduct, sampleAnimal, sampleCar, sampleLogo, sampleFood].map((img, i) => (
+                  <button 
+                    key={i}
+                    onClick={() => handleSampleSelect(img)}
+                    className="h-10 w-10 md:h-14 md:w-14 rounded-full border-2 border-transparent hover:border-primary hover:scale-110 transition-all overflow-hidden shadow-sm"
+                    data-testid={`sample-image-${i}`}
+                  >
+                    <img src={img} alt="Sample" className="h-full w-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
       </div>
