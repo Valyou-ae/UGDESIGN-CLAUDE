@@ -2582,6 +2582,33 @@ export default function Discover() {
                     )}
                   </div>
 
+                  {/* Stats Row */}
+                  <div className="flex items-center justify-between py-2 px-1 bg-muted/20 rounded-lg">
+                    <div className="flex items-center gap-1.5 text-center flex-1">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.views)}</span>
+                      <span className="text-xs text-muted-foreground">views</span>
+                    </div>
+                    <div className="w-px h-4 bg-border" />
+                    <div className="flex items-center gap-1.5 text-center flex-1 justify-center">
+                      <Heart className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.likes)}</span>
+                      <span className="text-xs text-muted-foreground">likes</span>
+                    </div>
+                    <div className="w-px h-4 bg-border" />
+                    <div className="flex items-center gap-1.5 text-center flex-1 justify-center">
+                      <Shuffle className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.uses)}</span>
+                      <span className="text-xs text-muted-foreground">remix</span>
+                    </div>
+                    <div className="w-px h-4 bg-border" />
+                    <div className="flex items-center gap-1.5 text-center flex-1 justify-end">
+                      <UserPlus className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-foreground">--</span>
+                      <span className="text-xs text-muted-foreground">followers</span>
+                    </div>
+                  </div>
+
                   {/* Prompt */}
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Prompt</label>
@@ -2752,18 +2779,6 @@ export default function Discover() {
                     >
                       <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
                     </Button>
-                    {/* Only show Delete for user's own images */}
-                    {isAuthenticated && user && selectedItem.creatorId === user.id && (
-                      <Button 
-                        variant="outline"
-                        size="icon"
-                        onClick={() => toast({ title: "Coming soon", description: "Delete feature will be available soon" })}
-                        className="shrink-0 text-red-500 hover:text-red-600 hover:border-red-500/50"
-                        data-testid="button-delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
