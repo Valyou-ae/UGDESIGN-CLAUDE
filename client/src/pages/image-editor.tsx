@@ -25,7 +25,8 @@ import {
   Layers,
   Scissors,
   Maximize,
-  Minimize
+  Minimize,
+  Lightbulb
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,17 @@ type RecentImage = {
 
 type EditStatus = "idle" | "preview" | "uploading" | "editing" | "complete" | "error";
 
+const EDITING_TIPS = [
+  "Be specific with your edits. \"Make the sky more vibrant\" works better than \"Change the sky\".",
+  "Try combining actions: \"Remove the person and fill with beach scenery\".",
+  "Use descriptive colors: \"Change to warm sunset orange\" instead of just \"Make it orange\".",
+  "Describe the mood: \"Make it feel cozy and warm\" for atmospheric changes.",
+  "Be precise about areas: \"Brighten only the foreground\" for targeted edits.",
+  "Add context: \"Make it look like a professional product photo\" for style changes.",
+  "Mention lighting: \"Add soft natural window lighting from the left side\".",
+  "Use comparisons: \"Make the colors pop like a vintage film photo\".",
+];
+
 export default function ImageEditor() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -85,6 +97,7 @@ export default function ImageEditor() {
   const recentScrollRef = useRef<HTMLDivElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [tipIndex, setTipIndex] = useState(0);
 
   const { data: recentImages, isLoading: isLoadingRecent } = useQuery<RecentImage[]>({
     queryKey: ["recent-images-for-editor"],
@@ -152,6 +165,14 @@ export default function ImageEditor() {
       clearTransferredImage();
     }
   }, [searchString, user, fetchVersions]);
+
+  // Auto-rotate tips every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTipIndex((prev) => (prev + 1) % EDITING_TIPS.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleFileSelect = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -841,6 +862,42 @@ export default function ImageEditor() {
                       </div>
                     </div>
                     
+                    {/* Tips Slider */}
+                    <div className="mt-3 p-2.5 rounded-lg bg-muted/40 border border-border/50">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-3.5 w-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <AnimatePresence mode="wait">
+                            <motion.p
+                              key={tipIndex}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-[11px] text-muted-foreground leading-relaxed"
+                            >
+                              {EDITING_TIPS[tipIndex]}
+                            </motion.p>
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-center gap-1 mt-2">
+                        {EDITING_TIPS.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setTipIndex(idx)}
+                            className={cn(
+                              "h-1.5 rounded-full transition-all",
+                              idx === tipIndex 
+                                ? "w-4 bg-amber-400" 
+                                : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                            )}
+                            data-testid={`tip-dot-${idx}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
                     {errorMessage && (
                       <div className="flex items-center gap-1.5 text-destructive text-xs">
                         <AlertCircle className="h-3.5 w-3.5" />
@@ -848,13 +905,6 @@ export default function ImageEditor() {
                       </div>
                     )}
                   </div>
-                </div>
-
-                {/* Tips Footer */}
-                <div className="flex-shrink-0 p-3 border-t border-border bg-muted/30">
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Tip: Be specific with your edits. For example, "Make the sky more vibrant" works better than "Change the sky".
-                  </p>
                 </div>
               </div>
             </div>
