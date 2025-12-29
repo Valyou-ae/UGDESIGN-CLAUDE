@@ -2380,7 +2380,7 @@ export default function MockupGenerator() {
                               {!uploadedImage ? (
                                 <div className="flex items-center justify-center w-full py-8">
                                   <div 
-                                    className="aspect-square w-[300px] sm:w-[360px] border-2 border-dashed border-border rounded-xl hover:border-primary transition-all cursor-pointer group active:scale-[0.99] flex flex-col items-center justify-center"
+                                    className="aspect-square w-[400px] sm:w-[500px] border-2 border-dashed border-border rounded-xl hover:border-primary transition-all cursor-pointer group active:scale-[0.99] flex flex-col items-center justify-center"
                                     style={{ backgroundColor: '#3d3d3e' }}
                                     onClick={() => fileInputRef.current?.click()}
                                     data-testid="dropzone-upload"
