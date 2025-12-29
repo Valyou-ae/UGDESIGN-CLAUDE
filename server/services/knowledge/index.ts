@@ -52,6 +52,15 @@ export {
   getPrintRealismReinforcement
 } from './printRealism';
 
+export {
+  DEFAULT_DISTORTION_PARAMS,
+  getDistortionParams,
+  get3DDistortionPhysicsBlock,
+  getGarmentConditionBlock,
+  getRenderingEngineFraming,
+  getImageAssetRules
+} from './distortionPhysics';
+
 export { ETHNIC_FEATURE_MAP, getEthnicFeatures } from './ethnicFeatures';
 
 export {

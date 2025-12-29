@@ -48,7 +48,11 @@ import {
   getProductNegativePrompts,
   getProductVisualAnchors,
   getPrintRealismBlock,
-  getPrintRealismNegatives
+  getPrintRealismNegatives,
+  get3DDistortionPhysicsBlock,
+  getGarmentConditionBlock,
+  getRenderingEngineFraming,
+  getImageAssetRules
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 
@@ -1219,13 +1223,24 @@ export async function generateSingleMockup(
   try {
     const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
 
+    // IMPORTANT: Design image comes FIRST as [IMAGE 1]
+    parts.push({
+      inlineData: { data: designBase64, mimeType: "image/png" }
+    });
+    parts.push({
+      text: `[IMAGE 1] - DESIGN ASSET
+This is the EXACT artwork to be printed on the garment. It must be reproduced PIXEL-PERFECT.`
+    });
+
+    // Headshot comes SECOND as [IMAGE 2]
     if (personaHeadshot) {
       parts.push({
         inlineData: { data: personaHeadshot, mimeType: "image/png" }
       });
       parts.push({
-        text: `[MODEL REFERENCE PHOTO]
-This is the person who should wear the shirt. Match their face, skin tone, and hair exactly.`
+        text: `[IMAGE 2] - MODEL IDENTITY REFERENCE
+This is the person who must wear the garment. Match their face, skin tone, hair, and body build EXACTLY.
+IGNORE the background and lighting of this photo - use only for identity matching.`
       });
     }
 
@@ -1235,77 +1250,69 @@ This is the person who should wear the shirt. Match their face, skin tone, and h
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
       parts.push({
-        text: `[STYLE REFERENCE]
-Match the background, lighting, and photography style from this reference image. Keep the same environment and mood.`
+        text: `[IMAGE 3] - STYLE/ENVIRONMENT REFERENCE
+Match the background, lighting, camera angle, and photography style from this reference image exactly.`
       });
     }
 
-    parts.push({
-      inlineData: { data: designBase64, mimeType: "image/png" }
-    });
-
-    // Build a focused prompt with essential locks and material physics
+    // Extract product name for distortion physics
+    const productName = renderSpec.locks?.product?.details?.productName as string || "t-shirt";
+    
+    // Build the comprehensive technical prompt
     const productInfo = renderSpec.productDescription || "t-shirt";
     const personaInfo = renderSpec.personaDescription || "";
     const materialInfo = renderSpec.materialDescription || "";
     const lightingInfo = renderSpec.lightingDescription || "natural lighting";
     const environmentInfo = renderSpec.environmentDescription || "lifestyle setting";
     const cameraInfo = renderSpec.cameraDescription || "front view";
-    const contourInfo = renderSpec.contourDescription || "";
     const negatives = renderSpec.negativePrompts || "";
     
-    const simplePrompt = `[PRINT FILE - USE AS-IS]
-The image above is the EXACT print file. This is NOT a reference or inspiration - this IS the final artwork.
+    // Get the new physics-based blocks
+    const renderingFraming = getRenderingEngineFraming();
+    const imageAssetRules = getImageAssetRules();
+    const distortionPhysics = get3DDistortionPhysicsBlock(productName);
+    const garmentCondition = getGarmentConditionBlock();
+    const printRealism = getPrintRealismBlock();
+    
+    const technicalPrompt = `${renderingFraming}
 
-=== CRITICAL: PIXEL-PERFECT OVERLAY REQUIRED ===
-DO NOT:
-- Redraw the design
-- Recreate the design in a different style  
-- Reinterpret the design
-- Simplify the design
-- Change the dogs, characters, or any elements
-- Modify the text or fonts
-- Change ANY colors
-- Add or remove ANY elements
+${imageAssetRules}
 
-DO:
-- Take this exact image file and overlay it onto the garment
-- The design must be IDENTICAL to the provided image - every pixel, every color, every detail
-- Apply perspective distortion to match the fabric surface
-- Add subtle fabric texture and lighting interaction
-- Allow natural fabric folds to affect the overlay
+===== SECTION 2: RENDER PARAMETERS =====
 
-=== MOCKUP TASK ===
-Create a photorealistic product photo with this design printed on the garment.
+【GARMENT SPECIFICATION】
+${productInfo}
+${materialInfo ? `Material: ${materialInfo}` : ''}
+${garmentCondition}
 
-PRODUCT: ${productInfo}
-CAMERA: ${cameraInfo}
+【MODEL SPECIFICATION】
+${personaInfo ? personaInfo : 'Generate an appropriate model for the garment.'}
+${personaHeadshot ? 'VERIFICATION: The final rendered person must match [IMAGE 2] visually.' : ''}
 
-${personaInfo ? `MODEL:\n${personaInfo}` : ''}
+【SCENE & CAMERA】
+Environment: ${environmentInfo}
+Lighting: ${lightingInfo}
+Camera: ${cameraInfo}
 
-PRINT OVERLAY RULES:
-- The provided image IS the print - overlay it directly onto the fabric
-- Center the design on the print area
-- Scale proportionally to fit the print area (approximately 12" x 16" on chest)
-- The design must look EXACTLY like the provided image - same dogs, same text, same colors, same arrangement
-- If there are 3 dogs with Santa hats in the design, there must be exactly 3 dogs with Santa hats on the shirt
+===== END RENDER PARAMETERS =====
 
-FABRIC INTERACTION (apply to the overlay):
-- Perspective warp to match camera angle and body pose
-- Subtle fabric fold distortion where creases occur
-- Light/shadow variation across the design matching the garment lighting
-- Slight stretch over body contours (chest, shoulders)
-${materialInfo ? `- ${materialInfo}` : ''}
-${contourInfo ? `- Body contours: ${contourInfo}` : ''}
+${distortionPhysics}
 
-LIGHTING: ${lightingInfo}
-ENVIRONMENT: ${environmentInfo}
+${printRealism}
 
-OUTPUT: Professional product photography. The printed design must be an exact reproduction of the provided image file, properly composited onto the fabric with realistic material interaction.
+===== NEGATIVE PROMPT (MANDATORY EXCLUSIONS) =====
+${negatives}
 
-${negatives ? `AVOID: ${negatives}` : ''}`;
+blurry, out of focus, soft focus, motion blur, unfocused, grainy, noisy, pixelated, 
+jpeg artifacts, overexposed, underexposed, wrong white balance, incorrect skin tones,
+flat design that ignores fabric folds, design floating above fabric, sticker appearance,
+design with separate lighting from garment, perfectly rectangular undistorted design,
+design that doesn't follow body contours, pasted-on look, digital overlay appearance
+===== END NEGATIVES =====
 
-    parts.push({ text: simplePrompt });
+FINAL OUTPUT: Generate a single photorealistic product photograph where the design from [IMAGE 1] appears as a REAL PHYSICAL PRINT that is BONDED to the fabric surface, following every fold and contour.`;
+
+    parts.push({ text: technicalPrompt });
 
     logger.info("Calling Gemini API for mockup generation", { 
       source: "eliteMockupGenerator", 
@@ -1897,6 +1904,7 @@ export async function colorSwapEdit(
     : "The artwork/design on the garment should remain dark for visibility on the light fabric.";
   
   const printRealismBlock = getPrintRealismBlock();
+  const distortionPhysics = get3DDistortionPhysicsBlock(product.name);
   
   const editPrompt = `PRECISE COLOR EDIT ONLY - Change the ${product.name} color from ${sourceColor.name} (${sourceColor.hex}) to ${targetColor.name} (${targetColor.hex}).
 
@@ -1908,10 +1916,13 @@ CRITICAL REQUIREMENTS:
 5. ${artworkInstruction}
 6. The garment fit, wrinkles, and draping should remain identical
 7. Do NOT change any other aspect of the image
+8. The printed design must remain BONDED to the fabric - it follows all folds and contours
+
+${distortionPhysics}
 
 ${printRealismBlock}
 
-This is a simple fabric color swap. The output should be pixel-perfect identical except for the product color change.`;
+This is a fabric color swap. The output should be identical except for the product color change, with the design still appearing as a real physical print on the fabric.`;
 
   logger.info("Color swap edit initiated", { 
     source: "eliteMockupGenerator",
