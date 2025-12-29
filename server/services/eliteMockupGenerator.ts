@@ -1258,7 +1258,7 @@ Match the background, lighting, camera angle, and photography style from this re
     // Extract product name for distortion physics
     const productName = renderSpec.locks?.product?.details?.productName as string || "t-shirt";
     
-    // Build the comprehensive technical prompt
+    // Build the comprehensive technical prompt - include ALL renderSpec lock descriptions
     const productInfo = renderSpec.productDescription || "t-shirt";
     const personaInfo = renderSpec.personaDescription || "";
     const materialInfo = renderSpec.materialDescription || "";
@@ -1266,6 +1266,12 @@ Match the background, lighting, camera angle, and photography style from this re
     const environmentInfo = renderSpec.environmentDescription || "lifestyle setting";
     const cameraInfo = renderSpec.cameraDescription || "front view";
     const negatives = renderSpec.negativePrompts || "";
+    
+    // Critical lock blocks that must be preserved
+    const designLock = renderSpec.designDescription || "";
+    const contourLock = renderSpec.contourDescription || "";
+    const printIntegration = renderSpec.printIntegrationDescription || "";
+    const humanRealism = renderSpec.humanRealismDescription || "";
     
     // Get the new physics-based blocks
     const renderingFraming = getRenderingEngineFraming();
@@ -1283,11 +1289,16 @@ ${imageAssetRules}
 【GARMENT SPECIFICATION】
 ${productInfo}
 ${materialInfo ? `Material: ${materialInfo}` : ''}
+${contourLock ? `Body Contours: ${contourLock}` : ''}
 ${garmentCondition}
 
 【MODEL SPECIFICATION】
 ${personaInfo ? personaInfo : 'Generate an appropriate model for the garment.'}
 ${personaHeadshot ? 'VERIFICATION: The final rendered person must match [IMAGE 2] visually.' : ''}
+${humanRealism ? `\n【HUMAN REALISM REQUIREMENTS】\n${humanRealism}` : ''}
+
+【DESIGN LOCK - CRITICAL】
+${designLock ? designLock : 'The design from [IMAGE 1] must be reproduced exactly as provided.'}
 
 【SCENE & CAMERA】
 Environment: ${environmentInfo}
@@ -1299,6 +1310,8 @@ Camera: ${cameraInfo}
 ${distortionPhysics}
 
 ${printRealism}
+
+${printIntegration ? `【PRINT INTEGRATION LOCK】\n${printIntegration}` : ''}
 
 ===== NEGATIVE PROMPT (MANDATORY EXCLUSIONS) =====
 ${negatives}
