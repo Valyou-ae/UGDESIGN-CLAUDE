@@ -17,7 +17,14 @@ import {
   UserCheck,
   Download,
   ExternalLink,
-  Pencil
+  Pencil,
+  FolderPlus,
+  Shuffle,
+  Shirt,
+  Eraser,
+  Star,
+  Trash2,
+  Sparkles
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { transferImageToTool } from "@/lib/image-transfer";
@@ -2078,9 +2085,13 @@ export default function Discover() {
   const [promptCopied, setPromptCopied] = useState(false);
   const [isFollowingPopup, setIsFollowingPopup] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
+  const [popupEditPrompt, setPopupEditPrompt] = useState("");
+  const [isEditingWithAI, setIsEditingWithAI] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { openLoginPopup } = useLoginPopup();
   const [, setLocation] = useLocation();
   const ITEMS_PER_LOAD = 12;
@@ -2089,11 +2100,14 @@ export default function Discover() {
     setSelectedItem(item);
     setPromptCopied(false);
     setIsFollowingPopup(item.isFollowing || false);
+    setPopupEditPrompt("");
+    setShareLinkCopied(false);
   };
 
   const closeItemPopup = () => {
     setSelectedItem(null);
     setPromptCopied(false);
+    setPopupEditPrompt("");
   };
 
   const handleCopyPrompt = async () => {
@@ -2171,6 +2185,130 @@ export default function Discover() {
     }, "image-editor");
     closeItemPopup();
     setLocation(route);
+  };
+
+  const handleAIEdit = () => {
+    if (!selectedItem || !popupEditPrompt.trim()) return;
+    if (!isAuthenticated) {
+      openLoginPopup();
+      return;
+    }
+    setIsEditingWithAI(true);
+    // Transfer image to editor with the edit prompt stored in name
+    const route = transferImageToTool({
+      id: String(selectedItem.id),
+      src: selectedItem.image,
+      name: popupEditPrompt.trim(),
+      aspectRatio: selectedItem.aspectRatio,
+    }, "image-editor");
+    closeItemPopup();
+    setLocation(route);
+  };
+
+  const handleVary = () => {
+    if (!selectedItem) return;
+    if (!isAuthenticated) {
+      openLoginPopup();
+      return;
+    }
+    // Copy prompt and redirect to image generator
+    navigator.clipboard.writeText(selectedItem.prompt || "");
+    toast({ title: "Prompt copied!", description: "Create variations in the Image Generator" });
+    closeItemPopup();
+    setLocation("/generate");
+  };
+
+  const handleMockup = () => {
+    if (!selectedItem) return;
+    if (!isAuthenticated) {
+      openLoginPopup();
+      return;
+    }
+    const route = transferImageToTool({
+      id: String(selectedItem.id),
+      src: selectedItem.image,
+      name: selectedItem.prompt,
+      aspectRatio: selectedItem.aspectRatio,
+    }, "mockup");
+    closeItemPopup();
+    setLocation(route);
+  };
+
+  const handleRemoveBG = () => {
+    if (!selectedItem) return;
+    if (!isAuthenticated) {
+      openLoginPopup();
+      return;
+    }
+    const route = transferImageToTool({
+      id: String(selectedItem.id),
+      src: selectedItem.image,
+      name: selectedItem.prompt,
+      aspectRatio: selectedItem.aspectRatio,
+    }, "bg-remover");
+    closeItemPopup();
+    setLocation(route);
+  };
+
+  const handleQuickShare = async () => {
+    if (!selectedItem || !selectedItem.isGalleryImage) return;
+    const shareUrl = `${window.location.origin}/share/${selectedItem.id}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: selectedItem.title || 'Check out this creation!',
+          text: selectedItem.prompt || 'Amazing AI-generated image',
+          url: shareUrl,
+        });
+      } catch {
+        // User cancelled or share failed, fallback to copy
+        await navigator.clipboard.writeText(shareUrl);
+        setShareLinkCopied(true);
+        toast({ title: "Link copied!", description: "Share URL copied to clipboard" });
+        setTimeout(() => setShareLinkCopied(false), 2000);
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareLinkCopied(true);
+      toast({ title: "Link copied!", description: "Share URL copied to clipboard" });
+      setTimeout(() => setShareLinkCopied(false), 2000);
+    }
+  };
+
+  const handleCopyShareLink = async () => {
+    if (!selectedItem || !selectedItem.isGalleryImage) {
+      toast({ title: "Share unavailable", description: "Only community creations can be shared." });
+      return;
+    }
+    const shareUrl = `${window.location.origin}/share/${selectedItem.id}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setShareLinkCopied(true);
+    toast({ title: "Link copied!", description: "Share URL copied to clipboard" });
+    setTimeout(() => setShareLinkCopied(false), 2000);
+  };
+
+  const formatDateCreated = (dateStr?: string) => {
+    if (!dateStr) return "Unknown";
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const getImageDimensions = (aspectRatio: string) => {
+    const ratioMap: Record<string, string> = {
+      "1:1": "1024 × 1024",
+      "16:9": "1792 × 1024",
+      "9:16": "1024 × 1792",
+      "4:5": "1024 × 1280",
+      "3:4": "1024 × 1365",
+    };
+    return ratioMap[aspectRatio] || "1024 × 1024";
   };
 
   useEffect(() => {
@@ -2461,101 +2599,172 @@ export default function Discover() {
                     </div>
                   </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center gap-6 py-2">
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Eye className="h-4 w-4" />
-                      <span>{formatCount(selectedItem.views)} views</span>
+                  {/* Edit with UGLI AI */}
+                  <div className="bg-gradient-to-r from-[#f8991c]/10 to-[#B8860B]/10 rounded-xl p-4 border border-[#f8991c]/20">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-4 w-4 text-[#f8991c]" />
+                      <span className="text-xs font-bold text-foreground uppercase tracking-widest">Edit with UGLI AI</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Heart className="h-4 w-4" />
-                      <span>{formatCount(selectedItem.likes)} likes</span>
+                    <div className="flex gap-2">
+                      <Input
+                        value={popupEditPrompt}
+                        onChange={(e) => setPopupEditPrompt(e.target.value)}
+                        placeholder="Remove background, change color to blue."
+                        className="flex-1 bg-card/80 border-border/50 text-sm placeholder:text-muted-foreground/60"
+                        onKeyDown={(e) => e.key === 'Enter' && handleAIEdit()}
+                        data-testid="input-ai-edit"
+                      />
+                      <Button 
+                        size="icon"
+                        onClick={handleAIEdit}
+                        disabled={!popupEditPrompt.trim() || isEditingWithAI}
+                        className="bg-[#f8991c] hover:bg-[#e88a17] text-white shrink-0"
+                        data-testid="button-ai-edit"
+                      >
+                        {isEditingWithAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      </Button>
                     </div>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                      <Wand2 className="h-4 w-4" />
-                      <span>{formatCount(selectedItem.uses)} uses</span>
+                    <p className="text-[10px] text-muted-foreground mt-2">Describe what you want to change using natural language</p>
+                  </div>
+
+                  {/* Quick Action Buttons */}
+                  <div className="flex justify-between gap-1">
+                    <button
+                      onClick={() => toast({ title: "Coming soon!", description: "Folder feature will be available soon" })}
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors flex-1"
+                      data-testid="button-folder"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <FolderPlus className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">Folder</span>
+                    </button>
+                    <button
+                      onClick={handleCopyPrompt}
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors flex-1"
+                      data-testid="button-copy-action"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <Copy className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">Copy</span>
+                    </button>
+                    <button
+                      onClick={handleVary}
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors flex-1"
+                      data-testid="button-vary"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <Shuffle className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">Vary</span>
+                    </button>
+                    <button
+                      onClick={handleMockup}
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors flex-1"
+                      data-testid="button-mockup"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <Shirt className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">Mockup</span>
+                    </button>
+                    <button
+                      onClick={handleRemoveBG}
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-lg hover:bg-muted/50 transition-colors flex-1"
+                      data-testid="button-remove-bg"
+                    >
+                      <div className="w-9 h-9 rounded-lg bg-muted/50 flex items-center justify-center">
+                        <Eraser className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <span className="text-[10px] text-muted-foreground">Remove BG</span>
+                    </button>
+                  </div>
+
+                  {/* Metadata Details */}
+                  <div className="space-y-0 border-t border-border pt-3">
+                    <div className="flex justify-between py-2">
+                      <span className="text-sm text-muted-foreground">Style</span>
+                      <span className="text-sm font-medium text-foreground">{selectedItem.style || "Auto"}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-sm text-muted-foreground">Dimensions</span>
+                      <span className="text-sm font-medium text-foreground">{getImageDimensions(selectedItem.aspectRatio)}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-sm text-muted-foreground">Ratio</span>
+                      <span className="text-sm font-medium text-foreground">{selectedItem.aspectRatio}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="text-sm text-muted-foreground">Date Created</span>
+                      <span className="text-sm font-medium text-foreground">{formatDateCreated(selectedItem.createdAt)}</span>
                     </div>
                   </div>
 
-                  {/* Tags */}
-                  {selectedItem.tags && selectedItem.tags.length > 0 && (
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tags</label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedItem.tags.map((tag, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-muted/50 rounded-full text-xs text-muted-foreground">
-                            {tag}
-                          </span>
-                        ))}
+                  {/* Share Row */}
+                  {selectedItem.isGalleryImage && (
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <span className="text-sm text-muted-foreground">Share</span>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleQuickShare}
+                          className="gap-1.5 text-xs"
+                          data-testid="button-quick-share"
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                          Quick Share
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCopyShareLink}
+                          className="gap-1.5 text-xs"
+                          data-testid="button-copy-link"
+                        >
+                          {shareLinkCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Link2 className="h-3.5 w-3.5" />}
+                          Copy Link
+                        </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* Details */}
-                  <div className="space-y-1 pt-2 border-t border-border">
-                    <div className="flex justify-between py-1.5">
-                      <span className="text-xs text-muted-foreground">Category</span>
-                      <span className="text-xs font-medium text-foreground">{selectedItem.category}</span>
-                    </div>
-                    <div className="flex justify-between py-1.5">
-                      <span className="text-xs text-muted-foreground">Aspect Ratio</span>
-                      <span className="text-xs font-medium text-foreground">{selectedItem.aspectRatio}</span>
-                    </div>
-                    {selectedItem.style && (
-                      <div className="flex justify-between py-1.5">
-                        <span className="text-xs text-muted-foreground">Style</span>
-                        <span className="text-xs font-medium text-foreground">{selectedItem.style}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
+                  {/* Bottom Actions */}
+                  <div className="flex gap-2 pt-3">
                     <Button 
-                      onClick={handleCopyPrompt}
-                      className="flex-1 gap-2 bg-[#f8991c] hover:bg-[#e88a17] text-white"
-                      data-testid="button-use-prompt"
-                    >
-                      {promptCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      {promptCopied ? "Copied!" : "Copy Prompt"}
-                    </Button>
-                    <Button 
-                      variant="outline" 
                       onClick={handleDownloadImage}
-                      className="gap-2"
+                      className="flex-1 gap-2 bg-card hover:bg-muted border border-border text-foreground"
                       data-testid="button-download-popup"
                     >
                       <Download className="h-4 w-4" />
                       Download
                     </Button>
-                  </div>
-
-                  {/* Edit Image Button */}
-                  <Button 
-                    variant="outline" 
-                    onClick={handleEditImage}
-                    className="w-full gap-2"
-                    data-testid="button-edit-image-popup"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    Edit Image
-                  </Button>
-
-                  {/* Share link for gallery images */}
-                  {selectedItem.isGalleryImage && (
                     <Button 
-                      variant="ghost" 
-                      className="w-full gap-2 text-muted-foreground hover:text-foreground"
+                      variant="outline"
+                      size="icon"
                       onClick={() => {
-                        const shareUrl = `${window.location.origin}/share/${selectedItem.id}`;
-                        window.open(shareUrl, '_blank');
+                        setIsFavorite(!isFavorite);
+                        toast({ title: isFavorite ? "Removed from favorites" : "Added to favorites" });
                       }}
-                      data-testid="button-view-share-page"
+                      className={cn("shrink-0", isFavorite && "text-[#f8991c] border-[#f8991c]")}
+                      data-testid="button-favorite"
                     >
-                      <ExternalLink className="h-4 w-4" />
-                      View Share Page
+                      <Star className={cn("h-4 w-4", isFavorite && "fill-current")} />
                     </Button>
-                  )}
+                    {/* Only show Delete for user's own images */}
+                    {isAuthenticated && user && selectedItem.creatorId === user.id && (
+                      <Button 
+                        variant="outline"
+                        size="icon"
+                        onClick={() => toast({ title: "Coming soon", description: "Delete feature will be available soon" })}
+                        className="shrink-0 text-red-500 hover:text-red-600 hover:border-red-500/50"
+                        data-testid="button-delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
