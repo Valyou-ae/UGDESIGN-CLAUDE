@@ -334,6 +334,9 @@ interface GeneratedMockupData {
   sex?: string;
   ethnicity?: string;
   printType?: string;
+  pending?: boolean;
+  jobId?: string;
+  status?: 'pending' | 'completed' | 'failed';
 }
 
 const DTG_STEPS: WizardStep[] = ["design", "product", "customize", "output"];
@@ -902,6 +905,9 @@ export default function MockupGenerator() {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingByKeyRef = useRef<Map<string, number>>(new Map());
+  const jobIdToIndexRef = useRef<Map<string, number>>(new Map());
+  const generatedImagesRef = useRef<GeneratedMockupData[]>([]);
 
   const [selectedMockupDetails, setSelectedMockupDetails] = useState<MockupDetails | null>(null);
   const [popupEditPrompt, setPopupEditPrompt] = useState("");
@@ -1075,7 +1081,8 @@ export default function MockupGenerator() {
   };
 
   const downloadAllAsZip = async () => {
-    if (generatedMockups.length === 0) return;
+    const completedMockups = generatedMockups.filter(m => m.status === 'completed');
+    if (completedMockups.length === 0) return;
     
     setIsDownloadingZip(true);
     try {
@@ -1086,7 +1093,7 @@ export default function MockupGenerator() {
       
       if (!folder) throw new Error('Failed to create zip folder');
 
-      const fetchPromises = generatedMockups.map(async (mockup, index) => {
+      const fetchPromises = completedMockups.map(async (mockup, index) => {
         try {
           const colorName = mockup.color.replace(/\s+/g, '-').toLowerCase();
           const angleName = mockup.angle.replace(/\s+/g, '-').toLowerCase();
@@ -1125,7 +1132,7 @@ export default function MockupGenerator() {
 
       toast({
         title: "Download Complete",
-        description: `${generatedMockups.length} mockups saved as ZIP file`,
+        description: `${completedMockups.length} mockups saved as ZIP file`,
       });
     } catch (error) {
       console.error('ZIP download failed:', error);
@@ -1528,7 +1535,9 @@ export default function MockupGenerator() {
     const scene = seasonalKeywords 
       ? `${baseScene} with ${seasonalTheme?.name} theme: ${seasonalKeywords}` 
       : baseScene;
-    const totalExpected = Math.max(1, angles.length * colors.length);
+    
+    const effectiveSizes = useModel ? sizes : [sizes[0]];
+    const totalExpected = Math.max(1, angles.length * colors.length * effectiveSizes.length);
 
     // Generate a new session ID for this generation batch
     const sessionId = `mockup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -1537,28 +1546,50 @@ export default function MockupGenerator() {
     setIsGenerating(true);
     setGenerationProgress(0);
     setGenerationStage("Initializing...");
-    setGeneratedMockups([]);
     setExpectedMockupsCount(totalExpected);
 
     const initialBatchJobs: BatchJob[] = [];
+    const placeholderMockups: GeneratedMockupData[] = [];
+    
+    pendingByKeyRef.current.clear();
+    jobIdToIndexRef.current.clear();
+    let placeholderIndex = 0;
+    
     colors.forEach((color) => {
       angles.forEach((angle) => {
-        initialBatchJobs.push({
-          id: `${color}-${angle}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          color,
-          angle,
-          size: sizes[0],
-          status: 'pending',
-          retryCount: 0
+        effectiveSizes.forEach((size) => {
+          const localJobId = `local-${color}-${angle}-${size}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          const key = `${color}|${angle}|${size}`;
+          
+          initialBatchJobs.push({
+            id: localJobId,
+            color,
+            angle,
+            size,
+            status: 'pending',
+            retryCount: 0
+          });
+          placeholderMockups.push({
+            src: '',
+            angle,
+            color,
+            size,
+            sessionId: sessionId,
+            productName: productName,
+            pending: true,
+            status: 'pending'
+          });
+          pendingByKeyRef.current.set(key, placeholderIndex);
+          placeholderIndex++;
         });
       });
     });
+    generatedImagesRef.current = [...placeholderMockups];
+    setGeneratedMockups(placeholderMockups);
     setBatchJobs(initialBatchJobs);
     setCurrentlyProcessing(null);
 
     if (intervalRef.current) clearInterval(intervalRef.current);
-
-    const generatedImages: GeneratedMockupData[] = [];
 
     const selectedPattern = isAopJourney && selectedVariationId 
       ? seamlessVariations.find(v => v.id === selectedVariationId)
@@ -1614,11 +1645,36 @@ export default function MockupGenerator() {
               if (event.data.imageData && event.data.mimeType) {
                 const imageUrl = `data:${event.data.mimeType};base64,${event.data.imageData}`;
                 const versionId = `v-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                const incomingAngle = event.data.angle || 'front';
+                const incomingColor = event.data.color || 'White';
+                const incomingSize = event.data.size || effectiveSizes[0] || 'M';
+                const incomingJobId = event.data.jobId;
+                const key = `${incomingColor}|${incomingAngle}|${incomingSize}`;
+                
+                let targetIndex = -1;
+                
+                if (incomingJobId && jobIdToIndexRef.current.has(incomingJobId)) {
+                  targetIndex = jobIdToIndexRef.current.get(incomingJobId)!;
+                } else if (pendingByKeyRef.current.has(key)) {
+                  targetIndex = pendingByKeyRef.current.get(key)!;
+                  if (incomingJobId) {
+                    jobIdToIndexRef.current.set(incomingJobId, targetIndex);
+                    pendingByKeyRef.current.delete(key);
+                  }
+                } else {
+                  targetIndex = generatedImagesRef.current.findIndex(
+                    m => m.pending && m.angle === incomingAngle && m.color === incomingColor && m.size === incomingSize
+                  );
+                  if (targetIndex >= 0 && incomingJobId) {
+                    jobIdToIndexRef.current.set(incomingJobId, targetIndex);
+                  }
+                }
+                
                 const mockupData: GeneratedMockupData = {
                   src: imageUrl,
-                  angle: event.data.angle || 'front',
-                  color: event.data.color || 'White',
-                  size: event.data.size || 'M',
+                  angle: incomingAngle,
+                  color: incomingColor,
+                  size: incomingSize,
                   sessionId: sessionId,
                   productName: productName,
                   ageGroup: useModel ? modelDetails.age : undefined,
@@ -1630,11 +1686,21 @@ export default function MockupGenerator() {
                     src: imageUrl,
                     timestamp: new Date()
                   }],
-                  currentVersionIndex: 0
+                  currentVersionIndex: 0,
+                  pending: false,
+                  status: 'completed',
+                  jobId: incomingJobId
                 };
-                generatedImages.push(mockupData);
-                setGeneratedMockups([...generatedImages]);
-                const progress = 10 + Math.round((generatedImages.length / totalExpected) * 85);
+                
+                if (targetIndex >= 0) {
+                  generatedImagesRef.current[targetIndex] = mockupData;
+                } else {
+                  generatedImagesRef.current.push(mockupData);
+                }
+                setGeneratedMockups([...generatedImagesRef.current]);
+                
+                const completedCount = generatedImagesRef.current.filter(m => !m.pending).length;
+                const progress = 10 + Math.round((completedCount / totalExpected) * 85);
                 setGenerationProgress(Math.min(progress, 95));
                 
                 // Save version to backend (fire and forget)
@@ -1663,7 +1729,7 @@ export default function MockupGenerator() {
                 }).catch(err => console.error('Failed to save version:', err));
                 
                 setBatchJobs(prev => prev.map(job => 
-                  job.color === mockupData.color && job.angle === mockupData.angle
+                  job.color === mockupData.color && job.angle === mockupData.angle && job.size === mockupData.size
                     ? { ...job, status: 'completed' as BatchJobStatus, imageData: event.data.imageData, mimeType: event.data.mimeType }
                     : job
                 ));
@@ -1671,9 +1737,41 @@ export default function MockupGenerator() {
               }
               break;
             case "image_error":
-              console.error(`Failed to generate ${event.data.angle} ${event.data.color || ''} view`);
+              console.error(`Failed to generate ${event.data.angle} ${event.data.color || ''} ${event.data.size || ''} view`);
+              const errorAngle = event.data.angle || 'front';
+              const errorColor = event.data.color || 'White';
+              const errorSize = event.data.size || effectiveSizes[0] || 'M';
+              const errorJobId = event.data.jobId;
+              const errorKey = `${errorColor}|${errorAngle}|${errorSize}`;
+              
+              let errorTargetIndex = -1;
+              
+              if (errorJobId && jobIdToIndexRef.current.has(errorJobId)) {
+                errorTargetIndex = jobIdToIndexRef.current.get(errorJobId)!;
+              } else if (pendingByKeyRef.current.has(errorKey)) {
+                errorTargetIndex = pendingByKeyRef.current.get(errorKey)!;
+                if (errorJobId) {
+                  jobIdToIndexRef.current.set(errorJobId, errorTargetIndex);
+                  pendingByKeyRef.current.delete(errorKey);
+                }
+              } else {
+                errorTargetIndex = generatedImagesRef.current.findIndex(
+                  m => m.pending && m.angle === errorAngle && m.color === errorColor && m.size === errorSize
+                );
+              }
+              
+              if (errorTargetIndex >= 0) {
+                generatedImagesRef.current[errorTargetIndex] = {
+                  ...generatedImagesRef.current[errorTargetIndex],
+                  pending: false,
+                  status: 'failed',
+                  jobId: errorJobId
+                };
+                setGeneratedMockups([...generatedImagesRef.current]);
+              }
+              
               setBatchJobs(prev => prev.map(job => 
-                job.color === event.data.color && job.angle === event.data.angle
+                job.color === errorColor && job.angle === errorAngle && job.size === errorSize
                   ? { ...job, status: 'failed' as BatchJobStatus, error: event.data.error || 'Generation failed' }
                   : job
               ));
@@ -1684,9 +1782,11 @@ export default function MockupGenerator() {
               setGenerationStage("Complete!");
               break;
             case "stream_end":
-              if (!event.data.success && generatedImages.length === 0) {
+              const successfulImages = generatedImagesRef.current.filter(m => m.status === 'completed');
+              if (!event.data.success && successfulImages.length === 0) {
                 setIsGenerating(false);
                 setGenerationProgress(0);
+                setGeneratedMockups([]);
                 toast({
                   title: "Generation Failed",
                   description: "No images were produced. Please try again.",
@@ -1704,10 +1804,17 @@ export default function MockupGenerator() {
       );
 
       setIsGenerating(false);
-      if (generatedImages.length > 0) {
+      const finalSuccessfulImages = generatedImagesRef.current.filter(m => m.status === 'completed');
+      const finalFailedCount = generatedImagesRef.current.filter(m => m.status === 'failed').length;
+      
+      if (finalSuccessfulImages.length > 0) {
+        setGeneratedMockups(finalSuccessfulImages);
+        const description = finalFailedCount > 0 
+          ? `${finalSuccessfulImages.length} ready, ${finalFailedCount} failed.`
+          : `${finalSuccessfulImages.length} professional product photo${finalSuccessfulImages.length > 1 ? 's' : ''} ready.`;
         toast({
           title: "Mockups Generated!",
-          description: `${generatedImages.length} professional product photo${generatedImages.length > 1 ? 's' : ''} ready.`,
+          description,
           className: "bg-green-50 border-green-200 text-green-800 dark:bg-green-900/20 dark:border-green-900/50 dark:text-green-400",
         });
       } else {
@@ -3227,108 +3334,119 @@ export default function MockupGenerator() {
                               <div className="flex-1 overflow-y-auto">
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                                   {generatedMockups.map((mockup, index) => (
-                                    <div key={index} className="flex flex-col gap-1.5">
-                                      <motion.div
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted/30 group cursor-pointer"
-                                        onClick={() => setSelectedMockupDetails({ ...mockup, index })}
-                                        data-testid={`mockup-${index}`}
-                                      >
-                                        <img src={mockup.src} alt={`Mockup ${index + 1}`} className="w-full h-full object-cover" />
-                                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-end justify-between">
-                                        <p className="text-[10px] text-white truncate flex-1">{mockup.color} • {mockup.angle}</p>
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                            <button 
-                                              className="h-6 w-6 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center transition-colors"
-                                              data-testid={`mockup-menu-${index}`}
-                                            >
-                                              <MoreVertical className="h-3.5 w-3.5 text-white" />
-                                            </button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end" className="w-44">
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                const route = transferImageToTool({
-                                                  id: `mockup-${Date.now()}`,
-                                                  src: mockup.src,
-                                                  name: `${selectedProductType} mockup`,
-                                                  type: "mockup"
-                                                }, "bg-remover");
-                                                setLocation(route);
-                                              }}
-                                              data-testid={`mockup-menu-bg-remover-${index}`}
-                                            >
-                                              <Scissors className="h-4 w-4 mr-2" />
-                                              BG Remover
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                downloadImage(mockup.src, `mockup_${index + 1}.png`);
-                                              }}
-                                              data-testid={`mockup-menu-download-${index}`}
-                                            >
-                                              <Download className="h-4 w-4 mr-2" />
-                                              Download
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setGeneratedMockups(prev => prev.map((m, i) => 
-                                                  i === index ? { ...m, isLiked: !m.isLiked } : m
-                                                ));
-                                                toast({
-                                                  title: mockup.isLiked ? "Removed from favorites" : "Added to favorites",
-                                                  description: mockup.isLiked ? "Mockup unliked" : "Mockup added to favorites",
-                                                });
-                                              }}
-                                              data-testid={`mockup-menu-like-${index}`}
-                                            >
-                                              <Heart className={cn("h-4 w-4 mr-2", mockup.isLiked && "fill-current text-red-500")} />
-                                              {mockup.isLiked ? "Unlike" : "Like"}
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                setGeneratedMockups(prev => prev.filter((_, i) => i !== index));
-                                                toast({
-                                                  title: "Deleted",
-                                                  description: "Mockup removed",
-                                                });
-                                              }}
-                                              className="text-destructive focus:text-destructive"
-                                              data-testid={`mockup-menu-delete-${index}`}
-                                            >
-                                              <Trash2 className="h-4 w-4 mr-2" />
-                                              Delete
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    </motion.div>
+                                    <div key={`${mockup.color}-${mockup.angle}-${mockup.size}-${index}`} className="flex flex-col gap-1.5">
+                                      {mockup.pending ? (
+                                        <motion.div
+                                          initial={{ opacity: 0 }}
+                                          animate={{ opacity: 1 }}
+                                          className="relative aspect-square rounded-xl border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center gap-2"
+                                          data-testid={`mockup-placeholder-${index}`}
+                                        >
+                                          <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+                                          <p className="text-[10px] text-muted-foreground">{mockup.color} • {mockup.angle} • {mockup.size}</p>
+                                        </motion.div>
+                                      ) : mockup.status === 'failed' ? (
+                                        <motion.div
+                                          initial={{ opacity: 0 }}
+                                          animate={{ opacity: 1 }}
+                                          className="relative aspect-square rounded-xl border-2 border-dashed border-destructive/50 bg-destructive/10 flex flex-col items-center justify-center gap-2"
+                                          data-testid={`mockup-failed-${index}`}
+                                        >
+                                          <AlertCircle className="h-6 w-6 text-destructive" />
+                                          <p className="text-[10px] text-destructive">Failed</p>
+                                          <p className="text-[10px] text-muted-foreground">{mockup.color} • {mockup.angle} • {mockup.size}</p>
+                                        </motion.div>
+                                      ) : (
+                                        <motion.div
+                                          initial={{ opacity: 0, scale: 0.9 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted/30 group cursor-pointer"
+                                          onClick={() => setSelectedMockupDetails({ ...mockup, index })}
+                                          data-testid={`mockup-${index}`}
+                                        >
+                                          <img src={mockup.src} alt={`Mockup ${index + 1}`} className="w-full h-full object-cover" />
+                                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-end justify-between">
+                                            <p className="text-[10px] text-white truncate flex-1">{mockup.color} • {mockup.angle}</p>
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                                <button 
+                                                  className="h-6 w-6 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center transition-colors"
+                                                  data-testid={`mockup-menu-${index}`}
+                                                >
+                                                  <MoreVertical className="h-3.5 w-3.5 text-white" />
+                                                </button>
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end" className="w-44">
+                                                <DropdownMenuItem 
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    const route = transferImageToTool({
+                                                      id: `mockup-${Date.now()}`,
+                                                      src: mockup.src,
+                                                      name: `${selectedProductType} mockup`,
+                                                      type: "mockup"
+                                                    }, "bg-remover");
+                                                    setLocation(route);
+                                                  }}
+                                                  data-testid={`mockup-menu-bg-remover-${index}`}
+                                                >
+                                                  <Scissors className="h-4 w-4 mr-2" />
+                                                  BG Remover
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    downloadImage(mockup.src, `mockup_${index + 1}.png`);
+                                                  }}
+                                                  data-testid={`mockup-menu-download-${index}`}
+                                                >
+                                                  <Download className="h-4 w-4 mr-2" />
+                                                  Download
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem 
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setGeneratedMockups(prev => prev.map((m, i) => 
+                                                      i === index ? { ...m, isLiked: !m.isLiked } : m
+                                                    ));
+                                                    toast({
+                                                      title: mockup.isLiked ? "Removed from favorites" : "Added to favorites",
+                                                      description: mockup.isLiked ? "Mockup unliked" : "Mockup added to favorites",
+                                                    });
+                                                  }}
+                                                  data-testid={`mockup-menu-like-${index}`}
+                                                >
+                                                  <Heart className={cn("h-4 w-4 mr-2", mockup.isLiked && "fill-current text-red-500")} />
+                                                  {mockup.isLiked ? "Unlike" : "Like"}
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem 
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setGeneratedMockups(prev => prev.filter((_, i) => i !== index));
+                                                    toast({
+                                                      title: "Deleted",
+                                                      description: "Mockup removed",
+                                                    });
+                                                  }}
+                                                  className="text-destructive focus:text-destructive"
+                                                  data-testid={`mockup-menu-delete-${index}`}
+                                                >
+                                                  <Trash2 className="h-4 w-4 mr-2" />
+                                                  Delete
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          </div>
+                                        </motion.div>
+                                      )}
                                     </div>
-                                  ))}
-                                  
-                                  {/* Placeholder for generating */}
-                                  {isGenerating && Array.from({ length: Math.max(0, expectedMockupsCount - generatedMockups.length) }).map((_, i) => (
-                                    <motion.div
-                                      key={`placeholder-${i}`}
-                                      initial={{ opacity: 0 }}
-                                      animate={{ opacity: 1 }}
-                                      className="relative aspect-square rounded-xl border-2 border-dashed border-border bg-muted/20 flex items-center justify-center"
-                                    >
-                                      <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
-                                    </motion.div>
                                   ))}
                                 </div>
                               </div>
 
                               {/* Action Bar */}
-                              {!isGenerating && generatedMockups.length > 0 && (
+                              {!isGenerating && generatedMockups.filter(m => m.status === 'completed').length > 0 && (
                                 <div className="pt-4 border-t border-border flex flex-col gap-3 shrink-0">
                                   <div className="flex items-center justify-between gap-3">
                                     <Button variant="outline" onClick={() => setJourney(null)} data-testid="button-start-over">
@@ -3351,7 +3469,7 @@ export default function MockupGenerator() {
                                         {isDownloadingZip ? (
                                           <><Loader2 className="h-4 w-4 mr-1 animate-spin" /> Creating ZIP...</>
                                         ) : (
-                                          <><Archive className="h-4 w-4 mr-1" /> Download All ({generatedMockups.length})</>
+                                          <><Archive className="h-4 w-4 mr-1" /> Download All ({generatedMockups.filter(m => m.status === 'completed').length})</>
                                         )}
                                       </Button>
                                     </div>
