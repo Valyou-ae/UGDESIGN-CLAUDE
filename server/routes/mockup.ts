@@ -1045,7 +1045,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Save a new version
   app.post("/api/mockup/versions", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1084,7 +1085,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Get versions for a session (optionally filtered by angle/color)
   app.get("/api/mockup/versions/:sessionId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1107,7 +1109,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Get a specific version
   app.get("/api/mockup/version/:versionId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1129,7 +1132,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Get user's mockup sessions with version counts
   app.get("/api/mockup/sessions", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
@@ -1147,7 +1151,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
   // Delete a version
   app.delete("/api/mockup/version/:versionId", requireAuth, async (req: Request, res: Response) => {
     try {
-      const userId = req.user?.id;
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
