@@ -741,6 +741,7 @@ export const mockupApi = {
       patternScale?: number;
       isSeamlessPattern?: boolean;
       outputQuality?: 'standard' | 'high' | 'ultra';
+      colorSwapMode?: boolean;
     } = {},
     onEvent: MockupEventCallback
   ): Promise<void> => {

@@ -1411,8 +1411,16 @@ export async function generateMockupBatch(
     });
   }
   
+  const baseColor = request.colors[0];
+  const editColors = request.colorSwapMode && request.colors.length > 1 
+    ? request.colors.slice(1) 
+    : [];
+  const colorsToGenerate = request.colorSwapMode ? [baseColor] : request.colors;
+  
+  const baseJobIds: Map<string, string> = new Map();
+  
   for (const size of sizesToGenerate) {
-    for (const color of request.colors) {
+    for (const color of colorsToGenerate) {
       for (const angle of request.angles) {
         const sizeModelDetails = request.modelDetails 
           ? { ...request.modelDetails, modelSize: size as Size }
@@ -1421,8 +1429,14 @@ export async function generateMockupBatch(
         const sizePersonaLock = personaLocksBySize.get(size);
         const sizeHeadshot = headshotsBySize.get(size);
         
+        const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        if (request.colorSwapMode) {
+          baseJobIds.set(`${size}_${angle}`, jobId);
+        }
+        
         jobs.push({
-          id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: jobId,
           designImage: request.designImage,
           product: request.product,
           color,
@@ -1441,6 +1455,46 @@ export async function generateMockupBatch(
         });
       }
     }
+  }
+  
+  if (request.colorSwapMode && editColors.length > 0) {
+    for (const size of sizesToGenerate) {
+      for (const editColor of editColors) {
+        for (const angle of request.angles) {
+          const baseJobId = baseJobIds.get(`${size}_${angle}`);
+          
+          jobs.push({
+            id: `edit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            designImage: request.designImage,
+            product: request.product,
+            color: editColor,
+            angle,
+            size,
+            modelDetails: request.modelDetails 
+              ? { ...request.modelDetails, modelSize: size as Size }
+              : undefined,
+            brandStyle: request.brandStyle,
+            lightingPreset: request.lightingPreset,
+            materialCondition: request.materialCondition,
+            environmentPrompt: request.environmentPrompt,
+            status: 'pending',
+            retryCount: 0,
+            createdAt: Date.now(),
+            isColorEditJob: true,
+            sourceColor: baseColor,
+            baseJobId
+          });
+        }
+      }
+    }
+    
+    logger.info("Color swap mode: created base + edit jobs", {
+      source: "eliteMockupGenerator",
+      baseColor: baseColor.name,
+      editColors: editColors.map(c => c.name),
+      baseJobCount: baseJobIds.size,
+      editJobCount: editColors.length * sizesToGenerate.length * request.angles.length
+    });
   }
   
   // For backward compatibility, use the first size's persona as the batch persona
@@ -1470,40 +1524,100 @@ export async function generateMockupBatch(
   let completedCount = 0;
   const totalJobs = jobs.length;
 
-  // With pre-stored headshots (per size), we can process all jobs in parallel
-  // Fall back to sequential only if no headshots are available (rare edge case)
+  const baseJobs = jobs.filter(j => !j.isColorEditJob);
+  const colorEditJobs = jobs.filter(j => j.isColorEditJob);
+  
   const hasPreStoredHeadshots = headshotsBySize.size > 0;
   
-  if (request.product.isWearable && personaLocksBySize.size > 0 && !hasPreStoredHeadshots) {
-    // Sequential processing only for wearables WITHOUT pre-stored headshot (fallback)
+  if (request.colorSwapMode && colorEditJobs.length > 0) {
+    logger.info("Color swap mode: processing base jobs first, then edit jobs", {
+      source: "eliteMockupGenerator",
+      baseJobCount: baseJobs.length,
+      editJobCount: colorEditJobs.length
+    });
+    
+    const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
+    let batchReferenceImage: string | undefined;
+    
+    for (let i = 0; i < baseJobs.length; i += batchSize) {
+      const batchJobsSlice = baseJobs.slice(i, i + batchSize);
+      await Promise.all(batchJobsSlice.map(job => processJobWithReference(job, batchReferenceImage)));
+      
+      const successfulJob = batchJobsSlice.find(j => j.result?.imageData);
+      if (successfulJob?.result?.imageData && !batchReferenceImage) {
+        batchReferenceImage = successfulJob.result.imageData;
+      }
+    }
+    
+    const jobResultMap = new Map<string, string>();
+    for (const job of baseJobs) {
+      if (job.result?.imageData) {
+        jobResultMap.set(job.id, job.result.imageData);
+      }
+    }
+    
+    for (const editJob of colorEditJobs) {
+      if (!editJob.baseJobId) continue;
+      
+      const baseImageData = jobResultMap.get(editJob.baseJobId);
+      if (!baseImageData) {
+        editJob.status = 'failed';
+        editJob.error = 'Base job did not produce an image';
+        editJob.completedAt = Date.now();
+        completedCount++;
+        if (onProgress) onProgress(completedCount, totalJobs, editJob);
+        continue;
+      }
+      
+      editJob.status = 'processing';
+      editJob.startedAt = Date.now();
+      
+      const editResult = await colorSwapEdit(
+        baseImageData,
+        editJob.sourceColor!,
+        editJob.color,
+        editJob.product
+      );
+      
+      if (editResult) {
+        editJob.status = 'completed';
+        editJob.result = {
+          ...editResult,
+          jobId: editJob.id,
+          angle: editJob.angle
+        };
+      } else {
+        editJob.status = 'failed';
+        editJob.error = 'Color swap edit failed';
+      }
+      
+      editJob.completedAt = Date.now();
+      completedCount++;
+      if (onProgress) onProgress(completedCount, totalJobs, editJob);
+    }
+  } else if (request.product.isWearable && personaLocksBySize.size > 0 && !hasPreStoredHeadshots) {
     let firstSuccessfulMockup: string | undefined;
     for (const job of jobs) {
       await processJobWithReference(job, firstSuccessfulMockup);
       
-      // Capture first successful result to use as reference
       if (!firstSuccessfulMockup && job.result?.imageData) {
         firstSuccessfulMockup = job.result.imageData;
         logger.info("First mockup captured for cross-angle consistency reference", { source: "eliteMockupGenerator" });
       }
     }
   } else {
-    // Parallel processing for all products with pre-stored headshots (optimized path) and non-wearables
-    // KEY FIX: Use first successful mockup as reference for subsequent batches to ensure consistency
     const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
     logger.info(`Processing ${jobs.length} jobs in parallel batches of ${batchSize}`, { source: "eliteMockupGenerator", hasPreStoredHeadshots, sizesWithHeadshots: headshotsBySize.size });
     
     let batchReferenceImage: string | undefined;
     
     for (let i = 0; i < jobs.length; i += batchSize) {
-      const batchJobs = jobs.slice(i, i + batchSize);
+      const batchJobsSlice = jobs.slice(i, i + batchSize);
       const batchIndex = Math.floor(i / batchSize);
       
-      // Process this batch with the reference from previous batch (if available)
-      await Promise.all(batchJobs.map(job => processJobWithReference(job, batchReferenceImage)));
+      await Promise.all(batchJobsSlice.map(job => processJobWithReference(job, batchReferenceImage)));
       
-      // After each batch, capture a successful result to use as reference for next batches
-      // Always update reference from any successful job - handles case where first batch fails but later succeeds
-      const successfulJob = batchJobs.find(j => j.result?.imageData);
+      const successfulJob = batchJobsSlice.find(j => j.result?.imageData);
       if (successfulJob?.result?.imageData) {
         const isFirstReference = !batchReferenceImage;
         batchReferenceImage = successfulJob.result.imageData;
@@ -1676,4 +1790,89 @@ Maintain all other aspects of the original image but apply the refinement above.
     renderSpec,
     originalJob.personaLockImage
   );
+}
+
+export async function colorSwapEdit(
+  baseImageData: string,
+  sourceColor: ProductColor,
+  targetColor: ProductColor,
+  product: Product
+): Promise<GeneratedMockup | null> {
+  const sourceColorName = sourceColor.name.toLowerCase();
+  const targetColorName = targetColor.name.toLowerCase();
+  
+  const isTargetDark = ['black', 'navy', 'charcoal', 'dark'].some(c => targetColorName.includes(c));
+  const artworkInstruction = isTargetDark 
+    ? "The artwork/design on the garment should be inverted to white/light colors for visibility on the dark fabric."
+    : "The artwork/design on the garment should remain dark for visibility on the light fabric.";
+  
+  const editPrompt = `PRECISE COLOR EDIT ONLY - Change the ${product.name} color from ${sourceColor.name} (${sourceColor.hex}) to ${targetColor.name} (${targetColor.hex}).
+
+CRITICAL REQUIREMENTS:
+1. ONLY change the apparel/product color - nothing else
+2. Keep the EXACT same model, face, pose, expression
+3. Keep the EXACT same background, lighting, camera angle
+4. Keep the EXACT same composition and framing
+5. ${artworkInstruction}
+6. The garment fit, wrinkles, and draping should remain identical
+7. Do NOT change any other aspect of the image
+
+This is a simple fabric color swap. The output should be pixel-perfect identical except for the product color change.`;
+
+  logger.info("Color swap edit initiated", { 
+    source: "eliteMockupGenerator",
+    from: sourceColor.name,
+    to: targetColor.name,
+    product: product.name,
+    isTargetDark
+  });
+
+  try {
+    const response = await genAI.models.generateContent({
+      model: MODELS.IMAGE_GENERATION,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { data: baseImageData, mimeType: "image/jpeg" } },
+            { text: editPrompt }
+          ]
+        }
+      ],
+      config: {
+        responseModalities: [Modality.TEXT, Modality.IMAGE],
+        temperature: 0.1,
+        topP: 0.8,
+        topK: 20
+      }
+    });
+
+    const candidate = response.candidates?.[0];
+    if (candidate?.content?.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData) {
+          logger.info("Color swap edit successful", { 
+            source: "eliteMockupGenerator",
+            from: sourceColor.name,
+            to: targetColor.name
+          });
+          
+          return {
+            imageData: part.inlineData.data || "",
+            mimeType: part.inlineData.mimeType || "image/jpeg",
+            jobId: `color_edit_${Date.now()}`,
+            color: targetColor.name,
+            angle: "front" as MockupAngle,
+            prompt: editPrompt
+          };
+        }
+      }
+    }
+
+    logger.warn("Color swap edit returned no image", { source: "eliteMockupGenerator" });
+    return null;
+  } catch (error) {
+    logger.error("Color swap edit failed", error, { source: "eliteMockupGenerator" });
+    return null;
+  }
 }

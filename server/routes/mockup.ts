@@ -213,6 +213,7 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         outputQuality: rawOutputQuality = "high",
         modelCustomization,
         knowledgeConfig,
+        colorSwapMode = false,
       } = req.body;
 
       if (!designImage || typeof designImage !== "string") {
@@ -496,7 +497,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
             materialCondition: 'BRAND_NEW',
             environmentPrompt: scene,
             patternScale: isAopJourney ? patternScale : undefined,
-            outputQuality: outputQuality
+            outputQuality: outputQuality,
+            colorSwapMode: colorSwapMode && !isAopJourney && colors.length > 1
           }, (completed, _total, job) => {
             const progress = 10 + Math.round((completed / totalJobs) * 85);
             const jobSize = job.size || mappedModelDetails.modelSize;

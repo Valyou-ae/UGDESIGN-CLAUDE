@@ -488,6 +488,9 @@ export interface GenerationJob {
   createdAt: number;
   startedAt?: number;
   completedAt?: number;
+  isColorEditJob?: boolean;
+  sourceColor?: ProductColor;
+  baseJobId?: string;
 }
 
 export interface GeneratedMockup {
@@ -584,6 +587,7 @@ export interface MockupGenerationRequest {
   aopBaseColor?: string;
   aopTrimColor?: string;
   outputQuality?: OutputQuality;
+  colorSwapMode?: boolean;
 }
 
 export interface MockupRefinementRequest {

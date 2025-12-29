@@ -116,6 +116,7 @@ import { useToast } from "@/hooks/use-toast";
 import { getTransferredImage, clearTransferredImage, fetchImageAsDataUrl, transferImageToTool } from "@/lib/image-transfer";
 import { useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { mockupApi, MockupEvent, TextToMockupProgressEvent, TextToMockupParsedPrompt, MockupVersion } from "@/lib/api";
 import {
   Collapsible,
@@ -871,6 +872,7 @@ export default function MockupGenerator() {
   const [selectedProductType, setSelectedProductType] = useState<string | null>("T-shirts");
   const [environmentPrompt, setEnvironmentPrompt] = useState("A minimalist gray or white photography studio with professional soft lighting");
   const [selectedColors, setSelectedColors] = useState<string[]>(["White"]);
+  const [colorSwapMode, setColorSwapMode] = useState<boolean>(false);
   const [selectedSizes, setSelectedSizes] = useState<string[]>(["M"]);
   const [selectedAngles, setSelectedAngles] = useState<string[]>(["front"]);
   const [modelDetails, setModelDetails] = useState<ModelDetails>({
@@ -1611,6 +1613,7 @@ export default function MockupGenerator() {
           patternScale: isAopJourney ? patternScale : undefined,
           isSeamlessPattern: isAopJourney,
           outputQuality: outputQuality,
+          colorSwapMode: colorSwapMode && !isAopJourney && selectedColors.length > 1,
         },
         (event: MockupEvent) => {
           switch (event.type) {
@@ -2844,6 +2847,36 @@ export default function MockupGenerator() {
                                         </TooltipProvider>
                                       );
                                     })}
+                                  </div>
+                                )}
+                                
+                                {journey !== "AOP" && selectedColors.length > 1 && (
+                                  <div className="mt-3 p-2 rounded-lg bg-muted/50">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium text-muted-foreground">Color Swap Mode</span>
+                                        <TooltipProvider>
+                                          <Tooltip delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                              Uses AI editing to swap product color while keeping the exact same model, pose, and background
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      </div>
+                                      <Switch
+                                        checked={colorSwapMode}
+                                        onCheckedChange={setColorSwapMode}
+                                        data-testid="switch-color-swap-mode"
+                                      />
+                                    </div>
+                                    {colorSwapMode && (
+                                      <p className="text-[10px] text-muted-foreground mt-1">
+                                        First color ({selectedColors[0]}) generates the base, others are edited variants
+                                      </p>
+                                    )}
                                   </div>
                                 )}
                               </div>

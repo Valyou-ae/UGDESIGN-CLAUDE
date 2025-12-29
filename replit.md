@@ -50,6 +50,12 @@ Preferred communication style: Simple, everyday language.
     -   **Camera/Pose Lock**: Consistent camera settings and angle presets.
     -   **Lighting Lock**: Consistent lighting across shots.
     -   **AOP Physics Locks**: For All-Over Print (construction, scale, physics).
+-   **Color Swap Mode**: AI-powered color variant generation ensuring perfect model/pose/background consistency:
+    -   **Activation**: Toggle in UI when 2+ colors selected (not available for AOP journey).
+    -   **Flow**: First color generates base mockup, subsequent colors use AI image editing to swap only product color.
+    -   **Artwork Inversion**: Automatically inverts artwork to white/light on dark fabrics for visibility.
+    -   **Implementation**: `colorSwapEdit()` function, `isColorEditJob/sourceColor/baseJobId` fields on GenerationJob.
+    -   **Types**: `colorSwapMode?: boolean` on MockupGenerationRequest.
 -   **Product Categories**: Apparel (8), Accessories (12), Home & Living (23) with Printify/Printful aligned print areas and construction blueprints.
 -   **Queue System**: 3 concurrent jobs max, 10 requests/minute rate limit, 3x auto-retry with exponential backoff, and SSE for progress.
 -   **API Endpoints**: For listing products/brand styles, analyzing designs, generating mockups, and refining mockups.
