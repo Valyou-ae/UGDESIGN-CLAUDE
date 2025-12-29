@@ -780,7 +780,7 @@ export default function ImageEditor() {
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: index * 0.03 }}
                               className={cn(
-                                "flex-shrink-0 w-16 cursor-pointer transition-all",
+                                "flex-shrink-0 w-16 cursor-pointer transition-all group/version",
                                 selectedVersionIndex === index 
                                   ? "ring-2 ring-primary ring-offset-2 ring-offset-background rounded-lg" 
                                   : "opacity-60 hover:opacity-100"
@@ -788,12 +788,28 @@ export default function ImageEditor() {
                               onClick={() => selectVersion(index)}
                               data-testid={`version-${index}`}
                             >
-                              <div className="aspect-square rounded-lg overflow-hidden bg-muted">
+                              <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                                 <img
                                   src={version.imageUrl}
                                   alt={`V${version.versionNumber}`}
                                   className="w-full h-full object-cover"
                                 />
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const a = document.createElement("a");
+                                    a.href = version.imageUrl;
+                                    a.download = `image-v${version.versionNumber}.png`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                  }}
+                                  className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-black/70 flex items-center justify-center opacity-0 group-hover/version:opacity-100 transition-opacity hover:bg-primary"
+                                  title="Download this version"
+                                  data-testid={`download-version-${index}`}
+                                >
+                                  <Download className="h-3 w-3 text-white" />
+                                </button>
                               </div>
                               <p className="text-[9px] text-center mt-1 text-muted-foreground truncate" title={version.prompt}>
                                 {promptPreview}
