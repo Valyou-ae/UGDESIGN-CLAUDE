@@ -14,9 +14,12 @@ import {
   Share2,
   Link2,
   UserPlus,
-  UserCheck
+  UserCheck,
+  Download,
+  ExternalLink
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -70,7 +73,7 @@ interface InspirationItem {
   createdAt?: string;
 }
 
-const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onUse, onCopy }: { item: InspirationItem; index: number; onLike?: (id: string) => void; onUse?: (id: string) => void; onCopy?: (prompt: string) => void }) {
+const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onUse, onCopy, onClick }: { item: InspirationItem; index: number; onLike?: (id: string) => void; onUse?: (id: string) => void; onCopy?: (prompt: string) => void; onClick?: (item: InspirationItem) => void }) {
   const [isVisible, setIsVisible] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -244,7 +247,9 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="group bg-white dark:bg-[#111113] border border-[#E4E4E7] dark:border-[#1F1F23] rounded-[20px] overflow-hidden cursor-pointer hover:border-[#f8991c]/50 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(233,30,99,0.15)] transition-all duration-300">
+      <div 
+        onClick={() => onClick?.(item)}
+        className="group bg-white dark:bg-[#111113] border border-[#E4E4E7] dark:border-[#1F1F23] rounded-[20px] overflow-hidden cursor-pointer hover:border-[#f8991c]/50 hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(233,30,99,0.15)] transition-all duration-300">
         <div className={cn("relative overflow-hidden", aspectClasses[item.aspectRatio])}>
           {isVisible ? (
             <>
@@ -2065,8 +2070,48 @@ export default function Discover() {
   const [isLoadingCommunity, setIsLoadingCommunity] = useState(true);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedItem, setSelectedItem] = useState<InspirationItem | null>(null);
+  const [promptCopied, setPromptCopied] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
   const ITEMS_PER_LOAD = 12;
+
+  const openItemPopup = (item: InspirationItem) => {
+    setSelectedItem(item);
+    setPromptCopied(false);
+  };
+
+  const closeItemPopup = () => {
+    setSelectedItem(null);
+    setPromptCopied(false);
+  };
+
+  const handleCopyPrompt = async () => {
+    if (!selectedItem) return;
+    await navigator.clipboard.writeText(selectedItem.prompt);
+    setPromptCopied(true);
+    toast({ title: "Prompt copied!", description: "The prompt has been copied to your clipboard." });
+    setTimeout(() => setPromptCopied(false), 2000);
+  };
+
+  const handleDownloadImage = async () => {
+    if (!selectedItem) return;
+    try {
+      const response = await fetch(selectedItem.image);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `discover-${selectedItem.id}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({ title: "Downloaded", description: "Image saved to your device" });
+    } catch {
+      toast({ title: "Download failed", description: "Please try again", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     const fetchGalleryImages = async () => {
@@ -2236,7 +2281,7 @@ export default function Discover() {
               )}
               <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-2">
                 {displayedItems.map((item, index) => (
-                  <LazyMasonryCard key={item.id} item={item} index={index} onLike={() => {}} onUse={() => {}} onCopy={() => {}} />
+                  <LazyMasonryCard key={item.id} item={item} index={index} onLike={() => {}} onUse={() => {}} onCopy={() => {}} onClick={openItemPopup} />
                 ))}
               </div>
 
@@ -2252,6 +2297,163 @@ export default function Discover() {
           )}
         </div>
       </main>
+
+      {/* Image Detail Popup Modal */}
+      <AnimatePresence>
+        {selectedItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closeItemPopup}
+            data-testid="discover-image-popup"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card rounded-2xl overflow-hidden flex flex-col md:flex-row border border-border shadow-2xl w-full max-w-5xl max-h-[90vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Left: Image */}
+              <div className="md:flex-1 bg-black/60 flex items-center justify-center p-4 md:p-6 relative group overflow-hidden">
+                <img 
+                  src={selectedItem.image} 
+                  alt={selectedItem.title} 
+                  className="max-w-full max-h-[40vh] md:max-h-[80vh] object-contain rounded-lg" 
+                  data-testid="popup-image"
+                />
+              </div>
+
+              {/* Right: Details */}
+              <div className="w-full md:w-[380px] bg-card border-t md:border-t-0 md:border-l border-border flex flex-col h-[50vh] md:h-auto">
+                <div className="p-4 md:p-5 border-b border-border flex justify-between items-center shrink-0">
+                  <h3 className="font-bold text-foreground">Image Details</h3>
+                  <Button variant="ghost" size="icon" onClick={closeItemPopup} className="text-muted-foreground hover:text-foreground" data-testid="button-close-popup">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
+                  {/* Creator Info */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#f8991c] to-[#B8860B] flex items-center justify-center text-white font-bold text-sm">
+                      {selectedItem.creator.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-semibold text-foreground">@{selectedItem.creator}</span>
+                        {selectedItem.verified && <BadgeCheck className="h-4 w-4 text-[#B8860B]" />}
+                      </div>
+                      {selectedItem.createdAt && (
+                        <span className="text-xs text-muted-foreground">{formatTimeAgo(new Date(selectedItem.createdAt))}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Prompt */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Prompt</label>
+                    <div className="bg-muted/30 rounded-lg p-3 text-sm text-muted-foreground leading-relaxed border border-border relative group">
+                      {selectedItem.prompt || "No prompt available"}
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="absolute top-2 right-2 h-6 w-6 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={handleCopyPrompt}
+                        data-testid="button-copy-prompt-popup"
+                      >
+                        {promptCopied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-6 py-2">
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Eye className="h-4 w-4" />
+                      <span>{formatCount(selectedItem.views)} views</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Heart className="h-4 w-4" />
+                      <span>{formatCount(selectedItem.likes)} likes</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Wand2 className="h-4 w-4" />
+                      <span>{formatCount(selectedItem.uses)} uses</span>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  {selectedItem.tags && selectedItem.tags.length > 0 && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tags</label>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedItem.tags.map((tag, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-muted/50 rounded-full text-xs text-muted-foreground">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Details */}
+                  <div className="space-y-1 pt-2 border-t border-border">
+                    <div className="flex justify-between py-1.5">
+                      <span className="text-xs text-muted-foreground">Category</span>
+                      <span className="text-xs font-medium text-foreground">{selectedItem.category}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5">
+                      <span className="text-xs text-muted-foreground">Aspect Ratio</span>
+                      <span className="text-xs font-medium text-foreground">{selectedItem.aspectRatio}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Button 
+                      onClick={handleCopyPrompt}
+                      className="flex-1 gap-2 bg-[#f8991c] hover:bg-[#e88a17] text-white"
+                      data-testid="button-use-prompt"
+                    >
+                      {promptCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {promptCopied ? "Copied!" : "Copy Prompt"}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={handleDownloadImage}
+                      className="gap-2"
+                      data-testid="button-download-popup"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download
+                    </Button>
+                  </div>
+
+                  {/* Share link for gallery images */}
+                  {selectedItem.isGalleryImage && (
+                    <Button 
+                      variant="ghost" 
+                      className="w-full gap-2 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        const shareUrl = `${window.location.origin}/share/${selectedItem.id}`;
+                        window.open(shareUrl, '_blank');
+                      }}
+                      data-testid="button-view-share-page"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      View Share Page
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
