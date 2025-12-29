@@ -475,12 +475,19 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         const mergedCustomization = modelDetails?.customization || modelCustomization;
 
         try {
-          logger.info("Starting batch generation with all sizes", { 
+          const isColorSwapEnabled = colorSwapMode && !isAopJourney && colors.length > 1;
+        logger.info("Starting batch generation with all sizes", { 
             source: "mockup", 
             sizes: sizesToGenerate, 
             totalJobs,
             colorsCount: colors.length,
-            anglesCount: angles.length
+            anglesCount: angles.length,
+            colorSwapModeRequested: colorSwapMode,
+            colorSwapModeEnabled: isColorSwapEnabled,
+            isAopJourney,
+            reason: !colorSwapMode ? "colorSwapMode not requested by user" : 
+                    isAopJourney ? "disabled for AOP journey" : 
+                    colors.length <= 1 ? "only 1 color selected" : "enabled"
           });
 
           const batch = await eliteGenerator.generateMockupBatch({
