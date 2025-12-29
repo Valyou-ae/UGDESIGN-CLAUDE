@@ -820,7 +820,7 @@ export default function BackgroundRemover() {
                   <button 
                     key={img.id}
                     onClick={() => handleSampleSelect(img.src)}
-                    className="h-10 w-10 md:h-14 md:w-14 rounded-full border-2 border-transparent hover:border-primary hover:scale-110 transition-all overflow-hidden shadow-sm"
+                    className="h-10 w-10 md:h-14 md:w-14 rounded-lg border-2 border-transparent hover:border-primary hover:scale-110 transition-all overflow-hidden shadow-sm"
                     data-testid={`recent-image-${i}`}
                     title={img.prompt || 'Recent creation'}
                   >
