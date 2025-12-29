@@ -58,6 +58,7 @@ import {
   getPositiveFabricRequirements
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
+import { compositeDesignOntoGarment, getBlankGarmentPrompt } from "./designCompositor";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -1407,6 +1408,146 @@ FINAL OUTPUT: Generate a single photorealistic product photograph. TRANSFER the 
   }
 }
 
+export async function generateBlankGarment(
+  renderSpec: RenderSpecification,
+  personaHeadshot?: string,
+  previousMockupReference?: string
+): Promise<GeneratedMockup | null> {
+  await waitForRateLimit();
+  await waitForConcurrencySlot();
+
+  try {
+    const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
+
+    if (personaHeadshot) {
+      parts.push({
+        inlineData: { data: personaHeadshot, mimeType: "image/png" }
+      });
+      parts.push({
+        text: `[IMAGE 1] - MODEL IDENTITY REFERENCE
+This is the person who must wear the garment. Match their face, skin tone, hair, and body build EXACTLY.
+IGNORE the background and lighting of this photo - use only for identity matching.`
+      });
+    }
+
+    if (previousMockupReference) {
+      parts.push({
+        inlineData: { data: previousMockupReference, mimeType: "image/png" }
+      });
+      parts.push({
+        text: `[IMAGE 2] - STYLE/ENVIRONMENT REFERENCE
+Match the background, lighting, camera angle, and photography style from this reference image exactly.
+IMPORTANT: The garment in this reference has artwork - generate a BLANK version without any design.`
+      });
+    }
+
+    const blankGarmentPrompt = getBlankGarmentPrompt({
+      productDescription: renderSpec.productDescription,
+      personaDescription: renderSpec.personaDescription,
+      materialDescription: renderSpec.materialDescription,
+      lightingDescription: renderSpec.lightingDescription,
+      environmentDescription: renderSpec.environmentDescription,
+      cameraDescription: renderSpec.cameraDescription,
+      humanRealismDescription: renderSpec.humanRealismDescription,
+      negativePrompts: renderSpec.negativePrompts
+    });
+
+    parts.push({ text: blankGarmentPrompt });
+
+    logger.info("Calling Gemini API for BLANK garment generation", { 
+      source: "eliteMockupGenerator", 
+      model: MODELS.IMAGE_GENERATION,
+      mode: "blank_garment"
+    });
+    
+    const response = await genAI.models.generateContent({
+      model: MODELS.IMAGE_GENERATION,
+      contents: [{ role: "user", parts }],
+      config: { responseModalities: [Modality.TEXT, Modality.IMAGE] }
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      logger.error("No candidates in blank garment response", { source: "eliteMockupGenerator" });
+      return null;
+    }
+
+    const content = candidates[0].content;
+    if (!content || !content.parts) {
+      logger.error("No content parts in blank garment response", { source: "eliteMockupGenerator" });
+      return null;
+    }
+
+    for (const part of content.parts) {
+      if (part.inlineData && part.inlineData.data) {
+        logger.info("Blank garment generated successfully", { source: "eliteMockupGenerator" });
+        return {
+          imageData: part.inlineData.data,
+          mimeType: part.inlineData.mimeType || "image/png",
+          jobId: "",
+          color: "",
+          angle: "front"
+        };
+      }
+    }
+
+    return null;
+  } catch (error) {
+    logger.error("Blank garment generation failed", error, { source: "eliteMockupGenerator" });
+    return null;
+  } finally {
+    releaseConcurrencySlot();
+  }
+}
+
+export async function generateTwoStageMockup(
+  designBase64: string,
+  renderSpec: RenderSpecification,
+  productName: string,
+  cameraAngle: 'front' | 'three-quarter' | 'side' | 'closeup',
+  personaHeadshot?: string,
+  previousMockupReference?: string
+): Promise<GeneratedMockup | null> {
+  logger.info("Starting two-stage mockup generation", { 
+    source: "eliteMockupGenerator", 
+    productName, 
+    cameraAngle,
+    mode: "two_stage_composite"
+  });
+
+  const blankGarment = await generateBlankGarment(renderSpec, personaHeadshot, previousMockupReference);
+  
+  if (!blankGarment) {
+    logger.error("Two-stage pipeline: Blank garment generation failed", { source: "eliteMockupGenerator" });
+    return null;
+  }
+
+  const compositeResult = await compositeDesignOntoGarment({
+    designBase64,
+    blankGarmentBase64: blankGarment.imageData,
+    productName,
+    cameraAngle
+  });
+
+  if (!compositeResult.success) {
+    logger.error("Two-stage pipeline: Design composition failed", { 
+      source: "eliteMockupGenerator", 
+      error: compositeResult.error 
+    });
+    return null;
+  }
+
+  logger.info("Two-stage mockup generation completed successfully", { source: "eliteMockupGenerator" });
+  
+  return {
+    imageData: compositeResult.composited,
+    mimeType: "image/png",
+    jobId: "",
+    color: "",
+    angle: cameraAngle
+  };
+}
+
 export async function generateMockupWithRetry(
   designBase64: string,
   renderSpec: RenderSpecification,
@@ -1796,13 +1937,55 @@ export async function generateMockupBatch(
       request.outputQuality
     );
 
-    // Use job-specific headshot for size-appropriate model appearance
-    const result = await generateMockupWithRetry(
-      request.designImage,
-      renderSpec,
-      jobHeadshot,
-      referenceImage
-    );
+    // Use two-stage pipeline for exact design preservation
+    // Stage 1: Generate blank garment, Stage 2: Composite exact design
+    const useTwoStagePipeline = request.useTwoStagePipeline ?? false;
+    
+    let result: GeneratedMockup | null = null;
+    
+    if (useTwoStagePipeline && request.product.isWearable) {
+      logger.info("Using two-stage pipeline for exact design preservation", { 
+        source: "eliteMockupGenerator",
+        jobId: job.id,
+        angle: job.angle
+      });
+      
+      const cameraAngle = job.angle === 'front' ? 'front' 
+        : job.angle === 'three-quarter' ? 'three-quarter'
+        : job.angle === 'side' ? 'side'
+        : 'closeup';
+      
+      result = await generateTwoStageMockup(
+        request.designImage,
+        renderSpec,
+        request.product.name,
+        cameraAngle,
+        jobHeadshot,
+        referenceImage
+      );
+      
+      // Fallback to single-stage if two-stage fails
+      if (!result) {
+        logger.warn("Two-stage pipeline failed, falling back to single-stage", { 
+          source: "eliteMockupGenerator",
+          jobId: job.id
+        });
+        result = await generateMockupWithRetry(
+          request.designImage,
+          renderSpec,
+          jobHeadshot,
+          referenceImage
+        );
+      }
+    } else {
+      // Use original single-stage pipeline
+      result = await generateMockupWithRetry(
+        request.designImage,
+        renderSpec,
+        jobHeadshot,
+        referenceImage
+      );
+    }
 
     if (result) {
       job.status = 'completed';

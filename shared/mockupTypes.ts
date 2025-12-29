@@ -588,6 +588,7 @@ export interface MockupGenerationRequest {
   aopTrimColor?: string;
   outputQuality?: OutputQuality;
   colorSwapMode?: boolean;
+  useTwoStagePipeline?: boolean;
 }
 
 export interface MockupRefinementRequest {
