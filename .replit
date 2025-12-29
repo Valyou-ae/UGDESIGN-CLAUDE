@@ -44,7 +44,7 @@ integrations = ["javascript_database:1.0.0", "stripe:2.0.0"]
 [userenv.development]
 
 [userenv.shared]
-GOOGLE_CLIENT_ID = "219712504704-2mv22scc589s3da7fufolugsnqumc545.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = "562074592658-73o9tq45so4g84dr0ropjl8v8cgohufq.apps.googleusercontent.com"
 
 [[ports]]
 localPort = 5000
