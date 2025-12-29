@@ -166,12 +166,12 @@ export default function ImageEditor() {
       // Show preview instead of going directly to edit
       setPreviewExistingImage({
         id: transferred.id,
-        imageUrl: transferred.imageUrl,
+        imageUrl: transferred.src,
         prompt: "",
         generationType: "transferred",
         createdAt: new Date().toISOString(),
       });
-      setPreviewImage(transferred.imageUrl);
+      setPreviewImage(transferred.src);
       setStatus("preview");
     }
   }, [searchString, user, fetchVersions]);
@@ -500,10 +500,11 @@ export default function ImageEditor() {
           {!currentImage ? (
             /* Upload State with Recent Images */
             <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
-              {/* Upload Zone / Preview Zone */}
+              {/* Upload Zone / Preview Zone - Fixed height container */}
               <div
                 className={cn(
-                  "flex-1 flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all min-h-0",
+                  "flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all",
+                  "h-[400px] md:h-[450px] lg:h-[500px]",
                   status === "preview" 
                     ? "border-primary cursor-default"
                     : isDragging
