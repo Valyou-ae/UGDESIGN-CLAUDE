@@ -46,7 +46,9 @@ import {
   getRandomName,
   getGarmentBlueprintPrompt,
   getProductNegativePrompts,
-  getProductVisualAnchors
+  getProductVisualAnchors,
+  getPrintRealismBlock,
+  getPrintRealismNegatives
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 
@@ -973,15 +975,23 @@ ENVIRONMENT VIOLATION EXAMPLES (DO NOT DO THESE):
 ===== END ENVIRONMENT LOCK =====`;
 
   const baseNegatives = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
-  // Add product-specific negatives to ensure garment type consistency
-  const negativePrompts = productSpecificNegatives.length > 0 
-    ? `${baseNegatives}, ${productSpecificNegatives.join(', ')}`
-    : baseNegatives;
+  const printRealismNegatives = getPrintRealismNegatives();
+  // Add product-specific negatives and print realism negatives
+  const negativePrompts = [
+    baseNegatives,
+    ...productSpecificNegatives,
+    ...printRealismNegatives
+  ].filter(Boolean).join(', ');
+  
+  // Get the print realism block
+  const printRealismBlock = getPrintRealismBlock();
 
   const fullPrompt = `ELITE MOCKUP GENERATION - RENDER SPECIFICATION
 ================================================================
 
 ${productTypeReinforcement}
+
+${printRealismBlock}
 
 ${personaLockBlock}
 
@@ -1884,6 +1894,8 @@ export async function colorSwapEdit(
     ? "The artwork/design on the garment should be inverted to white/light colors for visibility on the dark fabric."
     : "The artwork/design on the garment should remain dark for visibility on the light fabric.";
   
+  const printRealismBlock = getPrintRealismBlock();
+  
   const editPrompt = `PRECISE COLOR EDIT ONLY - Change the ${product.name} color from ${sourceColor.name} (${sourceColor.hex}) to ${targetColor.name} (${targetColor.hex}).
 
 CRITICAL REQUIREMENTS:
@@ -1894,6 +1906,8 @@ CRITICAL REQUIREMENTS:
 5. ${artworkInstruction}
 6. The garment fit, wrinkles, and draping should remain identical
 7. Do NOT change any other aspect of the image
+
+${printRealismBlock}
 
 This is a simple fabric color swap. The output should be pixel-perfect identical except for the product color change.`;
 

@@ -43,6 +43,15 @@ export {
 
 export { NAMES_BY_ETHNICITY_AND_SEX, getRandomName } from './names';
 
+export {
+  PRINT_REALISM_FULL,
+  PRINT_REALISM_REINFORCEMENTS,
+  PRINT_REALISM_NEGATIVE_PROMPTS,
+  getPrintRealismBlock,
+  getPrintRealismNegatives,
+  getPrintRealismReinforcement
+} from './printRealism';
+
 export { ETHNIC_FEATURE_MAP, getEthnicFeatures } from './ethnicFeatures';
 
 export {
