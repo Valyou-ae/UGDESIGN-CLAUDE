@@ -98,6 +98,7 @@ export default function ImageEditor() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [tipIndex, setTipIndex] = useState(0);
+  const [previewExistingImage, setPreviewExistingImage] = useState<RecentImage | null>(null);
 
   const { data: recentImages, isLoading: isLoadingRecent } = useQuery<RecentImage[]>({
     queryKey: ["recent-images-for-editor"],
@@ -149,6 +150,7 @@ export default function ImageEditor() {
     const params = new URLSearchParams(searchString);
     const imageIdFromUrl = params.get("imageId");
     
+    // Direct URL access - go directly to edit mode (user has explicit intent)
     if (imageIdFromUrl) {
       if (loadedImageIdRef.current === imageIdFromUrl) return;
       loadedImageIdRef.current = imageIdFromUrl;
@@ -157,12 +159,20 @@ export default function ImageEditor() {
       return;
     }
     
+    // Transferred images from other tools - show preview first
     const transferred = getTransferredImage();
     if (transferred && loadedImageIdRef.current !== transferred.id) {
-      loadedImageIdRef.current = transferred.id;
-      setRootImageId(transferred.id);
-      fetchVersions(transferred.id);
       clearTransferredImage();
+      // Show preview instead of going directly to edit
+      setPreviewExistingImage({
+        id: transferred.id,
+        imageUrl: transferred.imageUrl,
+        prompt: "",
+        generationType: "transferred",
+        createdAt: new Date().toISOString(),
+      });
+      setPreviewImage(transferred.imageUrl);
+      setStatus("preview");
     }
   }, [searchString, user, fetchVersions]);
 
@@ -255,6 +265,7 @@ export default function ImageEditor() {
   const handleCancelPreview = useCallback(() => {
     setPreviewImage(null);
     setPreviewFile(null);
+    setPreviewExistingImage(null);
     setStatus("idle");
   }, []);
 
@@ -404,12 +415,25 @@ export default function ImageEditor() {
     loadedImageIdRef.current = null;
   };
 
-  const selectRecentImage = async (image: RecentImage) => {
-    setRootImageId(image.id);
-    setCurrentImageId(image.id);
-    setCurrentImage(image.imageUrl);
-    loadedImageIdRef.current = image.id;
-    await fetchVersions(image.id);
+  const selectRecentImage = (image: RecentImage) => {
+    // Show preview first instead of going directly to edit mode
+    setPreviewExistingImage(image);
+    setPreviewImage(image.imageUrl);
+    setStatus("preview");
+  };
+
+  const handleProceedWithExisting = async () => {
+    if (!previewExistingImage) return;
+    
+    setStatus("uploading");
+    setRootImageId(previewExistingImage.id);
+    setCurrentImageId(previewExistingImage.id);
+    setCurrentImage(previewExistingImage.imageUrl);
+    loadedImageIdRef.current = previewExistingImage.id;
+    await fetchVersions(previewExistingImage.id);
+    setPreviewExistingImage(null);
+    setPreviewImage(null);
+    setStatus("idle");
   };
 
   const scrollRecent = (direction: "left" | "right") => {
@@ -531,7 +555,7 @@ export default function ImageEditor() {
                         Choose Different
                       </Button>
                       <Button
-                        onClick={handleProceedToEdit}
+                        onClick={previewExistingImage ? handleProceedWithExisting : handleProceedToEdit}
                         className="gap-2 bg-gradient-to-r from-[#f8991c] to-[#B8860B] hover:from-[#e88a10] hover:to-[#a67909]"
                         data-testid="button-proceed-edit"
                       >
