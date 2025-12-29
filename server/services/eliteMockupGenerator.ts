@@ -95,6 +95,7 @@ interface RenderSpecification {
   environmentDescription: string;
   materialDescription: string;
   contourDescription: string;
+  printIntegrationDescription: string;
   humanRealismDescription: string;
   negativePrompts: string;
   fullPrompt: string;
@@ -707,6 +708,64 @@ AOP PRINT METHOD:
 ${printMethod.technicalDescription}
 ===== END DESIGN LOCK =====`;
 
+  const printIntegrationDescription = product.isWearable ? `
+===== PRINT INTEGRATION PHYSICS (CRITICAL - REALISTIC FABRIC PRINTING) =====
+[MANDATORY - THE DESIGN MUST LOOK ACTUALLY PRINTED ON FABRIC, NOT DIGITALLY OVERLAID]
+
+ANTI-STICKER MANDATE (HIGHEST PRIORITY):
+- The design is NOT a sticker, decal, or digital overlay
+- The design must appear ABSORBED INTO the fabric fibers
+- The design must look like professional ${journey === 'DTG' ? 'Direct-to-Garment printing' : 'sublimation printing'}
+- NEVER render the design as if it's sitting ON TOP of the fabric
+- The design is PART OF the fabric, not applied to its surface
+
+INK ABSORPTION PHYSICS:
+${journey === 'DTG' ? `- DTG ink saturates into cotton/blend fibers creating a soft, matte finish
+- Water-based inks penetrate fiber structure leaving no raised texture
+- Ink density varies naturally across print - slightly heavier in dense color areas
+- White underbase (if any) creates subtle thickness difference, barely perceptible
+- Print areas have same tactile feel as unprintable fabric (soft hand)` : `- Sublimation dye becomes ONE with polyester fibers at molecular level
+- NO ink layer sitting on top - the color IS the fiber color now
+- Zero texture difference between printed and unprinted areas
+- Colors appear from WITHIN the fabric, not on its surface
+- Pattern seamlessly integrates as if the fabric was woven with colored threads`}
+
+CONTOUR ADHERENCE (CRITICAL FOR REALISM):
+- Where fabric FOLDS: design compresses, colors deepen slightly in shadow
+- Where fabric STRETCHES: design expands proportionally with fiber spacing
+- Where fabric CURVES over body: design warps naturally following 3D contour
+- At CREASES: design shows micro-shadowing, colors darken in valleys
+- At PEAKS: design shows highlights, subtle fabric texture visible through ink
+- The design MUST bend, stretch, compress, and shadow WITH the fabric
+
+FOLD/CREASE BEHAVIOR:
+- Horizontal chest folds: design distorts horizontally, darkens in crease depth
+- Vertical side wrinkles: design warps vertically, follows fabric drape
+- Arm movement creases: design compresses at joints, stretches at extension
+- Body contour curves: design follows torso curvature seamlessly
+- Shoulder transitions: design perspective shifts naturally at shoulder curve
+
+${fabricPhysics ? `FABRIC-SPECIFIC PRINT BEHAVIOR:
+- Fabric weight: ${fabricPhysics.weight} - affects how ink settles and shadows form
+- Surface texture: ${fabricPhysics.textureDensity} - visible through lighter ink areas
+- Print absorption: ${fabricPhysics.printAbsorption} - determines ink penetration depth
+- Fold behavior: ${fabricPhysics.foldCharacteristics} - guides contour distortion patterns` : ''}
+
+LIGHTING INTEGRATION:
+- Design responds to scene lighting exactly as fabric does
+- Shadows on fabric = shadows on design (same darkness, same edge softness)
+- Highlights on fabric = subtle ink sheen on design
+- Design colors shift with ambient light color temperature
+- NO separate lighting on design vs fabric - they are ONE surface
+
+WHAT THIS SHOULD LOOK LIKE:
+- A real photograph of an actually printed garment
+- You can almost feel the fabric texture through the design
+- The design is inseparable from the fabric surface
+- Natural, professional print shop quality
+- NOT a mockup with a graphic overlaid in Photoshop
+===== END PRINT INTEGRATION PHYSICS =====` : "";
+
   const aopCloseupOverride = journey === 'AOP' && angle === 'closeup' ? `
 ===== AOP CLOSEUP CLARIFICATION (CRITICAL) =====
 [MANDATORY - FOR ALL-OVER PRINT CLOSEUPS]
@@ -927,6 +986,8 @@ ${garmentConstructionBlock}
 
 ${contourDescription}
 
+${printIntegrationDescription}
+
 ${environmentBlock}
 
 ===== TECHNICAL REQUIREMENTS =====
@@ -1087,6 +1148,7 @@ If a reference photo was provided, the person in your output MUST be the SAME pe
     environmentDescription: environmentBlock,
     materialDescription: materialPreset.promptAddition,
     contourDescription,
+    printIntegrationDescription,
     humanRealismDescription: product.isWearable && personaLock ? getFullHumanRealismPrompt() : "",
     negativePrompts,
     fullPrompt
@@ -1780,6 +1842,7 @@ Maintain all other aspects of the original image but apply the refinement above.
     environmentDescription: "",
     materialDescription: "",
     contourDescription: "",
+    printIntegrationDescription: "",
     humanRealismDescription: "",
     negativePrompts: getNegativePrompts(originalJob.product.productType, originalJob.product.isWearable),
     fullPrompt: refinedPrompt

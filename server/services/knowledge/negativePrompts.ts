@@ -344,6 +344,46 @@ export const DESIGN_MODIFICATION_NEGATIVES: NegativePromptCategory = {
   ]
 };
 
+export const PRINT_INTEGRATION_NEGATIVES: NegativePromptCategory = {
+  id: 'print-integration',
+  name: 'Print Integration Flaws',
+  description: 'Prevents flat/overlaid/digitally-pasted design appearance',
+  severity: 'critical',
+  applicableFor: ['apparel', 't-shirt', 'mockups'],
+  prompts: [
+    'sticker on fabric',
+    'sticker-like design',
+    'decal on shirt',
+    'decal-like appearance',
+    'flat overlay',
+    'digitally pasted design',
+    'photoshopped design',
+    'design not integrated with fabric',
+    'design floating on surface',
+    'design sitting on top of fabric',
+    'paper cutout on fabric',
+    'glued-on design',
+    'taped-on graphic',
+    'design not following folds',
+    'design ignoring wrinkles',
+    'design not conforming to body contours',
+    'crisp sharp edges on design where fabric bends',
+    'design with no fabric texture showing through',
+    'design with uniform brightness across folds',
+    'design not affected by lighting',
+    'design without shadow integration',
+    'vinyl transfer look',
+    'iron-on transfer appearance',
+    'heat transfer vinyl',
+    'glossy sticker',
+    'shiny decal',
+    'plastic-looking print',
+    'artificial overlay',
+    'computer-generated overlay',
+    'unrealistic print application'
+  ]
+};
+
 export function getNegativePrompts(productType?: string, includesHuman?: boolean): string {
   let negatives: string[] = [];
 
@@ -354,6 +394,7 @@ export function getNegativePrompts(productType?: string, includesHuman?: boolean
 
   if (productType === 'apparel' || productType === 't-shirt' || productType === 'clothing' || productType === 'dtg-apparel' || productType === 'aop-apparel') {
     negatives.push(...APPAREL_NEGATIVES.prompts);
+    negatives.push(...PRINT_INTEGRATION_NEGATIVES.prompts);
   }
 
   if (includesHuman) {
