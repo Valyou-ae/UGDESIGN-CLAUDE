@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCredits } from "@/hooks/use-credits";
@@ -401,66 +402,56 @@ export default function ImageEditor() {
   };
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="min-h-screen bg-background flex font-sans text-foreground overflow-hidden">
       <Sidebar />
       
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Compact Header */}
-        <div className="flex-shrink-0 h-14 px-4 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#f8991c] to-[#B8860B] flex items-center justify-center">
-              <Wand2 className="h-4 w-4 text-white" />
+      <main className="flex-1 h-screen overflow-y-auto relative pb-20 md:pb-0">
+        <div className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto min-h-full flex flex-col">
+          
+          {/* Header Section */}
+          <div className="mb-6 md:mb-8">
+            <div className="flex items-center text-[13px] text-muted-foreground mb-2">
+              <span>Home</span>
+              <span className="mx-2">/</span>
+              <span>Image Editor</span>
             </div>
-            <h1 className="text-lg font-semibold text-foreground">Image Editor</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {credits !== null && (
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-sm">
-                <Coins className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium">{credits}</span>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-16 mb-1">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-[#f8991c] to-[#D4881E] bg-clip-text text-transparent">
+                    Image Editor
+                  </h1>
+                  <Wand2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+                </div>
+                <Badge className="bg-primary hover:bg-[#D4881E] text-white rounded-full px-2 py-0.5 text-[11px]">
+                  AI-Powered
+                </Badge>
               </div>
-            )}
-            {currentImage && (
-              <div className="flex items-center gap-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleDownload}
-                        className="h-8 w-8"
-                        data-testid="button-download"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Download</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={resetEditor}
-                        className="h-8 w-8"
-                        data-testid="button-reset"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Start over</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            )}
-          </div>
-        </div>
 
-        {/* Main Content - Fixed Height */}
-        <div className="flex-1 flex min-h-0">
+              <div className="flex items-center gap-4 lg:gap-8 opacity-0 lg:opacity-100 animate-fade-in hidden lg:flex">
+                <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Gemini AI</span>
+                </div>
+                <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+                  <Check className="h-3.5 w-3.5" />
+                  <span>Version History</span>
+                </div>
+                {credits !== null && (
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted text-sm">
+                    <Coins className="h-3.5 w-3.5 text-primary" />
+                    <span className="font-medium">{credits}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-sm md:text-[15px] text-muted-foreground mt-2">
+              Edit your images with AI prompts • Powered by Gemini
+            </p>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col min-h-0">
           {!currentImage ? (
             /* Upload State with Recent Images */
             <div className="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
@@ -867,9 +858,10 @@ export default function ImageEditor() {
                 </div>
               </div>
             </div>
-          )}
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
