@@ -71,7 +71,9 @@ export {
   getGarmentBlueprint,
   getGarmentBlueprintPrompt,
   getProductBlueprint,
-  getProductBlueprintPrompt
+  getProductBlueprintPrompt,
+  getProductNegativePrompts,
+  getProductVisualAnchors
 } from './productBlueprints';
 
 export {

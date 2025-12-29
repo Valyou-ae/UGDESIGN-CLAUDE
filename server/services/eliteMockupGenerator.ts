@@ -44,7 +44,9 @@ import {
   getExactPersona,
   getEthnicFeatures,
   getRandomName,
-  getGarmentBlueprintPrompt
+  getGarmentBlueprintPrompt,
+  getProductNegativePrompts,
+  getProductVisualAnchors
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 
@@ -845,9 +847,14 @@ FABRIC PHYSICS DETAILS:
 ===== END AOP LOCKS =====` : "";
 
   const productKeywords = product.promptKeywords?.length ? product.promptKeywords.join(', ') : product.name;
+  const productVisualAnchors = getProductVisualAnchors(product);
+  const productSpecificNegatives = getProductNegativePrompts(product);
+  
   const productTypeReinforcement = `
 ===== PRODUCT TYPE (CRITICAL - DO NOT IGNORE) =====
 [MANDATORY - THE GARMENT TYPE MUST MATCH]
+[THIS IS THE HIGHEST PRIORITY INSTRUCTION FOR GARMENT RENDERING]
+
 - Product: ${product.name} (${product.frontendName || product.name})
 - Subcategory: ${product.subcategory || product.category}
 - Keywords: ${productKeywords}
@@ -857,8 +864,12 @@ CRITICAL PRODUCT ENFORCEMENT:
 - The garment must be a ${product.name.toUpperCase()}, not a different type of clothing
 - If this is "Knitwear" or "Sweater", the model must wear a KNIT SWEATER with visible yarn/knit texture, NOT a thin T-shirt
 - If this is "Hoodie", the model must wear a hoodie with a hood, NOT a t-shirt
-- If this is "Long Sleeve", the model must wear a long-sleeved garment, NOT short sleeves
+- If this is "Long Sleeve", the model must wear a LONG-SLEEVED garment with sleeves extending to the wrists, NOT short sleeves
 - DO NOT substitute the product type for a simpler garment (like a basic t-shirt)
+${productVisualAnchors}
+
+PRODUCT-SPECIFIC BANS (DO NOT RENDER):
+${productSpecificNegatives.length > 0 ? productSpecificNegatives.map(neg => `- DO NOT: ${neg}`).join('\n') : '- None specified'}
 ===== END PRODUCT TYPE =====`;
 
   const garmentConstructionBlock = product.isWearable && garmentBlueprint ? `
@@ -961,7 +972,11 @@ ENVIRONMENT VIOLATION EXAMPLES (DO NOT DO THESE):
 - 4XL with industrial backdrop, 5XL with modern loft = VIOLATION
 ===== END ENVIRONMENT LOCK =====`;
 
-  const negativePrompts = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
+  const baseNegatives = getNegativePrompts(product.productType, product.isWearable && !!personaLock);
+  // Add product-specific negatives to ensure garment type consistency
+  const negativePrompts = productSpecificNegatives.length > 0 
+    ? `${baseNegatives}, ${productSpecificNegatives.join(', ')}`
+    : baseNegatives;
 
   const fullPrompt = `ELITE MOCKUP GENERATION - RENDER SPECIFICATION
 ================================================================

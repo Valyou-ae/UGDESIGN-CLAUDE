@@ -3186,6 +3186,18 @@ export function getGarmentBlueprint(product: Product): GarmentBlueprint {
     };
   }
 
+  // CRITICAL: Long sleeve products must have explicit long sleeve construction
+  if (name.includes('long sleeve') || name.includes('long-sleeve') || name.includes('longsleeve')) {
+    return {
+      fit: 'Regular fit, classic crew neck silhouette',
+      hem: 'Straight hem at waist level',
+      collarType: 'Ribbed crewneck collar',
+      sleeveType: 'LONG SLEEVES extending from shoulder to wrist - sleeves MUST reach the model\'s wrists, NOT short sleeves',
+      extraFeatures: 'CRITICAL VISUAL ANCHOR: The sleeves MUST be LONG - extending the full length of the arm from shoulder to wrist. This is NOT a t-shirt with short sleeves. The sleeves should be clearly visible covering the entire forearm and reaching the wrists. Lightweight cotton jersey fabric.',
+      aopConstruction: isAop ? 'Solid color collar and cuffs using dominant accent color, pattern covers torso and full sleeve length' : undefined
+    };
+  }
+
   if (name.includes('cut') && name.includes('sew')) {
     return {
       fit: 'Regular fit with athletic cut',
@@ -3230,6 +3242,122 @@ export function getGarmentBlueprintPrompt(product: Product): string {
   }
   
   return prompt;
+}
+
+// Get product-specific negative prompts to prevent wrong garment types
+export function getProductNegativePrompts(product: Product): string[] {
+  const name = product.name.toLowerCase();
+  const negatives: string[] = [];
+  
+  // Long sleeve must explicitly ban short sleeves
+  if (name.includes('long sleeve') || name.includes('long-sleeve') || name.includes('longsleeve')) {
+    negatives.push(
+      'short sleeves',
+      'short-sleeved',
+      't-shirt sleeves',
+      'cap sleeves',
+      'sleeves ending at bicep',
+      'sleeves ending above elbow',
+      'bare forearms',
+      'exposed forearms',
+      'standard t-shirt'
+    );
+  }
+  
+  // T-shirts should ban long sleeves
+  if ((name.includes('t-shirt') || name.includes('tee') || name.includes('tshirt')) && !name.includes('long')) {
+    negatives.push(
+      'long sleeves',
+      'long-sleeved',
+      'sleeves at wrist',
+      'full-length sleeves'
+    );
+  }
+  
+  // Hoodies must have hoods
+  if (name.includes('hoodie')) {
+    negatives.push(
+      'no hood',
+      'crewneck without hood',
+      't-shirt',
+      'simple shirt'
+    );
+  }
+  
+  // Knitwear/sweaters must have knit texture
+  if (name.includes('knitwear') || name.includes('sweater') || name.includes('pullover')) {
+    negatives.push(
+      'thin cotton t-shirt',
+      'jersey fabric',
+      'smooth thin fabric',
+      'basic t-shirt',
+      'lightweight cotton'
+    );
+  }
+  
+  // Tank tops must be sleeveless
+  if (name.includes('tank') || name.includes('sleeveless')) {
+    negatives.push(
+      'sleeves',
+      'short sleeves',
+      'long sleeves',
+      'cap sleeves'
+    );
+  }
+  
+  return negatives;
+}
+
+// Get product-specific visual anchors that MUST be present
+export function getProductVisualAnchors(product: Product): string {
+  const name = product.name.toLowerCase();
+  
+  if (name.includes('long sleeve') || name.includes('long-sleeve') || name.includes('longsleeve')) {
+    return `
+VISUAL ANCHOR REQUIREMENTS (MANDATORY):
+- Sleeves MUST extend from shoulder to wrist (covering the full arm)
+- Both forearms MUST be covered by fabric
+- Sleeve cuffs should be visible near the model's wrists
+- This is a LONG SLEEVE shirt, NOT a short-sleeved t-shirt
+- If arms are visible, sleeves must reach the wrists`;
+  }
+  
+  if (name.includes('hoodie')) {
+    return `
+VISUAL ANCHOR REQUIREMENTS (MANDATORY):
+- A HOOD must be visible (either worn up or resting on shoulders/back)
+- Hood drawstrings should be visible at the neckline
+- Kangaroo pocket on the front torso
+- This is a HOODIE with a hood, NOT a simple sweatshirt`;
+  }
+  
+  if (name.includes('knitwear') || name.includes('sweater') || name.includes('pullover')) {
+    return `
+VISUAL ANCHOR REQUIREMENTS (MANDATORY):
+- Visible KNIT TEXTURE throughout the garment (cable knit, ribbed, or yarn texture)
+- Thick, cozy, substantial fabric appearance
+- Visible yarn/knit ribbing at collar, cuffs, and hem
+- This is a KNIT SWEATER, NOT a thin cotton t-shirt`;
+  }
+  
+  if (name.includes('tank') || name.includes('sleeveless')) {
+    return `
+VISUAL ANCHOR REQUIREMENTS (MANDATORY):
+- NO sleeves - shoulders and arms fully exposed
+- Wide or thin straps only (no fabric covering arms)
+- This is a TANK TOP, NOT a t-shirt`;
+  }
+  
+  // Default for t-shirts
+  if (name.includes('t-shirt') || name.includes('tee') || name.includes('tshirt')) {
+    return `
+VISUAL ANCHOR REQUIREMENTS:
+- Standard SHORT sleeves ending at or above the elbow
+- Crew neck collar
+- Lightweight cotton appearance`;
+  }
+  
+  return '';
 }
 
 export interface AccessoryBlueprint {
