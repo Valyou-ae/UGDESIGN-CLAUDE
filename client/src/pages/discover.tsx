@@ -16,8 +16,11 @@ import {
   UserPlus,
   UserCheck,
   Download,
-  ExternalLink
+  ExternalLink,
+  Pencil
 } from "lucide-react";
+import { useLocation } from "wouter";
+import { transferImageToTool } from "@/lib/image-transfer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -67,6 +70,7 @@ interface InspirationItem {
   category: string;
   aspectRatio: "1:1" | "9:16" | "16:9" | "4:5" | "3:4";
   prompt: string;
+  style?: string;
   isLiked?: boolean;
   isFollowing?: boolean;
   isGalleryImage?: boolean;
@@ -2072,13 +2076,19 @@ export default function Discover() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<InspirationItem | null>(null);
   const [promptCopied, setPromptCopied] = useState(false);
+  const [isFollowingPopup, setIsFollowingPopup] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+  const { openLoginPopup } = useLoginPopup();
+  const [, setLocation] = useLocation();
   const ITEMS_PER_LOAD = 12;
 
   const openItemPopup = (item: InspirationItem) => {
     setSelectedItem(item);
     setPromptCopied(false);
+    setIsFollowingPopup(item.isFollowing || false);
   };
 
   const closeItemPopup = () => {
@@ -2111,6 +2121,56 @@ export default function Discover() {
     } catch {
       toast({ title: "Download failed", description: "Please try again", variant: "destructive" });
     }
+  };
+
+  const handleFollowToggle = async () => {
+    if (!selectedItem || !selectedItem.creatorId) return;
+    if (!isAuthenticated) {
+      openLoginPopup();
+      return;
+    }
+    setFollowLoading(true);
+    try {
+      const newFollowState = !isFollowingPopup;
+      if (isFollowingPopup) {
+        await socialApi.unfollowUser(selectedItem.creatorId);
+        toast({ title: "Unfollowed", description: `You unfollowed @${selectedItem.creator}` });
+      } else {
+        await socialApi.followUser(selectedItem.creatorId);
+        toast({ title: "Following", description: `You are now following @${selectedItem.creator}` });
+      }
+      setIsFollowingPopup(newFollowState);
+      
+      // Update the selected item and sync with displayed items
+      const updatedItem = { ...selectedItem, isFollowing: newFollowState };
+      setSelectedItem(updatedItem);
+      
+      // Update displayed items to keep in sync
+      setDisplayedItems(prev => prev.map(item => 
+        item.id === selectedItem.id ? { ...item, isFollowing: newFollowState } : item
+      ));
+      
+      // Update community images to persist state
+      setCommunityImages(prev => prev.map(item => 
+        item.id === selectedItem.id ? { ...item, isFollowing: newFollowState } : item
+      ));
+    } catch {
+      toast({ title: "Error", description: "Could not update follow status", variant: "destructive" });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleEditImage = () => {
+    if (!selectedItem) return;
+    const route = transferImageToTool({
+      id: String(selectedItem.id),
+      src: selectedItem.image,
+      name: selectedItem.prompt,
+      aspectRatio: selectedItem.aspectRatio,
+    }, "image-editor");
+    closeItemPopup();
+    setLocation(route);
   };
 
   useEffect(() => {
@@ -2337,20 +2397,51 @@ export default function Discover() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-5 space-y-4">
-                  {/* Creator Info */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#f8991c] to-[#B8860B] flex items-center justify-center text-white font-bold text-sm">
-                      {selectedItem.creator.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-foreground">@{selectedItem.creator}</span>
-                        {selectedItem.verified && <BadgeCheck className="h-4 w-4 text-[#B8860B]" />}
+                  {/* Creator Info with Follow Button */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#f8991c] to-[#B8860B] flex items-center justify-center text-white font-bold text-sm">
+                        {selectedItem.creator.charAt(0).toUpperCase()}
                       </div>
-                      {selectedItem.createdAt && (
-                        <span className="text-xs text-muted-foreground">{formatTimeAgo(new Date(selectedItem.createdAt))}</span>
-                      )}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-foreground">@{selectedItem.creator}</span>
+                          {selectedItem.verified && <BadgeCheck className="h-4 w-4 text-[#B8860B]" />}
+                        </div>
+                        {selectedItem.createdAt && (
+                          <span className="text-xs text-muted-foreground">{formatTimeAgo(new Date(selectedItem.createdAt))}</span>
+                        )}
+                      </div>
                     </div>
+                    {selectedItem.creatorId && (
+                      <Button
+                        size="sm"
+                        variant={isFollowingPopup ? "outline" : "default"}
+                        onClick={handleFollowToggle}
+                        disabled={followLoading}
+                        className={cn(
+                          "gap-1.5 transition-all",
+                          isFollowingPopup 
+                            ? "bg-transparent border-border hover:bg-muted" 
+                            : "bg-[#f8991c] hover:bg-[#e88a17] text-white"
+                        )}
+                        data-testid="button-follow-popup"
+                      >
+                        {followLoading ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : isFollowingPopup ? (
+                          <>
+                            <UserCheck className="h-3.5 w-3.5" />
+                            Following
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="h-3.5 w-3.5" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
+                    )}
                   </div>
 
                   {/* Prompt */}
@@ -2410,6 +2501,12 @@ export default function Discover() {
                       <span className="text-xs text-muted-foreground">Aspect Ratio</span>
                       <span className="text-xs font-medium text-foreground">{selectedItem.aspectRatio}</span>
                     </div>
+                    {selectedItem.style && (
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-xs text-muted-foreground">Style</span>
+                        <span className="text-xs font-medium text-foreground">{selectedItem.style}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Actions */}
@@ -2432,6 +2529,17 @@ export default function Discover() {
                       Download
                     </Button>
                   </div>
+
+                  {/* Edit Image Button */}
+                  <Button 
+                    variant="outline" 
+                    onClick={handleEditImage}
+                    className="w-full gap-2"
+                    data-testid="button-edit-image-popup"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit Image
+                  </Button>
 
                   {/* Share link for gallery images */}
                   {selectedItem.isGalleryImage && (
