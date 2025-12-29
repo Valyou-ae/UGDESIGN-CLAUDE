@@ -164,11 +164,13 @@ export function getImageAssetRules(): string {
 ===== CORE ASSETS & UNBREAKABLE RULES =====
 
 RULE 1: DESIGN ASSET LOCK (NON-NEGOTIABLE)
-The design on the garment MUST be a PERFECT, 1:1, PIXEL-PERFECT, STYLISTICALLY IDENTICAL COPY of the provided design asset [IMAGE 1].
-- It must not be redrawn, re-interpreted, or have its style changed
-- Every detail, color, and element must match exactly
-- The design is the SOURCE OF TRUTH for artwork appearance
-- [IMAGE 1] shows you what the PRINTED FABRIC looks like - render the garment using this fabric
+[IMAGE 1] is the EXACT artwork. You must TRANSFER this image onto the garment fabric - do NOT recreate, redraw, or reinterpret it.
+- TRANSFER means: the exact pixels, colors, typography, and styling from [IMAGE 1] appear on the fabric
+- Do NOT generate new artwork inspired by [IMAGE 1] - COPY it exactly
+- Every character of text must match the exact font, spacing, and styling
+- Every illustration element must match the exact colors, line weights, and proportions
+- If the design says "Santa Paws" in a specific font, render "Santa Paws" in that EXACT font
+- This is a TECHNICAL COPY operation, not a creative interpretation
 
 RULE 2: MODEL IDENTITY LOCK (NON-NEGOTIABLE)
 If a reference headshot [IMAGE 2] is provided, the model in the final render MUST be the EXACT SAME PERSON.
@@ -182,4 +184,70 @@ RULE 3: COLOR & FIT LOCK (NON-NEGOTIABLE)
 - No color drift or interpretation is allowed
 
 ===== END CORE ASSETS =====`;
+}
+
+export function getSeamIntegrationBlock(): string {
+  return `
+===== SEAM & CONSTRUCTION INTEGRATION =====
+[THE DESIGN FLOWS THROUGH GARMENT CONSTRUCTION]
+
+The design was printed on the fabric BEFORE the garment was cut and sewn. Therefore:
+
+【SEAM LINE BEHAVIOR】
+- The design continues through side seams (may show slight offset from sewing)
+- Shoulder seams create natural breaks in the design
+- Hem stitching creates subtle horizontal lines that cross through the design
+- Collar stitching shows where design meets garment edge
+
+【COMPRESSION ZONES - DESIGN MUST RESPOND】
+At underarm areas:
+- Fabric bunches and compresses
+- Design must show compression, bunching, and micro-folds
+- Text and artwork break apart at these fold lines
+
+At chest center:
+- Fabric stretches slightly over chest contour
+- Design stretches proportionally with fabric
+
+At side seams:
+- Fabric naturally pulls toward the sides
+- Design shows subtle distortion toward body edges
+
+【STITCH IMPRESSIONS】
+Where visible stitching exists:
+- Stitch lines create tiny shadows THROUGH the printed area
+- The design shows micro-interruptions where needle holes exist
+- This is subtle but contributes to "printed before construction" authenticity
+
+===== END SEAM INTEGRATION =====`;
+}
+
+export function getPositiveFabricRequirements(): string {
+  return `
+===== MANDATORY FABRIC INTERACTIONS =====
+[THESE MUST BE VISIBLE IN THE FINAL RENDER]
+
+The following fabric behaviors are REQUIRED - renders lacking these will be rejected:
+
+【FOLD DISCONTINUITIES】
+✓ At least 3 visible folds/creases that interrupt the design
+✓ When a fold crosses text, the text must show a break at the fold line
+✓ Letters do NOT remain perfectly aligned across fold lines
+
+【BODY CURVATURE RESPONSE】
+✓ Design narrows toward body edges (natural perspective)
+✓ Design curves around torso cylinder
+✓ Horizontal lines in the design appear slightly curved following body contour
+
+【COMPRESSION EVIDENCE】
+✓ At underarm areas: fabric bunches, design bunches with it
+✓ At movement creases: design shows corresponding creases
+✓ At natural wear points: micro-wrinkles affect design appearance
+
+【UNIFIED LIGHTING】
+✓ Shadows on fabric = shadows on design (same intensity)
+✓ Highlights on fabric = highlights on design (same brightness)
+✓ No lighting difference between printed and blank areas
+
+===== END MANDATORY REQUIREMENTS =====`;
 }

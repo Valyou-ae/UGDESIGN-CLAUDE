@@ -59,7 +59,9 @@ export {
   getGarmentConditionBlock,
   getRenderingEngineFraming,
   getImageAssetRules,
-  getDesignAsFabricBlock
+  getDesignAsFabricBlock,
+  getSeamIntegrationBlock,
+  getPositiveFabricRequirements
 } from './distortionPhysics';
 
 export { ETHNIC_FEATURE_MAP, getEthnicFeatures } from './ethnicFeatures';

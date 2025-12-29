@@ -53,7 +53,9 @@ import {
   getGarmentConditionBlock,
   getRenderingEngineFraming,
   getImageAssetRules,
-  getDesignAsFabricBlock
+  getDesignAsFabricBlock,
+  getSeamIntegrationBlock,
+  getPositiveFabricRequirements
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 
@@ -1229,8 +1231,11 @@ export async function generateSingleMockup(
       inlineData: { data: designBase64, mimeType: "image/png" }
     });
     parts.push({
-      text: `[IMAGE 1] - DESIGN ASSET
-This is the EXACT artwork to be printed on the garment. It must be reproduced PIXEL-PERFECT.`
+      text: `[IMAGE 1] - DESIGN ASSET (SOURCE MATERIAL - DO NOT REDRAW)
+This is the EXACT artwork to TRANSFER onto the garment fabric.
+- COPY this image exactly - do NOT generate new artwork inspired by it
+- Every letter, every color, every detail must match this source exactly
+- This is a TECHNICAL TRANSFER operation, not creative interpretation`
     });
 
     // Headshot comes SECOND as [IMAGE 2]
@@ -1281,12 +1286,16 @@ Match the background, lighting, camera angle, and photography style from this re
     const distortionPhysics = get3DDistortionPhysicsBlock(productName);
     const garmentCondition = getGarmentConditionBlock();
     const printRealism = getPrintRealismBlock();
+    const seamIntegration = getSeamIntegrationBlock();
+    const positiveFabricReqs = getPositiveFabricRequirements();
     
     const technicalPrompt = `${renderingFraming}
 
 ${imageAssetRules}
 
 ${designAsFabric}
+
+${seamIntegration}
 
 ===== SECTION 2: RENDER PARAMETERS =====
 
@@ -1313,6 +1322,8 @@ Camera: ${cameraInfo}
 
 ${distortionPhysics}
 
+${positiveFabricReqs}
+
 ${printRealism}
 
 ${printIntegration ? `【PRINT INTEGRATION LOCK】\n${printIntegration}` : ''}
@@ -1324,10 +1335,11 @@ blurry, out of focus, soft focus, motion blur, unfocused, grainy, noisy, pixelat
 jpeg artifacts, overexposed, underexposed, wrong white balance, incorrect skin tones,
 design that remains rigid while fabric folds around it, design with different lighting than fabric,
 perfectly smooth fabric with no natural creases, design edges that don't follow fabric curves,
-printed area that looks separate from the garment material, unnaturally crisp design boundaries
+printed area that looks separate from the garment material, unnaturally crisp design boundaries,
+design that is redrawn or reinterpreted instead of copied exactly from source image
 ===== END NEGATIVES =====
 
-FINAL OUTPUT: Generate a single photorealistic product photograph. The design from [IMAGE 1] IS the fabric - it naturally drapes, folds, and curves with the garment because they are the same material.`;
+FINAL OUTPUT: Generate a single photorealistic product photograph. TRANSFER the exact artwork from [IMAGE 1] onto the garment - do not redraw or reinterpret it. The design IS the fabric - it naturally drapes, folds, and curves with the garment because they are the same material.`;
 
     parts.push({ text: technicalPrompt });
 
