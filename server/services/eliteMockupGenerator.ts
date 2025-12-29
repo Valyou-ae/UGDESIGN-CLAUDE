@@ -1165,36 +1165,54 @@ Match the background, lighting, and photography style from this reference image.
     const contourInfo = renderSpec.contourDescription || "";
     const negatives = renderSpec.negativePrompts || "";
     
-    const simplePrompt = `[DESIGN IMAGE - COMPOSITE ONTO SHIRT]
-This is the exact design artwork to print on the shirt. Place this image directly onto the fabric - do not redraw, recreate, or reinterpret it.
+    const simplePrompt = `[PRINT FILE - USE AS-IS]
+The image above is the EXACT print file. This is NOT a reference or inspiration - this IS the final artwork.
 
-TASK: Create a photorealistic product mockup photo.
+=== CRITICAL: PIXEL-PERFECT OVERLAY REQUIRED ===
+DO NOT:
+- Redraw the design
+- Recreate the design in a different style  
+- Reinterpret the design
+- Simplify the design
+- Change the dogs, characters, or any elements
+- Modify the text or fonts
+- Change ANY colors
+- Add or remove ANY elements
+
+DO:
+- Take this exact image file and overlay it onto the garment
+- The design must be IDENTICAL to the provided image - every pixel, every color, every detail
+- Apply perspective distortion to match the fabric surface
+- Add subtle fabric texture and lighting interaction
+- Allow natural fabric folds to affect the overlay
+
+=== MOCKUP TASK ===
+Create a photorealistic product photo with this design printed on the garment.
 
 PRODUCT: ${productInfo}
 CAMERA: ${cameraInfo}
 
-${personaInfo ? `MODEL: ${personaInfo}` : ''}
+${personaInfo ? `MODEL:\n${personaInfo}` : ''}
 
-DESIGN PLACEMENT:
-- Composite this exact design image onto the shirt's print area
-- Keep the original colors, shapes, and details unchanged
-- Scale to fit the print area proportionally
-- The design artwork must be identical to the provided image
+PRINT OVERLAY RULES:
+- The provided image IS the print - overlay it directly onto the fabric
+- Center the design on the print area
+- Scale proportionally to fit the print area (approximately 12" x 16" on chest)
+- The design must look EXACTLY like the provided image - same dogs, same text, same colors, same arrangement
+- If there are 3 dogs with Santa hats in the design, there must be exactly 3 dogs with Santa hats on the shirt
 
-MATERIAL PHYSICS (realistic fabric rendering):
-- Design follows natural fabric folds and body contours
-- Subtle wrinkles and creases at joints and movement points
-- Realistic shadows within fabric folds
-- Slight stretching over curves (chest, shoulders, back)
-- Fabric texture visible through the print
-- Natural compression in seated/bent poses
+FABRIC INTERACTION (apply to the overlay):
+- Perspective warp to match camera angle and body pose
+- Subtle fabric fold distortion where creases occur
+- Light/shadow variation across the design matching the garment lighting
+- Slight stretch over body contours (chest, shoulders)
 ${materialInfo ? `- ${materialInfo}` : ''}
 ${contourInfo ? `- Body contours: ${contourInfo}` : ''}
 
 LIGHTING: ${lightingInfo}
 ENVIRONMENT: ${environmentInfo}
 
-OUTPUT: Professional product photography showing model wearing the shirt with the printed design. Photorealistic quality, natural pose, authentic fabric behavior.
+OUTPUT: Professional product photography. The printed design must be an exact reproduction of the provided image file, properly composited onto the fabric with realistic material interaction.
 
 ${negatives ? `AVOID: ${negatives}` : ''}`;
 
