@@ -450,8 +450,14 @@ export default function ImageEditor() {
     <div className="min-h-screen bg-background flex font-sans text-foreground overflow-hidden">
       <Sidebar />
       
-      <main className="flex-1 h-screen overflow-y-auto relative pb-20 md:pb-0">
-        <div className="p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto min-h-full flex flex-col">
+      <main className={cn(
+          "flex-1 h-screen relative pb-20 md:pb-0",
+          currentImage ? "overflow-hidden" : "overflow-y-auto"
+        )}>
+        <div className={cn(
+          "p-4 md:p-8 lg:p-10 max-w-[1400px] mx-auto flex flex-col",
+          currentImage ? "h-full" : "min-h-full"
+        )}>
           
           {/* Header Section */}
           <div className="mb-6 md:mb-8">
@@ -671,11 +677,14 @@ export default function ImageEditor() {
               )}
             </div>
           ) : (
-            /* Editor State - Two Column Layout */
-            <div className="flex-1 flex min-h-0">
+            /* Editor State - Two Column Layout with fixed height */
+            <div className="flex-1 flex min-h-0 overflow-hidden">
               {/* Left: Image Preview */}
-              <div className="flex-1 p-4 flex flex-col min-h-0">
-                <div className="flex-1 relative bg-muted/30 rounded-xl overflow-hidden flex items-center justify-center min-h-0">
+              <div className="flex-1 p-4 flex flex-col min-h-0 overflow-hidden">
+                <div 
+                  className="flex-1 relative bg-muted/30 rounded-xl overflow-hidden flex items-center justify-center"
+                  style={{ maxHeight: 'calc(100vh - 220px)' }}
+                >
                   <AnimatePresence mode="wait">
                     <motion.img
                       key={currentImage}
@@ -715,8 +724,10 @@ export default function ImageEditor() {
                 </div>
               </div>
 
-              {/* Right: Controls Panel */}
-              <div className="w-80 border-l border-border flex flex-col min-h-0">
+              {/* Right: Controls Panel - scrollable for smaller screens */}
+              <div className="w-80 border-l border-border flex flex-col min-h-0 overflow-y-auto"
+                style={{ maxHeight: 'calc(100vh - 80px)' }}
+              >
                 {/* Version History */}
                 {versions.length > 0 && (
                   <div className="flex-shrink-0 p-4 border-b border-border">
