@@ -1322,12 +1322,12 @@ ${negatives}
 
 blurry, out of focus, soft focus, motion blur, unfocused, grainy, noisy, pixelated, 
 jpeg artifacts, overexposed, underexposed, wrong white balance, incorrect skin tones,
-flat design that ignores fabric folds, design floating above fabric, sticker appearance,
-design with separate lighting from garment, perfectly rectangular undistorted design,
-design that doesn't follow body contours, pasted-on look, digital overlay appearance
+design that remains rigid while fabric folds around it, design with different lighting than fabric,
+perfectly smooth fabric with no natural creases, design edges that don't follow fabric curves,
+printed area that looks separate from the garment material, unnaturally crisp design boundaries
 ===== END NEGATIVES =====
 
-FINAL OUTPUT: Generate a single photorealistic product photograph where the design from [IMAGE 1] appears as a REAL PHYSICAL PRINT that is BONDED to the fabric surface, following every fold and contour.`;
+FINAL OUTPUT: Generate a single photorealistic product photograph. The design from [IMAGE 1] IS the fabric - it naturally drapes, folds, and curves with the garment because they are the same material.`;
 
     parts.push({ text: technicalPrompt });
 

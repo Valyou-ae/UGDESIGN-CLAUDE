@@ -1,7 +1,7 @@
 /**
- * 3D DISTORTION PHYSICS
- * Critical module for making designs appear bonded to fabric, not floating on top
- * Based on proven prompt structure that achieves realistic print integration
+ * FABRIC PHYSICS
+ * Critical module for ensuring designs behave as fabric, not overlays
+ * The design IS fabric - it naturally drapes, folds, and curves with the garment
  */
 
 export interface DistortionParameters {
@@ -66,50 +66,43 @@ export function get3DDistortionPhysicsBlock(productName: string): string {
   const params = getDistortionParams(productName);
   
   return `
-===== 3D DISTORTION PHYSICS (CRITICAL FOR REALISM) =====
-[THIS SECTION IS NON-NEGOTIABLE - FLAT DESIGNS ARE UNACCEPTABLE]
+===== FABRIC PHYSICS (CRITICAL FOR REALISM) =====
+[THE DESIGN IS FABRIC - IT BEHAVES EXACTLY LIKE FABRIC]
 
-The flat design [IMAGE 1] MUST realistically distort over the 3D curves and folds of the garment.
+The design [IMAGE 1] IS printed fabric. It naturally drapes, folds, and curves because it IS fabric - not an image applied to fabric.
 
-【CYLINDRICAL WRAP - MANDATORY】
-The torso is a CYLINDER with approximately ${params.cylinderRadius}cm radius (${params.chestWidth}cm diameter, ~${Math.round(params.chestWidth / 2.54)}" chest width).
-You must map the flat design onto this cylindrical surface.
+【NATURAL BODY CURVATURE】
+The torso has a curved surface (approximately ${params.chestWidth}cm / ~${Math.round(params.chestWidth / 2.54)}" chest width).
+The design fabric naturally follows this curvature:
+- The center of the design (facing the camera) appears at full width
+- The sides of the design recede toward the body's edges due to natural perspective
+- This is how fabric naturally appears when draped over a curved surface
 
-MENTAL MODEL: Imagine wrapping a rectangular sticker around a soda can.
-- The center of the sticker (facing you) looks normal width
-- The edges of the sticker (wrapping around the sides) appear much narrower due to the angle
-- This is the EXACT effect needed on the garment
+【FABRIC FOLDS AND CREASES】
+Because the design IS fabric, it naturally responds to folds and creases:
+- When the garment folds, the design folds with it - they are one material
+- A vertical fold through a letter "O" causes the "O" to fold - the left and right sides separate at the crease
+- A horizontal crease causes the design above and below to shift - natural fabric behavior
+- The design does NOT remain perfectly flat while the garment wrinkles around it
 
-【FOLD INTERACTION - BONDED DESIGN】
-The design is BONDED to the fabric surface. It is not floating above - it IS the fabric.
-
-Therefore:
-- Every fold in the fabric causes a corresponding distortion in the design
-- If there is a fold running vertically through the letter "O", the "O" must show the fold:
-  • The left side of the "O" and right side will not align perfectly
-  • The fold line will create a visible discontinuity
-  • The circular shape will appear "bent" at the fold
-- This is NON-NEGOTIABLE. Flat, undistorted designs are REJECTED.
-
-【FOLD REQUIREMENTS】
+【REQUIRED FABRIC BEHAVIOR】
 - Minimum ${params.foldCount}+ visible creases and micro-wrinkles from natural wear
-- Micro-wrinkles concentrated at underarms and sides
+- Micro-wrinkles concentrated at underarms, sides, and movement areas
 - Natural drape following body contours
-- Design must follow EVERY single fold and crease
+- The design fabric follows EVERY fold and crease because it IS the garment fabric
 
-【PRINT SIZE SPECIFICATION】
-The design asset [IMAGE 1] must be printed on the garment at a width of approximately ${params.printWidthInches} inches.
-The design is centered on the chest/front of the garment.
+【PRINT DIMENSIONS】
+The design occupies approximately ${params.printWidthInches} inches width on the garment front, centered on the chest.
 
-【DESIGN INTEGRATION PHYSICS】
-- The ink from the design has SOAKED INTO the fabric fibers
-- You can see subtle fabric texture THROUGH the printed areas
-- Where fabric stretches, the design stretches proportionally
-- Where fabric compresses (folds), the design compresses identically
-- Light and shadow affect the design the same way they affect the fabric
-- There is NO separation between design and fabric - they are ONE surface
+【UNIFIED MATERIAL PHYSICS】
+- The design ink has saturated into the cotton fibers
+- Fabric weave texture is visible through the printed colors
+- When fabric stretches, the design stretches (same material)
+- When fabric compresses at folds, the design compresses (same material)
+- Light and shadow affect design and fabric identically (same surface)
+- There is NO boundary between design and fabric - they are ONE piece of printed cotton
 
-===== END 3D DISTORTION PHYSICS =====`;
+===== END FABRIC PHYSICS =====`;
 }
 
 export function getGarmentConditionBlock(): string {
@@ -135,36 +128,35 @@ This is NOT a creative illustration task. This is a TECHNICAL RENDERING task wit
 
 export function getDesignAsFabricBlock(): string {
   return `
-===== DESIGN-AS-FABRIC MATERIAL DEFINITION =====
-[CRITICAL: This reframes how the design integrates with the garment]
+===== DESIGN IS FABRIC =====
+[CRITICAL: THE DESIGN IS NOT AN IMAGE - IT IS PRINTED FABRIC]
 
-The design asset [IMAGE 1] is NOT a flat digital image. It is a PRE-PRINTED FABRIC PANEL.
+The design asset [IMAGE 1] represents fabric that has been printed with this artwork. It is NOT a digital image to be placed on top of fabric.
 
-【DESIGN FABRIC PROPERTIES】
-The design file should be treated as if it were already printed onto fabric:
-- It has the same cotton weave texture as the garment
-- The ink has already saturated into fabric fibers (not sitting on top)
-- Slight thread variation is visible through the printed colors
-- Natural fabric imperfections exist within the design area
-- The design has the same material flexibility as the garment
+【THE DESIGN IS ALREADY FABRIC】
+Understand that [IMAGE 1] shows you what the FABRIC looks like after printing:
+- The artwork exists as ink saturated INTO cotton fibers
+- Cotton weave texture is visible through the printed colors
+- Slight thread variation exists within the printed areas
+- Natural fabric imperfections are present in the design area
+- The design has the same physical properties as the garment fabric
 
-【FABRIC-TO-FABRIC FUSION】
-When the design is applied to the garment, you are FUSING two compatible fabric surfaces:
-- The design fabric panel bonds seamlessly to the garment fabric
-- Both materials respond IDENTICALLY to physics (folds, stretches, lighting)
-- There is no "application" - they become ONE unified fabric surface
-- The boundary between design area and blank fabric is invisible
+【SINGLE UNIFIED MATERIAL】
+There is only ONE material in this mockup - printed cotton fabric:
+- The garment IS the design, the design IS the garment
+- They are not two things combined - they are one piece of fabric
+- Folds in the garment ARE folds in the design (same material)
+- Light on the garment IS light on the design (same surface)
+- There is no boundary, no edge, no separation
 
-【WHY THIS MATTERS】
-Because both the design and garment are the same material:
-- Folds in the garment naturally carry through the design
-- Lighting affects both surfaces uniformly
-- No "sticker effect" or "overlay" appearance is possible
-- The design IS the fabric - they cannot be separated
+【MENTAL MODEL】
+The design was printed onto this exact piece of cotton fabric DURING manufacturing, BEFORE the garment was cut and sewn.
 
-This is the mental model: The design was printed onto this exact piece of fabric BEFORE the garment was cut and sewn. It's not applied after - it's part of the original material.
+When you see [IMAGE 1], you are seeing what the fabric looks like.
+When you render the garment, you are rendering that same fabric draped on a body.
+The fabric naturally folds, curves, and creases - and the design does too, because they are the same thing.
 
-===== END DESIGN-AS-FABRIC =====`;
+===== END DESIGN IS FABRIC =====`;
 }
 
 export function getImageAssetRules(): string {
@@ -176,7 +168,7 @@ The design on the garment MUST be a PERFECT, 1:1, PIXEL-PERFECT, STYLISTICALLY I
 - It must not be redrawn, re-interpreted, or have its style changed
 - Every detail, color, and element must match exactly
 - The design is the SOURCE OF TRUTH for artwork appearance
-- IMPORTANT: Treat [IMAGE 1] as a pre-printed fabric panel, not a flat digital overlay
+- [IMAGE 1] shows you what the PRINTED FABRIC looks like - render the garment using this fabric
 
 RULE 2: MODEL IDENTITY LOCK (NON-NEGOTIABLE)
 If a reference headshot [IMAGE 2] is provided, the model in the final render MUST be the EXACT SAME PERSON.
