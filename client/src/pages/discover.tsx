@@ -304,7 +304,7 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
                   onClick={handleFollow}
                   disabled={followLoading}
                   className={cn(
-                    "flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-medium transition-all",
+                    "flex items-center justify-center w-7 h-7 rounded-full transition-all",
                     isFollowing 
                       ? "bg-white/20 text-white hover:bg-red-500/80" 
                       : "bg-[#f8991c] text-white hover:bg-[#e88a17]"
@@ -313,17 +313,11 @@ const LazyMasonryCard = memo(function LazyMasonryCard({ item, index, onLike, onU
                   title={isFollowing ? "Unfollow" : "Follow"}
                 >
                   {followLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : isFollowing ? (
-                    <>
-                      <UserCheck className="h-3 w-3" />
-                      <span className="hidden sm:inline">Following</span>
-                    </>
+                    <UserCheck className="h-3.5 w-3.5" />
                   ) : (
-                    <>
-                      <UserPlus className="h-3 w-3" />
-                      <span className="hidden sm:inline">Follow</span>
-                    </>
+                    <UserPlus className="h-3.5 w-3.5" />
                   )}
                 </button>
               )}
@@ -2583,29 +2577,29 @@ export default function Discover() {
                   </div>
 
                   {/* Stats Row */}
-                  <div className="flex items-center justify-between py-3 px-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <Eye className="h-4 w-4 text-[#f8991c]" />
-                      <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.views)}</span>
-                      <span className="text-sm text-muted-foreground">Views</span>
+                  <div className="flex items-center py-3 px-3 bg-muted/30 rounded-lg overflow-x-auto">
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Eye className="h-3.5 w-3.5 text-[#f8991c]" />
+                      <span className="text-xs font-medium text-foreground">{formatCount(selectedItem.views)}</span>
+                      <span className="text-xs text-muted-foreground">Views</span>
                     </div>
-                    <div className="w-px h-4 bg-border" />
-                    <div className="flex items-center gap-2">
-                      <Heart className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.likes)}</span>
-                      <span className="text-sm text-muted-foreground">Likes</span>
+                    <div className="w-px h-3 bg-border mx-2 shrink-0" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Heart className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-foreground">{formatCount(selectedItem.likes)}</span>
+                      <span className="text-xs text-muted-foreground">Likes</span>
                     </div>
-                    <div className="w-px h-4 bg-border" />
-                    <div className="flex items-center gap-2">
-                      <Shuffle className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">{formatCount(selectedItem.uses)}</span>
-                      <span className="text-sm text-muted-foreground">Remix</span>
+                    <div className="w-px h-3 bg-border mx-2 shrink-0" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Shuffle className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-foreground">{formatCount(selectedItem.uses)}</span>
+                      <span className="text-xs text-muted-foreground">Remix</span>
                     </div>
-                    <div className="w-px h-4 bg-border" />
-                    <div className="flex items-center gap-2">
-                      <UserPlus className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-foreground">--</span>
-                      <span className="text-sm text-muted-foreground">Followers</span>
+                    <div className="w-px h-3 bg-border mx-2 shrink-0" />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <UserPlus className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-foreground">--</span>
+                      <span className="text-xs text-muted-foreground">Followers</span>
                     </div>
                   </div>
 
