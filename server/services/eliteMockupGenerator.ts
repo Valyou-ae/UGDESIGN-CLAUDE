@@ -59,6 +59,7 @@ import {
 } from "./knowledge";
 import { getHeadshotPath, getHeadshotBase64 } from "./knowledge/headshotMapping";
 import { compositeDesignOntoGarment, getBlankGarmentPrompt } from "./designCompositor";
+import { buildStreamlinedPrompt, type MockupPromptInput } from "./promptBuilders/mockupPromptBuilder";
 
 const genAI = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.AI_INTEGRATIONS_GEMINI_API_KEY || ""
@@ -75,6 +76,9 @@ const GENERATION_CONFIG = {
   MAX_RETRIES: 3,
   RETRY_DELAY_MS: 2000,
   JOB_TIMEOUT_MS: 60000,
+  // USE_STREAMLINED_PROMPT: true = V2 (new 3-section structure), false = V1 (legacy verbose)
+  // Set env var USE_STREAMLINED_PROMPT=false to disable V2
+  USE_STREAMLINED_PROMPT: process.env.USE_STREAMLINED_PROMPT !== 'false', // Default to V2 unless explicitly disabled
 };
 
 let currentJobCount = 0;
@@ -1408,6 +1412,103 @@ FINAL OUTPUT: Generate a single photorealistic product photograph. TRANSFER the 
   }
 }
 
+/**
+ * V2: Generate mockup using the streamlined 3-section prompt structure
+ * This is the optimized version designed for better Gemini comprehension
+ */
+export async function generateSingleMockupV2(
+  designBase64: string,
+  promptInput: MockupPromptInput,
+  personaHeadshot?: string,
+  previousMockupReference?: string
+): Promise<GeneratedMockup | null> {
+  await waitForRateLimit();
+  await waitForConcurrencySlot();
+
+  try {
+    const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [];
+
+    // [IMAGE 1] Design asset
+    parts.push({
+      inlineData: { data: designBase64, mimeType: "image/png" }
+    });
+
+    // [IMAGE 2] Headshot (if provided)
+    if (personaHeadshot) {
+      parts.push({
+        inlineData: { data: personaHeadshot, mimeType: "image/png" }
+      });
+    }
+
+    // [IMAGE 3] Previous reference (if provided)
+    if (previousMockupReference) {
+      parts.push({
+        inlineData: { data: previousMockupReference, mimeType: "image/png" }
+      });
+    }
+
+    // Build the streamlined prompt
+    const streamlinedPrompt = buildStreamlinedPrompt({
+      ...promptInput,
+      hasHeadshot: !!personaHeadshot,
+      hasPreviousReference: !!previousMockupReference
+    });
+
+    // Add the complete prompt as text
+    parts.push({ text: streamlinedPrompt.fullPrompt });
+
+    logger.info("Calling Gemini API with STREAMLINED prompt (V2)", { 
+      source: "eliteMockupGenerator", 
+      model: MODELS.IMAGE_GENERATION,
+      promptVersion: "v2-streamlined",
+      hasPersonaHeadshot: !!personaHeadshot,
+      hasPreviousReference: !!previousMockupReference,
+      promptLength: streamlinedPrompt.fullPrompt.length
+    });
+    
+    const response = await genAI.models.generateContent({
+      model: MODELS.IMAGE_GENERATION,
+      contents: [{ role: "user", parts }],
+      config: { responseModalities: [Modality.TEXT, Modality.IMAGE] }
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      const finishReason = (response as { promptFeedback?: { blockReason?: string } }).promptFeedback?.blockReason;
+      logger.error("No candidates in V2 mockup response", { source: "eliteMockupGenerator", finishReason });
+      return null;
+    }
+
+    const content = candidates[0].content;
+    if (!content || !content.parts) {
+      logger.error("No content parts in V2 mockup response", { source: "eliteMockupGenerator" });
+      return null;
+    }
+
+    for (const part of content.parts) {
+      if (part.inlineData && part.inlineData.data) {
+        logger.info("V2 Mockup image generated successfully", { source: "eliteMockupGenerator" });
+        return {
+          imageData: part.inlineData.data,
+          mimeType: part.inlineData.mimeType || "image/png",
+          jobId: "",
+          color: "",
+          angle: promptInput.angle
+        };
+      }
+    }
+
+    const textContent = content.parts.find(p => p.text)?.text;
+    logger.error("No image data in V2 mockup response", { source: "eliteMockupGenerator", textResponse: textContent?.substring(0, 500) });
+    return null;
+  } catch (error) {
+    logger.error("V2 mockup generation failed", error, { source: "eliteMockupGenerator" });
+    return null;
+  } finally {
+    releaseConcurrencySlot();
+  }
+}
+
 export async function generateBlankGarment(
   renderSpec: RenderSpecification,
   personaHeadshot?: string,
@@ -1577,6 +1678,73 @@ export async function generateMockupWithRetry(
 
   logger.error(`All ${maxRetries} attempts failed. Last error`, lastError, { source: "eliteMockupGenerator" });
   return null;
+}
+
+/**
+ * V2 retry wrapper for streamlined prompt generation
+ */
+export async function generateMockupWithRetryV2(
+  designBase64: string,
+  promptInput: MockupPromptInput,
+  personaHeadshot?: string,
+  previousMockupReference?: string,
+  maxRetries: number = GENERATION_CONFIG.MAX_RETRIES
+): Promise<GeneratedMockup | null> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await generateSingleMockupV2(designBase64, promptInput, personaHeadshot, previousMockupReference);
+      if (result) {
+        return result;
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      logger.error(`V2 Attempt ${attempt + 1}/${maxRetries} failed`, lastError, { source: "eliteMockupGenerator" });
+
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => 
+          setTimeout(resolve, GENERATION_CONFIG.RETRY_DELAY_MS * Math.pow(2, attempt))
+        );
+      }
+    }
+  }
+
+  logger.error(`All ${maxRetries} V2 attempts failed. Last error`, lastError, { source: "eliteMockupGenerator" });
+  return null;
+}
+
+/**
+ * Helper: Create MockupPromptInput from existing generation data
+ */
+export function createMockupPromptInput(
+  designAnalysis: DesignAnalysis,
+  product: Product,
+  color: ProductColor,
+  angle: MockupAngle,
+  journey: JourneyType,
+  options?: {
+    modelDetails?: ModelDetails;
+    personaLock?: PersonaLock;
+    currentSize?: string;
+    lightingPreset?: string;
+    environmentPrompt?: string;
+    outputQuality?: OutputQuality;
+  }
+): MockupPromptInput {
+  return {
+    designAnalysis,
+    product,
+    color,
+    angle,
+    journey,
+    modelDetails: options?.modelDetails,
+    personaLock: options?.personaLock,
+    currentSize: options?.currentSize,
+    lightingPreset: options?.lightingPreset,
+    environmentPrompt: options?.environmentPrompt,
+    outputQuality: options?.outputQuality || 'high',
+  };
 }
 
 export interface BatchGenerationError {
@@ -1978,13 +2146,47 @@ export async function generateMockupBatch(
         );
       }
     } else {
-      // Use original single-stage pipeline
-      result = await generateMockupWithRetry(
-        request.designImage,
-        renderSpec,
-        jobHeadshot,
-        referenceImage
-      );
+      // Check if streamlined prompt (V2) is enabled
+      if (GENERATION_CONFIG.USE_STREAMLINED_PROMPT) {
+        // Use V2 with streamlined 3-section prompt
+        const promptInput = createMockupPromptInput(
+          designAnalysis,
+          request.product,
+          job.color,
+          job.angle,
+          request.journey,
+          {
+            modelDetails: job.modelDetails,
+            personaLock: jobPersonaLock,
+            currentSize: job.modelDetails?.modelSize,
+            lightingPreset: request.lightingPreset,
+            environmentPrompt: request.environmentPrompt,
+            outputQuality: request.outputQuality
+          }
+        );
+        
+        logger.info("Using V2 streamlined prompt for generation", { 
+          source: "eliteMockupGenerator",
+          jobId: job.id,
+          angle: job.angle,
+          promptVersion: "v2"
+        });
+        
+        result = await generateMockupWithRetryV2(
+          request.designImage,
+          promptInput,
+          jobHeadshot,
+          referenceImage
+        );
+      } else {
+        // Use original V1 pipeline
+        result = await generateMockupWithRetry(
+          request.designImage,
+          renderSpec,
+          jobHeadshot,
+          referenceImage
+        );
+      }
     }
 
     if (result) {
