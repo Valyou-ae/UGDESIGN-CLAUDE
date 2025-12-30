@@ -178,6 +178,8 @@ Fold Behavior:
 - A fold through text causes the text to break at the crease
 - Minimum 7 visible folds/creases that interrupt the design
 
+${getAngleFoldBehavior(angle)}
+
 Compression Zones:
 - Underarms: fabric bunches, design bunches with it
 - Chest: fabric stretches, design stretches proportionally
@@ -271,6 +273,44 @@ function getCameraSpecForAngle(angle: MockupAngle): string {
     'size-chart': 'Lens: 50mm, f/5.6 | Full garment visible, flat lay or mannequin'
   };
   return specs[angle] || specs['front'];
+}
+
+/**
+ * Helper: Get angle-specific fold behavior instructions
+ */
+function getAngleFoldBehavior(angle: MockupAngle): string {
+  const behaviors: Record<MockupAngle, string> = {
+    'front': `Angle-Specific (Front View):
+- Design centered on chest, minimal perspective distortion
+- Folds primarily vertical from gravity, horizontal from body movement
+- Design elements near armholes curve slightly inward`,
+
+    'three-quarter': `Angle-Specific (Three-Quarter View):
+- Design wraps around torso curve, far side foreshortens significantly
+- Side closest to camera shows full detail, far side compresses 40-60%
+- Folds at side seam create shadow valleys where design darkens
+- Natural fabric bunching at waist and underarm areas`,
+
+    'side': `Angle-Specific (Side/Profile View):
+- Only a narrow strip of the front design is visible, heavily foreshortened
+- Design wraps dramatically around the curved torso edge
+- Side seam folds create deep creases where design disappears into shadows
+- Underarm area shows compressed fabric bunching with design following folds
+- Print elements "turn the corner" around the body edge with perspective warp
+- Visible folds at waist and hip area where fabric naturally gathers`,
+
+    'closeup': `Angle-Specific (Closeup View):
+- Fabric texture and weave highly visible through ink
+- Micro-creases and thread-level detail apparent
+- Design ink shows subtle absorption into cotton fibers
+- Any folds in frame create clear breaks in the design continuity`,
+
+    'size-chart': `Angle-Specific (Size Chart/Flat):
+- Minimal distortion, design displayed for clarity
+- Natural fabric drape if on mannequin
+- Focus on accurate size representation`
+  };
+  return behaviors[angle] || behaviors['front'];
 }
 
 /**
