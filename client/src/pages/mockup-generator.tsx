@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { flushSync } from "react-dom";
 import JSZip from "jszip";
 import { 
   generateAllPatternVariations, 
@@ -1618,12 +1619,15 @@ export default function MockupGenerator() {
         (event: MockupEvent) => {
           switch (event.type) {
             case "status":
-              if (event.data.message) {
-                setGenerationStage(event.data.message);
-              }
-              if (event.data.progress !== undefined) {
-                setGenerationProgress(event.data.progress);
-              }
+              // Use flushSync to force immediate UI update for progress
+              flushSync(() => {
+                if (event.data.message) {
+                  setGenerationStage(event.data.message);
+                }
+                if (event.data.progress !== undefined) {
+                  setGenerationProgress(event.data.progress);
+                }
+              });
               break;
             case "analysis":
               setGenerationStage("Design analyzed, generating mockups...");
@@ -1700,11 +1704,14 @@ export default function MockupGenerator() {
                 } else {
                   generatedImagesRef.current.push(mockupData);
                 }
-                setGeneratedMockups([...generatedImagesRef.current]);
                 
+                // Use flushSync to force immediate UI update - show image as soon as it arrives
                 const completedCount = generatedImagesRef.current.filter(m => !m.pending).length;
                 const progress = 10 + Math.round((completedCount / totalExpected) * 85);
-                setGenerationProgress(Math.min(progress, 95));
+                flushSync(() => {
+                  setGeneratedMockups([...generatedImagesRef.current]);
+                  setGenerationProgress(Math.min(progress, 95));
+                });
                 
                 // Save version to backend (fire and forget)
                 mockupApi.saveVersion({
