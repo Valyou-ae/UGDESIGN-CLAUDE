@@ -391,6 +391,46 @@ STYLE:
   throw new Error(`Persona headshot generation failed after ${maxRetries} attempts: ${lastError?.message}`);
 }
 
+/**
+ * Calculate size-appropriate print area for design
+ * Scales design with body size to maintain proportional appearance
+ * Fixes issue where designs appear too small on 2XL+ sizes
+ */
+function getScaledPrintArea(
+  baseWidth: number, 
+  baseHeight: number, 
+  size: string
+): { width: number; height: number } {
+  // Size multipliers based on industry standards
+  // M size is baseline (1.00), others scale proportionally
+  const sizeMultipliers: Record<string, number> = {
+    'XS': 0.85,   // 85% - petite frame
+    'S': 0.92,    // 92% - slim frame
+    'M': 1.00,    // 100% - baseline (12" if base is 12")
+    'L': 1.08,    // 108% - larger frame
+    'XL': 1.17,   // 117% - stocky frame
+    '2XL': 1.33,  // 133% - plus size (16" if base is 12")
+    '3XL': 1.42,  // 142% - larger plus size
+    '4XL': 1.50,  // 150% - extra large plus size
+    '5XL': 1.58   // 158% - very large plus size
+  };
+  
+  const multiplier = sizeMultipliers[size] || 1.00;
+  
+  logger.debug("Scaling print area for size", {
+    source: "eliteMockupGenerator",
+    size,
+    multiplier,
+    baseWidth,
+    scaledWidth: (baseWidth * multiplier).toFixed(1)
+  });
+  
+  return {
+    width: Math.round(baseWidth * multiplier * 10) / 10,  // Round to 1 decimal
+    height: Math.round(baseHeight * multiplier * 10) / 10
+  };
+}
+
 export function buildRenderSpecification(
   designAnalysis: DesignAnalysis,
   product: Product,
@@ -600,9 +640,21 @@ ${materialPreset.promptAddition}
 ===== END SIZE/FIT LOCK =====` : "";
 
   const printSpec = product.printSpec;
-  const printAreaDesc = printSpec 
-    ? `${printSpec.printAreaWidth}" x ${printSpec.printAreaHeight}" (${printSpec.printAreaWidthPixels}x${printSpec.printAreaHeightPixels}px at ${printSpec.dpi}dpi)`
-    : '12" x 16" (3600x4800px at 300dpi)';
+  const basePrintWidth = printSpec?.printAreaWidth || 12;
+  const basePrintHeight = printSpec?.printAreaHeight || 16;
+
+  // SCALE print area based on body size to fix 2XL+ artwork size issues
+  const scaledPrintArea = getScaledPrintArea(basePrintWidth, basePrintHeight, sizeForBody);
+
+  const printAreaDesc = `${scaledPrintArea.width}" x ${scaledPrintArea.height}" (scaled for ${sizeForBody} size)`;
+
+  logger.info("Using size-scaled print area", {
+    source: "eliteMockupGenerator",
+    size: sizeForBody,
+    baseArea: `${basePrintWidth}" x ${basePrintHeight}"`,
+    scaledArea: `${scaledPrintArea.width}" x ${scaledPrintArea.height}"`
+  });
+
   const placementDesc = printSpec?.placementDescription || 'Center-chest placement';
   const surfaceDesc = printSpec?.surfaceType || 'flexible';
 
@@ -680,7 +732,7 @@ ${journey === 'DTG' ? `===== DESIGN SIZE LOCK (CRITICAL) =====
 - Only the close-up shot should show the design larger (because the camera is zoomed in)
 
 SIZE CONSISTENCY RULES:
-1. FRONT VIEW: Design visible at full print area size (${printSpec?.printAreaWidth || 12}" wide)
+1. FRONT VIEW: Design visible at full print area size (${scaledPrintArea.width}" wide, scaled for ${sizeForBody} body)
 2. THREE-QUARTER VIEW: Same design, same size, visible at an angle (appears slightly compressed due to perspective)
 3. SIDE VIEW: Design may be partially visible from the side, but same physical size
 4. CLOSE-UP VIEW: Zoomed in on the design, so it appears larger (this is expected)` : `===== AOP PATTERN CONSISTENCY LOCK (CRITICAL) =====
@@ -708,7 +760,7 @@ DTG PRINT METHOD:
 [THIS IS NOT ALL-OVER PRINT - THE DESIGN HAS STRICT BOUNDARIES]
 
 MAXIMUM PRINT AREA DIMENSIONS:
-- Width: ${printSpec?.printAreaWidth || 12} inches maximum
+- Width: ${scaledPrintArea.width} inches maximum (scaled for ${sizeForBody} size)
 - Height: ${printSpec?.printAreaHeight || 16} inches maximum
 - The design MUST NOT exceed these dimensions under any circumstances
 
@@ -733,6 +785,36 @@ DO NOT GENERATE:
 - Design extending beyond the chest/front torso area
 - Design that touches the collar, armholes, or hem
 ===== END PRINT AREA BOUNDARIES =====
+
+===== SIZE-SPECIFIC DESIGN SCALING (CRITICAL) =====
+[MANDATORY - DESIGN MUST BE PROPORTIONAL TO BODY SIZE]
+
+For ${sizeForBody} size garment:
+- Design width: ${scaledPrintArea.width} inches (height: ${scaledPrintArea.height} inches)
+- The design must fill approximately 35-45% of the chest width
+- The design must look PROPORTIONAL to the ${sizeForBody} body - neither too small nor too large
+${sizeForBody === 'XS' || sizeForBody === 'S' ? 
+  `- For ${sizeForBody} (petite/slim), the design is ${Math.round((1 - scaledPrintArea.width / basePrintWidth) * 100)}% smaller than baseline to match smaller frame` :
+sizeForBody === '2XL' || sizeForBody === '3XL' || sizeForBody === '4XL' || sizeForBody === '5XL' ?
+  `- For ${sizeForBody} (plus-size), the design MUST be ${Math.round((scaledPrintArea.width / basePrintWidth - 1) * 100)}% LARGER than baseline
+   - DO NOT use the same small design size as you would for M/L sizes
+   - The ${scaledPrintArea.width}" design should appear substantial on the ${sizeForBody} body
+   - If the design looks too small or "child-sized" on this ${sizeForBody} body, that is a CRITICAL FAILURE` :
+  `- For ${sizeForBody} (standard), the design uses baseline proportional sizing`
+}
+
+⚠️ CRITICAL SIZE PROPORTION RULES:
+- A ${sizeForBody} body requires a ${scaledPrintArea.width}" wide design (NOT the baseline 12" size)
+- The design must maintain consistent visual proportion across ALL sizes
+- Larger bodies need proportionally larger designs to look professional
+- The same 12" design on both M and 5XL bodies = CRITICAL FAILURE
+
+PROPORTION FAILURE EXAMPLES (DO NOT DO THESE):
+- Tiny design on 2XL/3XL/4XL/5XL body (looks like children's sizing) = CRITICAL FAILURE
+- Using 12" design on 48"+ chest (design covers <25% of chest) = FAILURE
+- Design looking like a "pocket logo" when it should be a full chest print = FAILURE
+- Same visual design size on XS and 5XL bodies = FAILURE
+===== END SIZE-SPECIFIC SCALING =====
 
 CRITICAL PLACEMENT RULES FOR DTG:
 - The design/graphic MUST be placed CENTERED on the chest area
