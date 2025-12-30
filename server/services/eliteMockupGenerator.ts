@@ -2139,7 +2139,8 @@ export async function generateMockupBatch(
 
     // Use two-stage pipeline for exact design preservation
     // Stage 1: Generate blank garment, Stage 2: Composite exact design
-    const useTwoStagePipeline = request.useTwoStagePipeline ?? false;
+    // ENABLED BY DEFAULT for better design accuracy and fabric integration
+    const useTwoStagePipeline = request.useTwoStagePipeline ?? true;
     
     let result: GeneratedMockup | null = null;
     
