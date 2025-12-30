@@ -1568,9 +1568,14 @@ IGNORE the background and lighting of this photo - use only for identity matchin
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
       parts.push({
-        text: `[IMAGE 2] - STYLE/ENVIRONMENT REFERENCE
-Match the background, lighting, camera angle, and photography style from this reference image exactly.
-IMPORTANT: The garment in this reference has artwork - generate a BLANK version without any design.`
+        text: `[IMAGE 2] - STYLE/ENVIRONMENT + COLOR REFERENCE
+Match the following from this reference image:
+1. GARMENT COLOR (CRITICAL): Sample and match the EXACT RGB color of the garment
+2. Background, lighting, camera angle, and photography style
+3. Model identity and pose (if visible)
+
+IMPORTANT: The garment in this reference has artwork - generate a BLANK version without any design.
+BUT: Keep the EXACT SAME garment color as shown in the reference.`
       });
     }
 
@@ -1582,7 +1587,8 @@ IMPORTANT: The garment in this reference has artwork - generate a BLANK version 
       environmentDescription: renderSpec.environmentDescription,
       cameraDescription: renderSpec.cameraDescription,
       humanRealismDescription: renderSpec.humanRealismDescription,
-      negativePrompts: renderSpec.negativePrompts
+      negativePrompts: renderSpec.negativePrompts,
+      hasColorReference: !!previousMockupReference
     });
 
     parts.push({ text: blankGarmentPrompt });
@@ -1590,7 +1596,9 @@ IMPORTANT: The garment in this reference has artwork - generate a BLANK version 
     logger.info("Calling Gemini API for BLANK garment generation", { 
       source: "eliteMockupGenerator", 
       model: MODELS.IMAGE_GENERATION,
-      mode: "blank_garment"
+      mode: "blank_garment",
+      hasColorReference: !!previousMockupReference,
+      hasPersonaHeadshot: !!personaHeadshot
     });
     
     const response = await genAI.models.generateContent({

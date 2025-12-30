@@ -791,6 +791,7 @@ export function getBlankGarmentPrompt(renderSpec: {
   cameraDescription?: string;
   humanRealismDescription?: string;
   negativePrompts?: string;
+  hasColorReference?: boolean;
 }): string {
   const productInfo = renderSpec.productDescription || "t-shirt";
   const personaInfo = renderSpec.personaDescription || "";
@@ -800,6 +801,51 @@ export function getBlankGarmentPrompt(renderSpec: {
   const cameraInfo = renderSpec.cameraDescription || "front view";
   const humanRealism = renderSpec.humanRealismDescription || "";
   const negatives = renderSpec.negativePrompts || "";
+  const hasColorRef = renderSpec.hasColorReference || false;
+  
+  // Extract color info from productDescription for color matching
+  const colorMatch = productInfo.match(/Color:\s*([^(]+)\s*\(([^)]+)\)/);
+  const colorName = colorMatch ? colorMatch[1].trim() : "";
+  const colorHex = colorMatch ? colorMatch[2].trim() : "";
+  
+  const colorReferenceBlock = hasColorRef ? `
+
+===== COLOR CONSISTENCY REQUIREMENT (CRITICAL) =====
+[MANDATORY - EXACT COLOR MATCH REQUIRED]
+
+A reference image has been provided that shows the EXACT target garment color.
+
+⚠️ STRICT COLOR MATCHING PROTOCOL:
+1. VISUAL REFERENCE PRIORITY: The reference image shows the EXACT ${colorName} color you must match
+2. SAMPLE RGB VALUES: Extract the garment color RGB values from the reference image
+3. REPRODUCE EXACTLY: The garment in this render must use the SAME RGB values as the reference
+4. MATCH ALL ASPECTS:
+   - Base color (RGB values)
+   - Color temperature (warm/cool undertones)
+   - Saturation level
+   - Brightness/value
+   - Fabric texture appearance under lighting
+
+⚠️ CRITICAL RULES:
+- DO NOT interpret "${colorName}" as text - use the VISUAL REFERENCE ONLY
+- DO NOT create a different shade (lighter, darker, or different hue)
+- DO NOT introduce color drift or variation
+- The color must be PIXEL-IDENTICAL to the reference garment color
+- Lighting effects (shadows/highlights) are OK, but base color must match exactly
+
+⚠️ WHAT TO AVOID (NEGATIVE PROMPTS FOR COLOR):
+- Different shade than reference image
+- Lighter or darker base color than reference
+- Different hue (e.g., blue-gray when reference is warm-gray)
+- Inconsistent color temperature
+- Color drift or color variation
+- Reinterpreting the color name instead of matching the visual
+
+✅ SUCCESS CRITERIA:
+The garment color in this image must be INDISTINGUISHABLE from the reference image color.
+When placed side-by-side, the colors should appear identical.
+
+===== END COLOR CONSISTENCY REQUIREMENT =====` : "";
   
   return `TASK: PHOTOREALISTIC BLANK GARMENT RENDER FOR DESIGN COMPOSITING
 
@@ -814,6 +860,7 @@ IMPORTANT: The chest/print area should be clearly visible and well-lit for desig
 ===== GARMENT SPECIFICATION =====
 ${productInfo}
 ${materialInfo ? `Material: ${materialInfo}` : ''}
+${colorReferenceBlock}
 
 The garment should show:
 - Natural fabric folds and creases from wear
