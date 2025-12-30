@@ -2223,7 +2223,16 @@ export async function generateMockupBatch(
       completedCount++;
       if (onProgress) onProgress(completedCount, totalJobs, editJob);
     }
-  } else if (request.product.isWearable && personaLocksBySize.size > 0 && !hasPreStoredHeadshots) {
+  } else if (request.product.isWearable && personaLocksBySize.size > 0) {
+    // CRITICAL: Force sequential processing for ALL wearables with persona locks
+    // This ensures the first mockup becomes a visual reference for subsequent angles
+    // Parallel processing breaks consistency (different persona/color interpretations)
+    logger.info("Using sequential processing for persona consistency", { 
+      source: "eliteMockupGenerator",
+      hasPreStoredHeadshots,
+      reason: "Reference-based consistency required for wearables"
+    });
+    
     let firstSuccessfulMockup: string | undefined;
     for (const job of jobs) {
       await processJobWithReference(job, firstSuccessfulMockup);
@@ -2231,6 +2240,11 @@ export async function generateMockupBatch(
       if (!firstSuccessfulMockup && job.result?.imageData) {
         firstSuccessfulMockup = job.result.imageData;
         logger.info("First mockup captured for cross-angle consistency reference", { source: "eliteMockupGenerator" });
+      }
+      
+      completedCount++;
+      if (onProgress) {
+        onProgress(completedCount, totalJobs, job);
       }
     }
   } else {
