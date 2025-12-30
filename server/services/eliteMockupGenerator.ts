@@ -1799,7 +1799,10 @@ export async function generateTwoStageMockup(
     mode: "two_stage_composite"
   });
 
-  const blankGarment = await generateBlankGarment(renderSpec, personaHeadshot, previousMockupReference);
+  // CRITICAL: Do NOT pass previousMockupReference to blank garment generation
+  // If we pass a reference with design, Gemini copies the design position
+  // Only use personaHeadshot for identity consistency
+  const blankGarment = await generateBlankGarment(renderSpec, personaHeadshot, undefined);
   
   if (!blankGarment) {
     logger.error("Two-stage pipeline: Blank garment generation failed", { source: "eliteMockupGenerator" });
