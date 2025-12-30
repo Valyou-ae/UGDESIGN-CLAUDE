@@ -867,8 +867,36 @@ When placed side-by-side, the colors should appear identical.
 You are a photorealistic rendering engine. Generate a mockup photograph of a model wearing a BLANK, UNPRINTED garment.
 
 ===== CRITICAL REQUIREMENT =====
-The garment must be COMPLETELY BLANK - NO design, NO artwork, NO graphics, NO text, NO patterns.
-Just a solid-colored garment with realistic fabric folds, creases, and lighting.
+${hasColorRef ? `🔴🔴🔴 EXTREMELY IMPORTANT - READ CAREFULLY 🔴🔴🔴
+
+You are being shown a REFERENCE IMAGE that has artwork/design on the garment.
+YOUR TASK: Generate the SAME garment but COMPLETELY BLANK (no design).
+
+⚠️ DO NOT COPY THE DESIGN FROM THE REFERENCE:
+- The reference image shows artwork/text/graphics on the chest
+- You MUST generate the SAME garment WITHOUT any artwork/text/graphics
+- The garment must be SOLID COLOR with NO design whatsoever
+- This is a BLANK TEMPLATE that will have design added later
+
+🚫 CRITICAL VIOLATIONS TO AVOID:
+- Copying the design/text/artwork from the reference image
+- Generating ANY text, graphics, or patterns on the garment
+- Adding decorations, logos, or designs of any kind
+
+✅ WHAT TO COPY FROM REFERENCE:
+- Garment color (exact RGB match)
+- Model identity (same person)
+- Lighting and background style
+- Camera angle and photography style
+
+✅ WHAT NOT TO COPY FROM REFERENCE:
+- The design/artwork/text on the chest ← DO NOT COPY THIS
+- Any graphics or patterns on the garment ← DO NOT COPY THIS
+
+The garment MUST be COMPLETELY BLANK - just solid colored fabric with no designs.
+
+===== END CRITICAL REQUIREMENT =====` : `The garment must be COMPLETELY BLANK - NO design, NO artwork, NO graphics, NO text, NO patterns.
+Just a solid-colored garment with realistic fabric folds, creases, and lighting.`}
 
 IMPORTANT: The chest/print area should be clearly visible and well-lit for design compositing.
 
