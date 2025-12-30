@@ -1646,6 +1646,10 @@ IGNORE the background and lighting of this photo - use only for identity matchin
     }
 
     if (previousMockupReference) {
+      // Extract product name from renderSpec for explicit product type warning
+      const productMatch = renderSpec.productDescription?.match(/Product:\s*([^|]+)/);
+      const productName = productMatch ? productMatch[1].trim() : "garment";
+      
       parts.push({
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
@@ -1656,11 +1660,18 @@ Match the following from this reference image:
 2. Background, lighting, and photography style
 3. Model identity and pose (if visible)
 
+🔴 CRITICAL PRODUCT TYPE LOCK:
+- The garment MUST be a: ${productName}
+- DO NOT change the product type (e.g., DO NOT convert long-sleeve to short-sleeve, t-shirt to tank, etc.)
+- If you see sleeves in the reference, generate the SAME sleeve type
+- The reference shows the STYLE, but product type MUST match the specification: ${productName}
+
 ⚠️ IMPORTANT INSTRUCTIONS:
 - The garment in this reference has artwork - generate a BLANK version without any design
 - Keep the EXACT SAME garment color as shown in the reference
+- Keep the EXACT SAME product type (${productName})
 - DO NOT copy the camera angle from the reference - use the camera angle specified in the prompt below
-- Match ONLY the color, lighting, and model identity - the camera angle will be different`
+- Match ONLY the color, lighting, and model identity - the camera angle and product type are specified separately`
       });
     }
 
@@ -1706,7 +1717,11 @@ Match the following from this reference image:
 
     for (const part of content.parts) {
       if (part.inlineData && part.inlineData.data) {
-        logger.info("Blank garment generated successfully", { source: "eliteMockupGenerator" });
+        logger.info("Blank garment generated successfully", { 
+          source: "eliteMockupGenerator",
+          hasReference: !!previousMockupReference,
+          productDescription: renderSpec.productDescription?.substring(0, 100)
+        });
         return {
           imageData: part.inlineData.data,
           mimeType: part.inlineData.mimeType || "image/png",

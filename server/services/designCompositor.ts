@@ -808,6 +808,21 @@ export function getBlankGarmentPrompt(renderSpec: {
   const colorName = colorMatch ? colorMatch[1].trim() : "";
   const colorHex = colorMatch ? colorMatch[2].trim() : "";
   
+  // Extract product type from productDescription for explicit lock
+  const productMatch = productInfo.match(/Product:\s*([^|]+)/);
+  const productType = productMatch ? productMatch[1].trim() : "t-shirt";
+  
+  const productTypeLockBlock = hasColorRef ? `
+
+🔴 PRODUCT TYPE LOCK (MANDATORY):
+- Garment type: ${productType}
+- This product type is NON-NEGOTIABLE
+- If a reference image is provided, it shows COLOR and STYLE only
+- DO NOT copy the garment type from the reference if it differs
+- DO NOT substitute (e.g., short-sleeve for long-sleeve, tank for t-shirt)
+- The product type MUST be: ${productType}
+` : "";
+  
   const colorReferenceBlock = hasColorRef ? `
 
 ===== COLOR CONSISTENCY REQUIREMENT (CRITICAL) =====
@@ -860,6 +875,7 @@ IMPORTANT: The chest/print area should be clearly visible and well-lit for desig
 ===== GARMENT SPECIFICATION =====
 ${productInfo}
 ${materialInfo ? `Material: ${materialInfo}` : ''}
+${productTypeLockBlock}
 ${colorReferenceBlock}
 
 The garment should show:
