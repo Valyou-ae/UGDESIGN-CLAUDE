@@ -703,12 +703,44 @@ DTG PRINT METHOD:
 - Slight texture integration with fabric
 - Design follows natural fabric contours and folds
 
+===== PRINT AREA BOUNDARIES (HIGHEST PRIORITY - ABSOLUTE LIMIT) =====
+[CRITICAL - THE DESIGN MUST STAY WITHIN THE PRINT AREA ONLY]
+[THIS IS NOT ALL-OVER PRINT - THE DESIGN HAS STRICT BOUNDARIES]
+
+MAXIMUM PRINT AREA DIMENSIONS:
+- Width: ${printSpec?.printAreaWidth || 12} inches maximum
+- Height: ${printSpec?.printAreaHeight || 16} inches maximum
+- The design MUST NOT exceed these dimensions under any circumstances
+
+BOUNDARY ENFORCEMENT (MANDATORY):
+- The design occupies ONLY the designated chest print area
+- The design MUST NOT extend onto the sleeves
+- The design MUST NOT extend onto the shoulders
+- The design MUST NOT extend onto the collar/neckline area
+- The design MUST NOT extend onto the sides/underarm areas
+- The design MUST NOT extend to the bottom hem area
+- The design MUST NOT wrap around to the back
+
+WHAT THE FINAL RESULT MUST LOOK LIKE:
+- A traditional screen-printed t-shirt with a rectangular design on the chest
+- Solid ${color.name} fabric visible on sleeves, shoulders, sides, collar, and below the design
+- Clear visible separation between where the design ENDS and plain fabric BEGINS
+- The design appears as if pressed/printed in a defined rectangular area on the front chest
+
+DO NOT GENERATE:
+- All-over print appearance where design covers entire garment
+- Design bleeding onto sleeves or shoulders
+- Design extending beyond the chest/front torso area
+- Design that touches the collar, armholes, or hem
+===== END PRINT AREA BOUNDARIES =====
+
 CRITICAL PLACEMENT RULES FOR DTG:
 - The design/graphic MUST be placed CENTERED on the chest area
 - Design should be horizontally centered between left and right edges of shirt front
 - Design should be vertically positioned in the upper-center chest area (below collar, above stomach)
 - DO NOT place the design on the side, shoulder, sleeve, or off-center
 - The design must appear as if professionally screen-printed in the traditional chest logo position
+- SURROUNDING AREAS (sleeves, shoulders, sides, collar) MUST show only solid ${color.name} fabric
 ${fabricPhysics ? `
 FABRIC BEHAVIOR:
 - Weight: ${fabricPhysics.weight}

@@ -97,8 +97,13 @@ The design from [IMAGE 1] is PRINTED FABRIC, not a digital overlay.
 - Design must follow every fold, crease, and body curve because it IS the garment
 - Design shares identical lighting and shadows with the rest of the garment
 - Fabric weave texture shows through the printed ink
-- No boundary exists between design and fabric - they are ONE piece of printed cotton
-${journey === 'AOP' ? '- AOP: Pattern covers the entire garment surface edge-to-edge with seamless continuity' : `- Placement: ${designAnalysis.suggestedPlacement || 'center chest'}`}
+${journey === 'AOP' ? `- AOP: Pattern covers the entire garment surface edge-to-edge with seamless continuity
+- No boundary exists between design and fabric - they are ONE piece of printed cotton` : `- DTG PRINT AREA BOUNDARIES (CRITICAL):
+  * The design MUST stay within the chest print area ONLY (approximately 12" x 16" maximum)
+  * Design MUST NOT extend onto sleeves, shoulders, collar, sides, or hem
+  * Solid ${color.name} fabric MUST be visible on ALL areas outside the print zone
+  * This is NOT all-over print - there MUST be clear boundaries where design ends
+- Placement: ${designAnalysis.suggestedPlacement || 'center chest'}`}
 
 RULE 3: PARAMETER LOCK
 - Garment Color: ${color.name} (${color.hex}) - exact match required on all non-printed areas

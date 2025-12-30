@@ -415,6 +415,8 @@ export interface MockupEventData {
   type?: string;
   status?: 'pending' | 'processing' | 'completed' | 'failed';
   retryCount?: number;
+  batchId?: string;
+  totalJobs?: number;
 }
 
 export type MockupEventType = 
@@ -426,6 +428,7 @@ export type MockupEventType =
   | "job_update"
   | "persona_lock"
   | "persona_lock_failed"
+  | "batch_started"
   | "batch_complete"
   | "batch_error"
   | "stream_end"
@@ -758,7 +761,121 @@ export const mockupApi = {
         throw new Error(errorData.message || "Batch mockup generation failed");
       }
 
-      await parseMockupSSEStream(response, onEvent);
+      // Track batch info for polling fallback
+      let batchId: string | null = null;
+      let pollingInterval: ReturnType<typeof setInterval> | null = null;
+      let lastPolledIndex = 0;
+      let streamComplete = false;
+      const receivedJobIds = new Set<string>();
+
+      // Polling fallback to ensure progressive display even with SSE buffering
+      const startPolling = (id: string) => {
+        if (pollingInterval) return;
+        console.log("Starting polling fallback for batch:", id);
+        
+        pollingInterval = setInterval(async () => {
+          if (streamComplete) {
+            if (pollingInterval) clearInterval(pollingInterval);
+            return;
+          }
+          
+          try {
+            const pollResponse = await fetch(`/api/mockup/batch/${id}/poll?since=${lastPolledIndex}`, {
+              credentials: "include"
+            });
+            
+            if (!pollResponse.ok) return;
+            
+            const pollData = await pollResponse.json();
+            
+            // Handle persona lock image from first poll
+            if (pollData.personaLockImage && !receivedJobIds.has('persona_lock')) {
+              receivedJobIds.add('persona_lock');
+              console.log("Polling found persona lock image");
+              onEvent({
+                type: "persona_lock",
+                data: { headshotImage: pollData.personaLockImage }
+              });
+            }
+            
+            // Process newly completed jobs that weren't already received via SSE
+            for (const job of pollData.newJobs || []) {
+              if (!receivedJobIds.has(job.jobId)) {
+                receivedJobIds.add(job.jobId);
+                console.log("Polling found new completed job:", job.jobId, job.angle, job.color);
+                
+                if (job.status === 'completed' && job.imageData) {
+                  onEvent({
+                    type: "image",
+                    data: {
+                      jobId: job.jobId,
+                      angle: job.angle,
+                      color: job.color,
+                      size: job.size,
+                      status: 'completed',
+                      imageData: job.imageData,
+                      mimeType: job.mimeType
+                    }
+                  });
+                } else if (job.status === 'failed') {
+                  onEvent({
+                    type: "image_error",
+                    data: {
+                      jobId: job.jobId,
+                      angle: job.angle,
+                      color: job.color,
+                      size: job.size,
+                      status: 'failed',
+                      error: job.error
+                    }
+                  });
+                }
+              }
+            }
+            
+            lastPolledIndex = pollData.currentIndex || lastPolledIndex;
+            
+            // Stop polling if complete or error
+            if (pollData.status === 'complete' || pollData.status === 'error') {
+              console.log("Polling: batch completed with status:", pollData.status);
+              if (pollingInterval) clearInterval(pollingInterval);
+            }
+          } catch (e) {
+            console.error("Polling error:", e);
+          }
+        }, 2500); // Poll every 2.5 seconds
+      };
+
+      // Wrapper to track received events and start polling
+      const wrappedOnEvent: MockupEventCallback = (event) => {
+        // Track batch_started to get batchId for polling
+        if (event.type === "batch_started" && event.data.batchId) {
+          batchId = event.data.batchId;
+          // Start polling after a short delay to catch buffered SSE
+          setTimeout(() => {
+            if (batchId && !streamComplete) startPolling(batchId);
+          }, 3000);
+        }
+        
+        // Track received job IDs to avoid duplicates from polling
+        if (event.type === "image" && event.data.jobId) {
+          receivedJobIds.add(event.data.jobId);
+        }
+        
+        // Track stream completion
+        if (event.type === "stream_end" || event.type === "complete") {
+          streamComplete = true;
+          if (pollingInterval) clearInterval(pollingInterval);
+        }
+        
+        onEvent(event);
+      };
+
+      await parseMockupSSEStream(response, wrappedOnEvent);
+      
+      // Cleanup polling on stream end
+      streamComplete = true;
+      if (pollingInterval) clearInterval(pollingInterval);
     } catch (error) {
       console.error("Batch mockup generation error:", error);
       throw error;

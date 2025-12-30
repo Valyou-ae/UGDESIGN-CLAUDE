@@ -5,6 +5,47 @@ import { storage } from "../storage";
 import { generationRateLimiter } from "../rateLimiter";
 import { enhancePromptWithKnowledge, type KnowledgeConfig } from "../services/knowledge";
 
+// In-memory store for batch generation progress (for polling-based progressive display)
+interface BatchJobResult {
+  jobId: string;
+  angle: string;
+  color: string;
+  size: string;
+  status: 'pending' | 'completed' | 'failed';
+  imageData?: string;
+  mimeType?: string;
+  error?: string;
+  completedAt?: number;
+}
+
+interface BatchProgress {
+  batchId: string;
+  userId: string;
+  totalJobs: number;
+  completedJobs: number;
+  status: 'generating' | 'complete' | 'error';
+  jobs: BatchJobResult[];
+  createdAt: number;
+  lastPolledIndex: number; // Track what client has already fetched
+  personaLockImage?: string; // Store persona lock for polling fallback
+  errorMessage?: string; // Store error message for polling fallback
+}
+
+// Store batch progress for polling (auto-cleanup after 10 minutes)
+const batchProgressStore = new Map<string, BatchProgress>();
+
+// Cleanup old batches every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  const expiryTime = 10 * 60 * 1000; // 10 minutes
+  const entries = Array.from(batchProgressStore.entries());
+  for (const [batchId, batch] of entries) {
+    if (now - batch.createdAt > expiryTime) {
+      batchProgressStore.delete(batchId);
+    }
+  }
+}, 5 * 60 * 1000);
+
 // Credit costs for mockup generation
 const MOCKUP_CREDIT_COSTS = {
   standard: 1,  // 512px
@@ -504,6 +545,25 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         let totalGeneratedCount = 0;
         const totalJobs = sizesToGenerate.length * angleList.length * colors.length;
 
+        // Create batchId for polling-based progressive display
+        const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // Initialize batch progress store for polling fallback
+        const batchProgress: BatchProgress = {
+          batchId,
+          userId,
+          totalJobs,
+          completedJobs: 0,
+          status: 'generating',
+          jobs: [],
+          createdAt: Date.now(),
+          lastPolledIndex: 0
+        };
+        batchProgressStore.set(batchId, batchProgress);
+        
+        // Send batchId to client for polling fallback
+        sendEvent("batch_started", { batchId, totalJobs });
+
         sendEvent("status", { stage: "preparing", message: "Preparing model reference...", progress: 8 });
 
         const mergedCustomization = modelDetails?.customization || modelCustomization;
@@ -558,6 +618,23 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
               error: job.error
             };
 
+            // Store in batch progress for polling fallback
+            const storedBatch = batchProgressStore.get(batchId);
+            if (storedBatch && (job.status === 'completed' || job.status === 'failed')) {
+              storedBatch.jobs.push({
+                jobId: job.id,
+                angle: job.angle,
+                color: job.color.name,
+                size: jobSize,
+                status: job.status as 'completed' | 'failed',
+                imageData: job.result?.imageData,
+                mimeType: job.result?.mimeType,
+                error: job.error,
+                completedAt: Date.now()
+              });
+              storedBatch.completedJobs = completed;
+            }
+
             if (job.status === 'completed' && job.result) {
               totalGeneratedCount++;
               logger.info("Sending completed image via SSE", { source: "mockup", jobId: job.id, jobSize, imageDataLength: job.result.imageData?.length || 0 });
@@ -587,14 +664,29 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
             }
           });
 
+          // Store persona lock image in batch progress store for polling fallback
+          const batchProgressRef = batchProgressStore.get(batchId);
+          if (batch.personaLockImage && batchProgressRef) {
+            batchProgressRef.personaLockImage = batch.personaLockImage;
+          }
+          
           if (batch.personaLockImage) {
             sendEvent("persona_lock", { headshotImage: batch.personaLockImage });
+          }
+
+          // Update batch progress store status
+          const finalBatch = batchProgressStore.get(batchId);
+          if (finalBatch) {
+            finalBatch.status = personaLockFailed ? 'error' : 'complete';
+            if (personaLockFailed) {
+              finalBatch.errorMessage = "Model generation failed - please try again";
+            }
           }
 
           if (!personaLockFailed) {
             batchCompleted = true;
             sendEvent("status", { stage: "complete", message: "All mockups generated!", progress: 100 });
-            sendEvent("complete", { success: true, totalGenerated: totalGeneratedCount });
+            sendEvent("complete", { success: true, totalGenerated: totalGeneratedCount, batchId });
           } else {
             sendEvent("status", { stage: "failed", message: "Model generation failed - please try again", progress: 0 });
           }
@@ -1227,4 +1319,63 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       res.status(500).json({ message: "Failed to delete version" });
     }
   });
+
+  // Poll for batch generation progress (for progressive display)
+  app.get("/api/mockup/batch/:batchId/poll", requireAuth, async (req: Request, res: Response) => {
+    try {
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { batchId } = req.params;
+      const sinceIndex = parseInt(req.query.since as string) || 0;
+      
+      const batch = batchProgressStore.get(batchId);
+      
+      if (!batch) {
+        return res.status(404).json({ message: "Batch not found or expired" });
+      }
+
+      if (batch.userId !== userId) {
+        return res.status(403).json({ message: "Not authorized to access this batch" });
+      }
+
+      // Get only newly completed jobs since last poll
+      const newlyCompletedJobs = batch.jobs
+        .filter((job, index) => index >= sinceIndex && job.status !== 'pending')
+        .map(job => ({
+          jobId: job.jobId,
+          angle: job.angle,
+          color: job.color,
+          size: job.size,
+          status: job.status,
+          imageData: job.imageData,
+          mimeType: job.mimeType,
+          error: job.error
+        }));
+
+      // Update batch's lastPolledIndex to track what has been fetched
+      const currentCompletedCount = batch.jobs.length;
+      batch.lastPolledIndex = Math.max(batch.lastPolledIndex, sinceIndex + newlyCompletedJobs.length);
+
+      res.json({
+        batchId,
+        totalJobs: batch.totalJobs,
+        completedJobs: batch.completedJobs,
+        status: batch.status,
+        newJobs: newlyCompletedJobs,
+        currentIndex: currentCompletedCount,
+        personaLockImage: sinceIndex === 0 ? batch.personaLockImage : undefined,
+        errorMessage: batch.status === 'error' ? batch.errorMessage : undefined
+      });
+    } catch (error) {
+      logger.error("Poll batch progress error", error, { source: "mockup" });
+      res.status(500).json({ message: "Failed to poll batch progress" });
+    }
+  });
 }
+
+// Export the batch progress store for use in generation
+export { batchProgressStore, type BatchProgress, type BatchJobResult };
