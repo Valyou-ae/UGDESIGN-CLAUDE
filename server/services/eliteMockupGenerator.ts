@@ -1650,6 +1650,48 @@ IGNORE the background and lighting of this photo - use only for identity matchin
       const productMatch = renderSpec.productDescription?.match(/Product:\s*([^|]+)/);
       const productName = productMatch ? productMatch[1].trim() : "garment";
       
+      // Extract camera description from renderSpec to determine framing instructions
+      const cameraDescription = renderSpec.cameraDescription || "front view";
+      
+      // Determine framing instructions based on angle to prevent reference copying
+      let framingInstructions = "";
+      if (cameraDescription.toLowerCase().includes("closeup")) {
+        framingInstructions = `
+
+🎥 CRITICAL CAMERA FRAMING LOCK:
+- This is a CLOSEUP shot, NOT a medium shot like the reference
+- Camera distance: 3-4 feet (much closer than the reference image)
+- Framing: Crop from JUST BELOW THE CHIN to MID-TORSO
+- The model's face may be PARTIALLY or FULLY out of frame
+- Focus on the DESIGN and FABRIC TEXTURE in detail
+- This is a TIGHT shot - do NOT use the medium shot framing from the reference
+- The reference shows COLOR/STYLE, but FRAMING must be CLOSEUP as specified`;
+      } else if (cameraDescription.toLowerCase().includes("side")) {
+        framingInstructions = `
+
+🎥 CRITICAL CAMERA ANGLE LOCK:
+- This is a SIDE PROFILE shot, NOT a front view like the reference
+- Camera position: 90° perpendicular to the subject (pure profile)
+- Only ONE side of the face is visible
+- Shoulder, hip, and ear should align vertically
+- The design on the chest will be visible from the side angle
+- Do NOT use the front-facing angle from the reference`;
+      } else if (cameraDescription.toLowerCase().includes("three-quarter")) {
+        framingInstructions = `
+
+🎥 CRITICAL CAMERA ANGLE LOCK:
+- This is a THREE-QUARTER view (30-45° angle), NOT a straight front view
+- Model is turned 30-45° relative to the camera
+- Both front and side of the garment are visible
+- Shows 3D depth and fit
+- Do NOT use the straight-on front angle from the reference`;
+      } else {
+        // Front view - reference framing is okay
+        framingInstructions = `
+
+🎥 CAMERA ANGLE: Front view (similar framing to reference is acceptable for this angle)`;
+      }
+      
       parts.push({
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
@@ -1665,13 +1707,14 @@ Match the following from this reference image:
 - DO NOT change the product type (e.g., DO NOT convert long-sleeve to short-sleeve, t-shirt to tank, etc.)
 - If you see sleeves in the reference, generate the SAME sleeve type
 - The reference shows the STYLE, but product type MUST match the specification: ${productName}
+${framingInstructions}
 
 ⚠️ IMPORTANT INSTRUCTIONS:
 - The garment in this reference has artwork - generate a BLANK version without any design
 - Keep the EXACT SAME garment color as shown in the reference
 - Keep the EXACT SAME product type (${productName})
-- DO NOT copy the camera angle from the reference - use the camera angle specified in the prompt below
-- Match ONLY the color, lighting, and model identity - the camera angle and product type are specified separately`
+- DO NOT copy the camera angle or framing from the reference - use the angle/framing specified in the prompt below
+- Match ONLY the color, lighting, and model identity - the camera angle, framing, and product type are specified separately`
       });
     }
 
