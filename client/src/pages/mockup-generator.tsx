@@ -3348,16 +3348,27 @@ export default function MockupGenerator() {
                             <div className="flex-1 flex flex-col overflow-hidden">
                               {/* Progress Bar */}
                               {isGenerating && (
-                                <div className="mb-4 shrink-0">
+                                <div className="mb-4 shrink-0 bg-card/80 rounded-xl p-4 border border-border">
                                   <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-primary font-medium">{generationStage}</p>
-                                    <p className="text-xs text-muted-foreground">{generationProgress}%</p>
+                                    <div className="flex items-center gap-2">
+                                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                      <p className="text-sm text-primary font-medium">{generationStage}</p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-bold text-foreground">
+                                        {generatedMockups.filter(m => m.status === 'completed').length} / {generatedMockups.length}
+                                      </span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {generationProgress}%
+                                      </Badge>
+                                    </div>
                                   </div>
-                                  <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                  <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                                     <motion.div 
-                                      className="bg-primary h-full rounded-full"
+                                      className="bg-gradient-to-r from-primary to-secondary h-full rounded-full"
                                       initial={{ width: 0 }}
                                       animate={{ width: `${generationProgress}%` }}
+                                      transition={{ duration: 0.3, ease: "easeOut" }}
                                     />
                                   </div>
                                 </div>
@@ -3370,13 +3381,36 @@ export default function MockupGenerator() {
                                     <div key={`${mockup.color}-${mockup.angle}-${mockup.size}-${index}`} className="flex flex-col gap-1.5">
                                       {mockup.pending ? (
                                         <motion.div
-                                          initial={{ opacity: 0 }}
-                                          animate={{ opacity: 1 }}
-                                          className="relative aspect-square rounded-xl border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center gap-2"
+                                          initial={{ opacity: 0, scale: 0.95 }}
+                                          animate={{ 
+                                            opacity: 1, 
+                                            scale: 1,
+                                            boxShadow: ['0 0 0 0 rgba(var(--primary), 0)', '0 0 0 4px rgba(var(--primary), 0.2)', '0 0 0 0 rgba(var(--primary), 0)']
+                                          }}
+                                          transition={{ 
+                                            boxShadow: { repeat: Infinity, duration: 2 }
+                                          }}
+                                          className="relative aspect-square rounded-xl border-2 border-primary/30 bg-gradient-to-br from-muted/40 to-muted/20 flex flex-col items-center justify-center gap-3 overflow-hidden"
                                           data-testid={`mockup-placeholder-${index}`}
                                         >
-                                          <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
-                                          <p className="text-[10px] text-muted-foreground">{mockup.color} • {mockup.angle} • {mockup.size}</p>
+                                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                                          <div className="relative z-10 flex flex-col items-center gap-2">
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                              <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                                            </div>
+                                            <p className="text-[10px] font-medium text-foreground/70">{mockup.angle}</p>
+                                            <p className="text-[9px] text-muted-foreground">{mockup.color} • {mockup.size}</p>
+                                          </div>
+                                          <div className="absolute bottom-2 left-2 right-2">
+                                            <div className="h-1 bg-muted rounded-full overflow-hidden">
+                                              <motion.div 
+                                                className="h-full bg-primary/50 rounded-full"
+                                                initial={{ width: "0%" }}
+                                                animate={{ width: "100%" }}
+                                                transition={{ duration: 25, ease: "linear" }}
+                                              />
+                                            </div>
+                                          </div>
                                         </motion.div>
                                       ) : mockup.status === 'failed' ? (
                                         <motion.div
@@ -3391,13 +3425,28 @@ export default function MockupGenerator() {
                                         </motion.div>
                                       ) : (
                                         <motion.div
-                                          initial={{ opacity: 0, scale: 0.9 }}
-                                          animate={{ opacity: 1, scale: 1 }}
-                                          className="relative aspect-square rounded-xl overflow-hidden border border-border bg-muted/30 group cursor-pointer"
+                                          initial={{ opacity: 0, scale: 0.85, y: 10 }}
+                                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                                          transition={{ 
+                                            type: "spring",
+                                            stiffness: 300,
+                                            damping: 20
+                                          }}
+                                          className="relative aspect-square rounded-xl overflow-hidden border-2 border-primary/20 bg-muted/30 group cursor-pointer shadow-lg hover:shadow-xl transition-shadow"
                                           onClick={() => setSelectedMockupDetails({ ...mockup, index })}
                                           data-testid={`mockup-${index}`}
                                         >
                                           <img src={mockup.src} alt={`Mockup ${index + 1}`} className="w-full h-full object-cover" />
+                                          {isGenerating && (
+                                            <motion.div 
+                                              initial={{ opacity: 0, scale: 0.5 }}
+                                              animate={{ opacity: 1, scale: 1 }}
+                                              className="absolute top-2 right-2 bg-green-500/90 text-white text-[9px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-1 shadow-md"
+                                            >
+                                              <Check className="h-2.5 w-2.5" />
+                                              Done
+                                            </motion.div>
+                                          )}
                                           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 flex items-end justify-between">
                                             <p className="text-[10px] text-white truncate flex-1">{mockup.color} • {mockup.angle}</p>
                                             <DropdownMenu>
