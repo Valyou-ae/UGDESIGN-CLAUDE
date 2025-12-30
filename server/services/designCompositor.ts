@@ -878,6 +878,11 @@ Environment: ${environmentInfo}
 Lighting: ${lightingInfo}
 Camera: ${cameraInfo}
 
+${hasColorRef ? `⚠️ CAMERA ANGLE PRIORITY:
+If a reference image was provided, you MUST use the camera angle specified above (${cameraInfo}).
+DO NOT copy the camera angle from the reference image - it may be different.
+The reference is ONLY for color, lighting, and model identity matching.
+` : ''}
 Ensure the lighting clearly defines:
 - The curvature of the torso/chest area
 - Natural shadows in fabric folds

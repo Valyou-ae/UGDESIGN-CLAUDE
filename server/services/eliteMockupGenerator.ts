@@ -1571,11 +1571,14 @@ IGNORE the background and lighting of this photo - use only for identity matchin
         text: `[IMAGE 2] - STYLE/ENVIRONMENT + COLOR REFERENCE
 Match the following from this reference image:
 1. GARMENT COLOR (CRITICAL): Sample and match the EXACT RGB color of the garment
-2. Background, lighting, camera angle, and photography style
+2. Background, lighting, and photography style
 3. Model identity and pose (if visible)
 
-IMPORTANT: The garment in this reference has artwork - generate a BLANK version without any design.
-BUT: Keep the EXACT SAME garment color as shown in the reference.`
+⚠️ IMPORTANT INSTRUCTIONS:
+- The garment in this reference has artwork - generate a BLANK version without any design
+- Keep the EXACT SAME garment color as shown in the reference
+- DO NOT copy the camera angle from the reference - use the camera angle specified in the prompt below
+- Match ONLY the color, lighting, and model identity - the camera angle will be different`
       });
     }
 
@@ -1663,6 +1666,12 @@ export async function generateTwoStageMockup(
     return null;
   }
 
+  logger.info("Blank garment generated, starting design composition", { 
+    source: "eliteMockupGenerator",
+    cameraAngle,
+    blankGarmentSize: blankGarment.imageData.length
+  });
+
   const compositeResult = await compositeDesignOntoGarment({
     designBase64,
     blankGarmentBase64: blankGarment.imageData,
@@ -1671,14 +1680,19 @@ export async function generateTwoStageMockup(
   });
 
   if (!compositeResult.success) {
-    logger.error("Two-stage pipeline: Design composition failed", { 
+    logger.error("Two-stage pipeline: Design composition failed, will retry with fallback", { 
       source: "eliteMockupGenerator", 
-      error: compositeResult.error 
+      error: compositeResult.error,
+      cameraAngle
     });
     return null;
   }
 
-  logger.info("Two-stage mockup generation completed successfully", { source: "eliteMockupGenerator" });
+  logger.info("Two-stage mockup generation completed successfully", { 
+    source: "eliteMockupGenerator",
+    cameraAngle,
+    compositedSize: compositeResult.composited.length
+  });
   
   return {
     imageData: compositeResult.composited,
