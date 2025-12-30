@@ -1630,14 +1630,18 @@ export default function MockupGenerator() {
               });
               break;
             case "analysis":
-              setGenerationStage("Design analyzed, generating mockups...");
-              setGenerationProgress(10);
+              flushSync(() => {
+                setGenerationStage("Design analyzed, generating mockups...");
+                setGenerationProgress(10);
+              });
               break;
             case "persona_lock":
               if (event.data.headshotImage) {
                 const headshotUrl = `data:image/png;base64,${event.data.headshotImage}`;
-                setPersonaHeadshot(headshotUrl);
-                setGenerationStage("Model reference generated, creating mockups...");
+                flushSync(() => {
+                  setPersonaHeadshot(headshotUrl);
+                  setGenerationStage("Model reference generated, creating mockups...");
+                });
               }
               break;
             case "persona_lock_failed":
@@ -1777,7 +1781,10 @@ export default function MockupGenerator() {
                   status: 'failed',
                   jobId: errorJobId
                 };
-                setGeneratedMockups([...generatedImagesRef.current]);
+                // Use flushSync to show failed state immediately
+                flushSync(() => {
+                  setGeneratedMockups([...generatedImagesRef.current]);
+                });
               }
               
               setBatchJobs(prev => prev.map(job => 
@@ -1788,8 +1795,10 @@ export default function MockupGenerator() {
               setCurrentlyProcessing(null);
               break;
             case "complete":
-              setGenerationProgress(100);
-              setGenerationStage("Complete!");
+              flushSync(() => {
+                setGenerationProgress(100);
+                setGenerationStage("Complete!");
+              });
               break;
             case "stream_end":
               const successfulImages = generatedImagesRef.current.filter(m => m.status === 'completed');
