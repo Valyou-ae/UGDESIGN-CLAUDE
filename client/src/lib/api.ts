@@ -749,7 +749,8 @@ export const mockupApi = {
     onEvent: MockupEventCallback
   ): Promise<void> => {
     try {
-      const response = await fetch("/api/mockup/generate-batch", {
+      // Use async endpoint that returns immediately with batchId
+      const response = await fetch("/api/mockup/generate-batch-async", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -761,121 +762,123 @@ export const mockupApi = {
         throw new Error(errorData.message || "Batch mockup generation failed");
       }
 
-      // Track batch info for polling fallback
-      let batchId: string | null = null;
-      let pollingInterval: ReturnType<typeof setInterval> | null = null;
-      let lastPolledIndex = 0;
-      let streamComplete = false;
-      const receivedJobIds = new Set<string>();
+      const { batchId, totalJobs } = await response.json();
+      console.log("Batch started with ID:", batchId, "Total jobs:", totalJobs);
 
-      // Polling fallback to ensure progressive display even with SSE buffering
-      const startPolling = (id: string) => {
-        if (pollingInterval) return;
-        console.log("Starting polling fallback for batch:", id);
-        
-        pollingInterval = setInterval(async () => {
-          if (streamComplete) {
-            if (pollingInterval) clearInterval(pollingInterval);
-            return;
-          }
-          
-          try {
-            const pollResponse = await fetch(`/api/mockup/batch/${id}/poll?since=${lastPolledIndex}`, {
-              credentials: "include"
-            });
-            
-            if (!pollResponse.ok) return;
-            
-            const pollData = await pollResponse.json();
-            
-            // Handle persona lock image from first poll
-            if (pollData.personaLockImage && !receivedJobIds.has('persona_lock')) {
-              receivedJobIds.add('persona_lock');
-              console.log("Polling found persona lock image");
-              onEvent({
-                type: "persona_lock",
-                data: { headshotImage: pollData.personaLockImage }
+      // Notify that batch has started
+      onEvent({ type: "batch_started", data: { batchId, totalJobs } });
+      onEvent({ type: "status", data: { stage: "preparing", message: "Preparing model reference...", progress: 5 } });
+
+      // Pure polling for progressive display
+      const receivedJobIds = new Set<string>();
+      let lastPolledIndex = 0;
+      let personaLockReceived = false;
+
+      const pollForProgress = (): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          const poll = async () => {
+            try {
+              const pollResponse = await fetch(`/api/mockup/batch/${batchId}/poll?since=${lastPolledIndex}`, {
+                credentials: "include"
               });
-            }
-            
-            // Process newly completed jobs that weren't already received via SSE
-            for (const job of pollData.newJobs || []) {
-              if (!receivedJobIds.has(job.jobId)) {
-                receivedJobIds.add(job.jobId);
-                console.log("Polling found new completed job:", job.jobId, job.angle, job.color);
-                
-                if (job.status === 'completed' && job.imageData) {
-                  onEvent({
-                    type: "image",
-                    data: {
-                      jobId: job.jobId,
-                      angle: job.angle,
-                      color: job.color,
-                      size: job.size,
-                      status: 'completed',
-                      imageData: job.imageData,
-                      mimeType: job.mimeType
-                    }
-                  });
-                } else if (job.status === 'failed') {
-                  onEvent({
-                    type: "image_error",
-                    data: {
-                      jobId: job.jobId,
-                      angle: job.angle,
-                      color: job.color,
-                      size: job.size,
-                      status: 'failed',
-                      error: job.error
-                    }
-                  });
+
+              if (!pollResponse.ok) {
+                console.error("Poll failed:", pollResponse.status);
+                setTimeout(poll, 2000);
+                return;
+              }
+
+              const pollData = await pollResponse.json();
+              console.log("Poll response:", { 
+                status: pollData.status, 
+                completed: pollData.completedJobs, 
+                total: pollData.totalJobs,
+                newJobsCount: pollData.newJobs?.length || 0
+              });
+
+              // Handle persona lock image
+              if (pollData.personaLockImage && !personaLockReceived) {
+                personaLockReceived = true;
+                console.log("Received persona lock image");
+                onEvent({ type: "persona_lock", data: { headshotImage: pollData.personaLockImage } });
+              }
+
+              // Process newly completed jobs
+              for (const job of pollData.newJobs || []) {
+                if (!receivedJobIds.has(job.jobId)) {
+                  receivedJobIds.add(job.jobId);
+                  console.log("New image received:", job.jobId, job.angle, job.color);
+
+                  if (job.status === 'completed' && job.imageData) {
+                    onEvent({
+                      type: "image",
+                      data: {
+                        jobId: job.jobId,
+                        angle: job.angle,
+                        color: job.color,
+                        size: job.size,
+                        status: 'completed',
+                        imageData: job.imageData,
+                        mimeType: job.mimeType
+                      }
+                    });
+                  } else if (job.status === 'failed') {
+                    onEvent({
+                      type: "image_error",
+                      data: {
+                        jobId: job.jobId,
+                        angle: job.angle,
+                        color: job.color,
+                        size: job.size,
+                        status: 'failed',
+                        error: job.error
+                      }
+                    });
+                  }
                 }
               }
+
+              lastPolledIndex = pollData.currentIndex || lastPolledIndex;
+
+              // Update progress
+              const progress = Math.round((pollData.completedJobs / pollData.totalJobs) * 90) + 5;
+              onEvent({
+                type: "status",
+                data: {
+                  stage: "generating",
+                  message: `Generated ${pollData.completedJobs}/${pollData.totalJobs} mockups...`,
+                  progress
+                }
+              });
+
+              // Check if complete or error
+              if (pollData.status === 'complete') {
+                console.log("Batch completed successfully");
+                onEvent({ type: "status", data: { stage: "complete", message: "All mockups generated!", progress: 100 } });
+                onEvent({ type: "complete", data: { success: true, totalGenerated: pollData.completedJobs, batchId } });
+                resolve();
+                return;
+              } else if (pollData.status === 'error') {
+                console.log("Batch failed:", pollData.errorMessage);
+                onEvent({ type: "error", data: { message: pollData.errorMessage || "Generation failed" } });
+                reject(new Error(pollData.errorMessage || "Generation failed"));
+                return;
+              }
+
+              // Continue polling every 2 seconds
+              setTimeout(poll, 2000);
+            } catch (err) {
+              console.error("Polling error:", err);
+              setTimeout(poll, 3000); // Retry after longer delay on error
             }
-            
-            lastPolledIndex = pollData.currentIndex || lastPolledIndex;
-            
-            // Stop polling if complete or error
-            if (pollData.status === 'complete' || pollData.status === 'error') {
-              console.log("Polling: batch completed with status:", pollData.status);
-              if (pollingInterval) clearInterval(pollingInterval);
-            }
-          } catch (e) {
-            console.error("Polling error:", e);
-          }
-        }, 2500); // Poll every 2.5 seconds
+          };
+
+          // Start polling immediately
+          poll();
+        });
       };
 
-      // Wrapper to track received events and start polling
-      const wrappedOnEvent: MockupEventCallback = (event) => {
-        // Track batch_started to get batchId for polling
-        if (event.type === "batch_started" && event.data.batchId) {
-          batchId = event.data.batchId;
-          // Start polling after a short delay to catch buffered SSE
-          setTimeout(() => {
-            if (batchId && !streamComplete) startPolling(batchId);
-          }, 3000);
-        }
-        
-        // Track received job IDs to avoid duplicates from polling
-        if (event.type === "image" && event.data.jobId) {
-          receivedJobIds.add(event.data.jobId);
-        }
-        
-        // Track stream completion
-        if (event.type === "stream_end" || event.type === "complete") {
-          streamComplete = true;
-          if (pollingInterval) clearInterval(pollingInterval);
-        }
-        
-        onEvent(event);
-      };
-
-      await parseMockupSSEStream(response, wrappedOnEvent);
-      
-      // Cleanup polling on stream end
-      streamComplete = true;
-      if (pollingInterval) clearInterval(pollingInterval);
+      await pollForProgress();
     } catch (error) {
       console.error("Batch mockup generation error:", error);
       throw error;

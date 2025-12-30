@@ -1375,6 +1375,254 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       res.status(500).json({ message: "Failed to poll batch progress" });
     }
   });
+
+  // Async batch generation endpoint - returns immediately with batchId, client polls for progress
+  app.post("/api/mockup/generate-batch-async", requireAuth, generationRateLimiter, async (req: Request, res: Response) => {
+    try {
+      const authReq = req as any;
+      const userId = authReq.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const {
+        designImage, productType = "hoodie", productColors = ["White"], productSizes = ["M"],
+        angles = ["front"], scene = "studio", style = "clean",
+        modelDetails, journey = "DTG", patternScale, isSeamlessPattern, outputQuality = "standard",
+        colorSwapMode, modelCustomization
+      } = req.body;
+
+      if (!designImage) {
+        return res.status(400).json({ message: "Design image is required" });
+      }
+
+      const angleList = Array.isArray(angles) ? angles : [angles];
+      
+      // SINGLE SOURCE OF TRUTH: Size normalization (exact copy from SSE endpoint)
+      // Maps all product sizes to somatic profile sizes for body measurement calculations
+      const sizeNormMap: Record<string, string> = {
+        // Standard adult sizes (direct mapping)
+        "XS": "XS", "S": "S", "M": "M", "L": "L", "XL": "XL",
+        "2XL": "XXL", "XXL": "XXL", "3XL": "XXXL", "XXXL": "XXXL", 
+        "4XL": "4XL", "5XL": "5XL",
+        // Baby sizes (map to S for smaller infants, M for larger)
+        "NB": "S", "3M": "S", "6M": "S", "12M": "M", "18M": "M", "24M": "M",
+        // Toddler sizes (map to S for younger, M for older)
+        "2T": "S", "3T": "S", "4T": "M",
+        // Youth/One-Size (map to M as default)
+        "Youth": "M", "OS": "M"
+      };
+      
+      // Compute sizes - deduplicate based on normalized equivalents while preserving original labels
+      const defaultSize = modelDetails?.modelSize || "M";
+      const rawSizeList: string[] = Array.isArray(productSizes) && productSizes.length > 0
+        ? productSizes
+        : [defaultSize];
+      
+      // Deduplicate: Keep first occurrence of each normalized size (preserves original label)
+      // This ensures billing and generation counts always match
+      const seenNormalizedSizes = new Set<string>();
+      const deduplicatedSizeList: string[] = [];
+      for (const size of rawSizeList) {
+        const normalizedSize = sizeNormMap[size] || size;
+        if (!seenNormalizedSizes.has(normalizedSize)) {
+          seenNormalizedSizes.add(normalizedSize);
+          deduplicatedSizeList.push(size); // Keep original label
+        }
+      }
+      
+      // For backward compatibility, also keep normalized list (same as SSE endpoint)
+      const normalizedSizeList: string[] = deduplicatedSizeList.map((s: string) => sizeNormMap[s] || s);
+      
+      // Color name to hex mapping (same as SSE endpoint)
+      const colorNameToHex: Record<string, string> = {
+        "White": "#FFFFFF", "Black": "#000000", "Sport Grey": "#9E9E9E",
+        "Dark Heather": "#545454", "Charcoal": "#424242", "Navy": "#1A237E",
+        "Royal": "#0D47A1", "Light Blue": "#ADD8E6", "Red": "#D32F2F",
+        "Cardinal": "#880E4F", "Maroon": "#4A148C", "Orange": "#F57C00",
+        "Gold": "#FBC02D", "Yellow": "#FFEB3B", "Irish Green": "#388E3C",
+        "Military Green": "#558B2F", "Forest": "#1B5E20", "Purple": "#7B1FA2",
+        "Light Pink": "#F8BBD0", "Sand": "#F5F5DC",
+      };
+      
+      const colorList = Array.isArray(productColors) ? productColors : [productColors];
+      const colors = colorList.map(colorName => ({
+        name: colorName,
+        hex: colorNameToHex[colorName] || "#FFFFFF"
+      }));
+
+      // Calculate totals using normalized lists (same as SSE endpoint)
+      const totalMockups = colorList.length * angleList.length * normalizedSizeList.length;
+      const MAX_BATCH_SIZE = 27; // 3 sizes × 3 colors × 3 angles max
+      
+      if (totalMockups > MAX_BATCH_SIZE) {
+        return res.status(400).json({ 
+          message: `Batch size too large. Maximum ${MAX_BATCH_SIZE} mockups per request. You requested ${totalMockups}.` 
+        });
+      }
+      
+      const totalJobs = totalMockups;
+      
+      // Calculate credits
+      const creditCost = MOCKUP_CREDIT_COSTS[outputQuality as keyof typeof MOCKUP_CREDIT_COSTS] || MOCKUP_CREDIT_COSTS.standard;
+      const totalCredits = totalJobs * creditCost;
+
+      // Check credits
+      const hasCredits = await checkAndDeductCredits(userId, totalCredits);
+      if (!hasCredits) {
+        return res.status(402).json({ 
+          message: "Insufficient credits", 
+          creditsRequired: totalCredits 
+        });
+      }
+
+      // Create batchId immediately
+      const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Initialize batch progress store
+      const batchProgress: BatchProgress = {
+        batchId,
+        userId,
+        totalJobs,
+        completedJobs: 0,
+        status: 'generating',
+        jobs: [],
+        createdAt: Date.now(),
+        lastPolledIndex: 0
+      };
+      batchProgressStore.set(batchId, batchProgress);
+
+      // Return batchId immediately - client will poll for progress
+      res.json({ 
+        batchId, 
+        totalJobs,
+        message: "Generation started. Poll for progress."
+      });
+
+      // Now start generation in the background (not awaited)
+      const base64Data = designImage.replace(/^data:image\/\w+;base64,/, "");
+
+      // Fire off background generation
+      setImmediate(async () => {
+        try {
+          const eliteGenerator = await import("../services/eliteMockupGenerator");
+          const knowledge = await import("../services/knowledge");
+
+          const ethnicityMap: Record<string, string> = {
+            "CAUCASIAN": "White", "WHITE": "White", "AFRICAN": "Black", "BLACK": "Black",
+            "ASIAN": "Asian", "HISPANIC": "Hispanic", "SOUTH_ASIAN": "Indian", "INDIAN": "Indian",
+            "MIDDLE_EASTERN": "Middle Eastern", "SOUTHEAST_ASIAN": "Southeast Asian",
+            "MIXED": "Diverse", "INDIGENOUS": "Indigenous", "DIVERSE": "Diverse",
+            "White": "White", "Black": "Black", "Hispanic": "Hispanic", "Asian": "Asian",
+            "Indian": "Indian", "Southeast Asian": "Southeast Asian", "Middle Eastern": "Middle Eastern",
+            "Indigenous": "Indigenous", "Diverse": "Diverse"
+          };
+          const ageMap: Record<string, string> = {
+            "ADULT": "Adult", "YOUNG_ADULT": "Young Adult", "TEEN": "Teen",
+            "Adult": "Adult", "Young Adult": "Young Adult", "Teen": "Teen"
+          };
+          const sexMap: Record<string, string> = { "MALE": "Male", "FEMALE": "Female", "Male": "Male", "Female": "Female" };
+
+          const mappedModelDetails = {
+            age: ageMap[modelDetails?.age] || "Adult",
+            sex: sexMap[modelDetails?.sex] || "Male",
+            ethnicity: ethnicityMap[modelDetails?.ethnicity] || "White",
+            modelSize: modelDetails?.modelSize || "M"
+          };
+
+          const styleMap: Record<string, string> = {
+            "minimal": "MINIMALIST_MODERN", "editorial": "EDITORIAL_FASHION",
+            "vintage": "VINTAGE_RETRO", "street": "STREET_URBAN",
+            "ecommerce": "ECOMMERCE_CLEAN", "clean": "ECOMMERCE_CLEAN",
+            "ECOMMERCE_CLEAN": "ECOMMERCE_CLEAN"
+          };
+          const mappedStyle = styleMap[style] || "ECOMMERCE_CLEAN";
+
+          const isAopJourney = journey === "AOP";
+          let product = knowledge.getProductByFrontendName(productType);
+          if (!product) {
+            const productSource = isAopJourney ? knowledge.getAOPProducts() : knowledge.getDTGProducts();
+            product = productSource[0];
+          }
+
+          const batch = await eliteGenerator.generateMockupBatch({
+            journey: isAopJourney ? "AOP" : "DTG",
+            designImage: base64Data,
+            isSeamlessPattern: isAopJourney ? (isSeamlessPattern ?? true) : undefined,
+            product: product,
+            colors: colors,
+            angles: angleList as ("front" | "back" | "left" | "right")[],
+            sizes: deduplicatedSizeList,
+            modelDetails: { ...mappedModelDetails, customization: modelCustomization } as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['modelDetails'],
+            brandStyle: mappedStyle as Parameters<typeof eliteGenerator.generateMockupBatch>[0]['brandStyle'],
+            lightingPreset: 'three-point-classic',
+            materialCondition: 'BRAND_NEW',
+            environmentPrompt: scene,
+            patternScale: isAopJourney ? patternScale : undefined,
+            outputQuality: outputQuality,
+            colorSwapMode: colorSwapMode && !isAopJourney && colors.length > 1
+          }, (completed, _total, job) => {
+            const jobSize = job.size || mappedModelDetails.modelSize;
+            const storedBatch = batchProgressStore.get(batchId);
+            
+            if (storedBatch && (job.status === 'completed' || job.status === 'failed')) {
+              storedBatch.jobs.push({
+                jobId: job.id,
+                angle: job.angle,
+                color: job.color.name,
+                size: jobSize,
+                status: job.status as 'completed' | 'failed',
+                imageData: job.result?.imageData,
+                mimeType: job.result?.mimeType,
+                error: job.error,
+                completedAt: Date.now()
+              });
+              storedBatch.completedJobs = completed;
+              logger.info("Async job completed", { source: "mockup", batchId, jobId: job.id, completed, total: totalJobs });
+            }
+          }, (error) => {
+            const storedBatch = batchProgressStore.get(batchId);
+            if (storedBatch && error.type === 'persona_lock_failed') {
+              storedBatch.status = 'error';
+              storedBatch.errorMessage = error.message;
+            }
+          });
+
+          // Store persona lock image
+          const finalBatch = batchProgressStore.get(batchId);
+          if (finalBatch) {
+            if (batch.personaLockImage) {
+              finalBatch.personaLockImage = batch.personaLockImage;
+            }
+            finalBatch.status = 'complete';
+            logger.info("Async batch generation complete", { source: "mockup", batchId, totalJobs });
+          }
+        } catch (err) {
+          logger.error("Async batch generation error", err, { source: "mockup", batchId });
+          const storedBatch = batchProgressStore.get(batchId);
+          if (storedBatch) {
+            storedBatch.status = 'error';
+            storedBatch.errorMessage = err instanceof Error ? err.message : "Generation failed";
+            
+            // Refund credits on error (only if no images were generated)
+            const generatedCount = storedBatch.jobs.filter(j => j.status === 'completed').length;
+            const refundCredits = (totalJobs - generatedCount) * creditCost;
+            if (refundCredits > 0) {
+              try {
+                await storage.addCredits(userId, refundCredits);
+                logger.info("Credits refunded on error", { source: "mockup", userId, refundCredits, batchId });
+              } catch (refundErr) {
+                logger.error("Failed to refund credits", refundErr, { source: "mockup", userId, refundCredits, batchId });
+              }
+            }
+          }
+        }
+      });
+    } catch (error) {
+      logger.error("Generate batch async error", error, { source: "mockup" });
+      res.status(500).json({ message: "Failed to start generation" });
+    }
+  });
 }
 
 // Export the batch progress store for use in generation
