@@ -9,12 +9,21 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { pool } from "./db";
 import type { AuthUser, AuthClaims } from "./types";
+import { logger } from "./logger";
+
+const authLogger = logger.child({ source: 'replit-auth' });
+
+// Check if Replit Auth is available
+const isReplitAuthEnabled = () => !!process.env.REPL_ID;
 
 const getOidcConfig = memoize(
   async () => {
+    if (!process.env.REPL_ID) {
+      throw new Error("REPL_ID not configured - Replit Auth disabled");
+    }
     return await client.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process.env.REPL_ID!
+      process.env.REPL_ID
     );
   },
   { maxAge: 3600 * 1000 }
@@ -71,6 +80,31 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  passport.serializeUser((user: Express.User, cb) => cb(null, user));
+  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
+
+  // Skip Replit-specific auth setup if REPL_ID is not configured
+  if (!isReplitAuthEnabled()) {
+    authLogger.info("Replit Auth disabled - REPL_ID not configured. Using Google Auth only.");
+
+    // Provide fallback routes that explain auth is not available via Replit
+    app.get("/api/login", (_req, res) => {
+      res.status(400).json({ message: "Replit Auth not available. Use Google Sign-In." });
+    });
+
+    app.get("/api/callback", (_req, res) => {
+      res.status(400).json({ message: "Replit Auth not available. Use Google Sign-In." });
+    });
+
+    app.get("/api/logout", (req, res) => {
+      req.logout(() => {
+        res.redirect("/");
+      });
+    });
+
+    return;
+  }
+
   const config = await getOidcConfig();
 
   const verify: VerifyFunction = async (
@@ -101,9 +135,6 @@ export async function setupAuth(app: Express) {
       registeredStrategies.add(strategyName);
     }
   };
-
-  passport.serializeUser((user: Express.User, cb) => cb(null, user));
-  passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
     ensureStrategy(req.hostname);
