@@ -2314,10 +2314,10 @@ export async function generateMockupBatch(
       request.outputQuality
     );
 
-    // Use two-stage pipeline for exact design preservation
-    // Stage 1: Generate blank garment, Stage 2: Composite exact design
-    // ENABLED BY DEFAULT for better design accuracy and fabric integration
-    const useTwoStagePipeline = request.useTwoStagePipeline ?? true;
+    // CRITICAL: DISABLE two-stage pipeline - it's causing design placement issues
+    // Two-stage was causing Gemini to copy design positions from reference images
+    // Single-stage generation works better for design placement accuracy
+    const useTwoStagePipeline = false; // FORCE DISABLED
     
     let result: GeneratedMockup | null = null;
     
