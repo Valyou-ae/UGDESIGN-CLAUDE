@@ -1560,7 +1560,8 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
             environmentPrompt: scene,
             patternScale: isAopJourney ? patternScale : undefined,
             outputQuality: outputQuality,
-            colorSwapMode: colorSwapMode && !isAopJourney && colors.length > 1
+            colorSwapMode: colorSwapMode && !isAopJourney && colors.length > 1,
+            useTwoStagePipeline: true
           }, (completed, _total, job) => {
             const jobSize = job.size || mappedModelDetails.modelSize;
             const storedBatch = batchProgressStore.get(batchId);

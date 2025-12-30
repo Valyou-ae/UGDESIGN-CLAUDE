@@ -2532,6 +2532,15 @@ export async function generateMockupBatch(
     // Stage 2: Compositor pastes exact design with proper placement
     const useTwoStagePipeline = request.useTwoStagePipeline ?? true;
     
+    logger.debug("Pipeline decision check", { 
+      source: "eliteMockupGenerator",
+      jobId: job.id,
+      useTwoStagePipeline,
+      productIsWearable: request.product.isWearable,
+      willUseHybrid: useTwoStagePipeline && request.product.isWearable,
+      USE_HYBRID_REFINEMENT: GENERATION_CONFIG.USE_HYBRID_REFINEMENT
+    });
+    
     let result: GeneratedMockup | null = null;
     
     if (useTwoStagePipeline && request.product.isWearable) {
