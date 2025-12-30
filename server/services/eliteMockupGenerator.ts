@@ -2242,10 +2242,8 @@ export async function generateMockupBatch(
         logger.info("First mockup captured for cross-angle consistency reference", { source: "eliteMockupGenerator" });
       }
       
-      completedCount++;
-      if (onProgress) {
-        onProgress(completedCount, totalJobs, job);
-      }
+      // Progress tracking is handled inside processJobWithReference
+      // Don't duplicate it here
     }
   } else {
     const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
