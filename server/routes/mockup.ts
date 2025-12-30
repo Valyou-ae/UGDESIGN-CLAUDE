@@ -112,12 +112,30 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       }
 
       res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
       res.setHeader("Connection", "keep-alive");
+      res.setHeader("X-Accel-Buffering", "no");
+      res.setHeader("Transfer-Encoding", "chunked");
       res.flushHeaders();
 
       const sendEvent = (event: string, data: unknown) => {
-        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        try {
+          const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+          res.write(eventData);
+          const socket = (res as any).socket;
+          if (socket && typeof socket.setNoDelay === 'function') {
+            socket.setNoDelay(true);
+          }
+          if (socket && typeof socket.uncork === 'function') {
+            socket.cork();
+            socket.uncork();
+          }
+          if (typeof (res as { flush?: () => void }).flush === 'function') {
+            (res as { flush: () => void }).flush();
+          }
+        } catch (e) {
+          logger.error("Error sending SSE event", e, { source: "mockup", event });
+        }
       };
 
       const base64Data = designImage.replace(/^data:image\/\w+;base64,/, "");
@@ -311,7 +329,19 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
 
       const sendEvent = (event: string, data: unknown) => {
         try {
-          res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+          const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+          res.write(eventData);
+          // Force immediate send by accessing underlying socket
+          const socket = (res as any).socket;
+          if (socket && typeof socket.setNoDelay === 'function') {
+            socket.setNoDelay(true);
+          }
+          // Use Cork/Uncork pattern for immediate flush
+          if (socket && typeof socket.uncork === 'function') {
+            socket.cork();
+            socket.uncork();
+          }
+          // Also try res.flush if available (compression middleware)
           if (typeof (res as { flush?: () => void }).flush === 'function') {
             (res as { flush: () => void }).flush();
           }
@@ -326,6 +356,10 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         if (connectionClosed) return;
         try {
           res.write(`:keepalive ${Date.now()}\n\n`);
+          const socket = (res as any).socket;
+          if (socket && typeof socket.setNoDelay === 'function') {
+            socket.setNoDelay(true);
+          }
           if (typeof (res as { flush?: () => void }).flush === 'function') {
             (res as { flush: () => void }).flush();
           }
@@ -708,15 +742,29 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
       }
 
       res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Cache-Control", "no-cache, no-transform");
       res.setHeader("Connection", "keep-alive");
       res.setHeader("X-Accel-Buffering", "no");
+      res.setHeader("Transfer-Encoding", "chunked");
       res.flushHeaders();
 
       const sendEvent = (event: string, data: unknown) => {
-        res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-        if (typeof (res as { flush?: () => void }).flush === 'function') {
-          (res as { flush: () => void }).flush();
+        try {
+          const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+          res.write(eventData);
+          const socket = (res as any).socket;
+          if (socket && typeof socket.setNoDelay === 'function') {
+            socket.setNoDelay(true);
+          }
+          if (socket && typeof socket.uncork === 'function') {
+            socket.cork();
+            socket.uncork();
+          }
+          if (typeof (res as { flush?: () => void }).flush === 'function') {
+            (res as { flush: () => void }).flush();
+          }
+        } catch (e) {
+          logger.error("Error sending SSE event", e, { source: "mockup", event });
         }
       };
 
@@ -924,7 +972,16 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
 
       const sendEvent = (event: string, data: unknown) => {
         try {
-          res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+          const eventData = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+          res.write(eventData);
+          const socket = (res as any).socket;
+          if (socket && typeof socket.setNoDelay === 'function') {
+            socket.setNoDelay(true);
+          }
+          if (socket && typeof socket.uncork === 'function') {
+            socket.cork();
+            socket.uncork();
+          }
           if (typeof (res as { flush?: () => void }).flush === "function") {
             (res as { flush: () => void }).flush();
           }
@@ -938,6 +995,10 @@ export async function registerMockupRoutes(app: Express, middleware: Middleware)
         if (connectionClosed) return;
         try {
           res.write(`:keepalive ${Date.now()}\n\n`);
+          const socket = (res as any).socket;
+          if (socket && typeof socket.setNoDelay === 'function') {
+            socket.setNoDelay(true);
+          }
           if (typeof (res as { flush?: () => void }).flush === "function") {
             (res as { flush: () => void }).flush();
           }
