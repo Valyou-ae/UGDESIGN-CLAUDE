@@ -1610,7 +1610,7 @@ export default function MockupGenerator() {
           scene: scene,
           style: styleName,
           modelDetails: useModel ? modelDetails : undefined,
-          journey: journey || "DTG",
+          journey: (journey === 'DTG' || journey === 'AOP') ? journey : "DTG",
           patternScale: isAopJourney ? patternScale : undefined,
           isSeamlessPattern: isAopJourney,
           outputQuality: outputQuality,
