@@ -77,12 +77,12 @@ Age: ${personaLock.persona.age} | Sex: ${personaLock.persona.sex} | Ethnicity: $
 The result must be immediately recognizable as the same individual from [IMAGE 2].` 
     : 'No model reference provided. Use invisible mannequin or flat lay.';
 
-  const dtgPlacement = `DTG PRINT ZONE (CRITICAL):
-- Design MUST be PERFECTLY CENTERED on the chest (equal distance from left and right armholes)
-- Maximum print area: 12" wide × 14" tall, positioned 2-3" below collar
-- Design MUST NOT touch or extend onto: sleeves, shoulders, collar, side seams, or hem
-- Solid ${color.name} fabric MUST be clearly visible on ALL areas outside the print zone
-- The printed area should occupy roughly 30-40% of the visible front garment surface`;
+  const dtgPlacement = `DTG PRINT ZONE:
+- CENTERING: Design must be exactly centered horizontally (equal distance from both armholes)
+- VERTICAL BOUNDS: Top of design 2-3" below collar, bottom MUST stop above the belly button/waistline
+- MAX SIZE: 12" wide × 12" tall - design should NOT dominate the garment
+- BOUNDARIES: Design cannot touch sleeves, shoulders, collar, side seams, or hem
+- VISIBILITY: Solid ${color.name} fabric clearly visible on all areas outside print zone`;
 
   const aopPlacement = `AOP COVERAGE: Pattern covers entire garment edge-to-edge with seamless continuity. No boundary between design and fabric.`;
 
@@ -97,12 +97,17 @@ ${journey === 'AOP' ? aopPlacement : dtgPlacement}
 
 3. FABRIC INTEGRATION
 The design is PRINTED INK on cotton, not a digital overlay:
-- Design follows every fold and body curve because it IS the fabric
+- Design warps and curves with the body's 3D contours (chest curve, torso taper)
 - Fabric weave texture shows through printed colors
 - Light and shadow affect design and fabric identically
-- Minimum 5-7 visible folds that interrupt and distort the design naturally
+- Edges blend naturally into fabric texture (no sharp digital boundaries)
 
-4. COLOR LOCK
+4. TEXT CLARITY
+- Any text in the design must remain legible and properly proportioned
+- Subtext/smaller text should be crisp and readable, not compressed or distorted
+- Text follows fabric curves but maintains letter integrity
+
+5. COLOR LOCK
 - Garment: ${color.name} (${color.hex}) - exact match on non-printed areas
 - Design: ${designAnalysis.dominantColors.slice(0, 4).join(', ')} - no color shift
 `;
@@ -159,20 +164,21 @@ function buildQualityControl(input: MockupPromptInput): string {
   const hasModel = !!personaLock;
 
   const dtgWarnings = journey !== 'AOP' ? `
-DTG FAILURES TO AVOID:
-- Design bleeding onto sleeves, shoulders, or sides (keep within chest zone)
-- Design off-center (must be perfectly centered horizontally)
-- Design too large (should not dominate the entire garment)
-- Missing ${color.name} fabric visibility around the print` : '';
+DTG FAILURES:
+- Design off-center or leaning to one side
+- Design extending below the belly button/waistline
+- Design bleeding onto sleeves, shoulders, or sides
+- Flat/sticker-like design that ignores body curves
+- Blurry or compressed text within the design
+- Sharp digital edges instead of fabric-blended edges` : '';
 
   return `
 ═══ AVOID THESE FAILURES ═══
 
-DESIGN INTEGRATION:
-- Flat/sticker-like overlay that ignores fabric folds
+REALISM:
+- Flat overlay that ignores body curves and fabric folds
 - Design with different lighting than the garment
-- Unnaturally crisp edges that "float" on fabric
-- Design remaining undistorted while fabric wraps around body
+- Sharp digital edges instead of natural fabric integration
 ${dtgWarnings}
 ${hasModel ? `
 IDENTITY:
@@ -223,10 +229,10 @@ function getCameraSpecForAngle(angle: MockupAngle): string {
  */
 function getAngleFoldBehavior(angle: MockupAngle): string {
   const behaviors: Record<MockupAngle, string> = {
-    'front': `- Design centered on chest with minimal perspective distortion
-- Vertical gravity folds, horizontal movement creases
-- Design curves slightly inward near armholes
-- Body contour creates subtle horizontal warping across design`,
+    'front': `- Design follows the 3D curve of the chest and torso (not flat)
+- Horizontal lines in design subtly curve following body contour
+- Design edges taper inward near armholes due to body perspective
+- Natural fabric creases interrupt and distort design elements`,
 
     'three-quarter': `- Design wraps around torso, far side foreshortens 40-60%
 - Side closest to camera shows full detail
