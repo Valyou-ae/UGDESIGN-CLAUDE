@@ -79,9 +79,6 @@ const GENERATION_CONFIG = {
   // USE_STREAMLINED_PROMPT: true = V2 (new 3-section structure), false = V1 (legacy verbose)
   // Set env var USE_STREAMLINED_PROMPT=false to disable V2
   USE_STREAMLINED_PROMPT: process.env.USE_STREAMLINED_PROMPT !== 'false', // Default to V2 unless explicitly disabled
-  // USE_HYBRID_REFINEMENT: Enable 3-stage hybrid mockup generation (blank + compositor + Gemini refinement)
-  // Stage 3 adds fabric realism WITHOUT regenerating the design
-  USE_HYBRID_REFINEMENT: process.env.USE_HYBRID_REFINEMENT !== 'false', // Default to enabled
 };
 
 let currentJobCount = 0;
@@ -394,46 +391,6 @@ STYLE:
   throw new Error(`Persona headshot generation failed after ${maxRetries} attempts: ${lastError?.message}`);
 }
 
-/**
- * Calculate size-appropriate print area for design
- * Scales design with body size to maintain proportional appearance
- * Fixes issue where designs appear too small on 2XL+ sizes
- */
-function getScaledPrintArea(
-  baseWidth: number, 
-  baseHeight: number, 
-  size: string
-): { width: number; height: number } {
-  // Size multipliers based on industry standards
-  // M size is baseline (1.00), others scale proportionally
-  const sizeMultipliers: Record<string, number> = {
-    'XS': 0.85,   // 85% - petite frame
-    'S': 0.92,    // 92% - slim frame
-    'M': 1.00,    // 100% - baseline (12" if base is 12")
-    'L': 1.08,    // 108% - larger frame
-    'XL': 1.17,   // 117% - stocky frame
-    '2XL': 1.33,  // 133% - plus size (16" if base is 12")
-    '3XL': 1.42,  // 142% - larger plus size
-    '4XL': 1.50,  // 150% - extra large plus size
-    '5XL': 1.58   // 158% - very large plus size
-  };
-  
-  const multiplier = sizeMultipliers[size] || 1.00;
-  
-  logger.debug("Scaling print area for size", {
-    source: "eliteMockupGenerator",
-    size,
-    multiplier,
-    baseWidth,
-    scaledWidth: (baseWidth * multiplier).toFixed(1)
-  });
-  
-  return {
-    width: Math.round(baseWidth * multiplier * 10) / 10,  // Round to 1 decimal
-    height: Math.round(baseHeight * multiplier * 10) / 10
-  };
-}
-
 export function buildRenderSpecification(
   designAnalysis: DesignAnalysis,
   product: Product,
@@ -643,21 +600,9 @@ ${materialPreset.promptAddition}
 ===== END SIZE/FIT LOCK =====` : "";
 
   const printSpec = product.printSpec;
-  const basePrintWidth = printSpec?.printAreaWidth || 12;
-  const basePrintHeight = printSpec?.printAreaHeight || 16;
-
-  // SCALE print area based on body size to fix 2XL+ artwork size issues
-  const scaledPrintArea = getScaledPrintArea(basePrintWidth, basePrintHeight, sizeForBody);
-
-  const printAreaDesc = `${scaledPrintArea.width}" x ${scaledPrintArea.height}" (scaled for ${sizeForBody} size)`;
-
-  logger.info("Using size-scaled print area", {
-    source: "eliteMockupGenerator",
-    size: sizeForBody,
-    baseArea: `${basePrintWidth}" x ${basePrintHeight}"`,
-    scaledArea: `${scaledPrintArea.width}" x ${scaledPrintArea.height}"`
-  });
-
+  const printAreaDesc = printSpec 
+    ? `${printSpec.printAreaWidth}" x ${printSpec.printAreaHeight}" (${printSpec.printAreaWidthPixels}x${printSpec.printAreaHeightPixels}px at ${printSpec.dpi}dpi)`
+    : '12" x 16" (3600x4800px at 300dpi)';
   const placementDesc = printSpec?.placementDescription || 'Center-chest placement';
   const surfaceDesc = printSpec?.surfaceType || 'flexible';
 
@@ -735,7 +680,7 @@ ${journey === 'DTG' ? `===== DESIGN SIZE LOCK (CRITICAL) =====
 - Only the close-up shot should show the design larger (because the camera is zoomed in)
 
 SIZE CONSISTENCY RULES:
-1. FRONT VIEW: Design visible at full print area size (${scaledPrintArea.width}" wide, scaled for ${sizeForBody} body)
+1. FRONT VIEW: Design visible at full print area size (${printSpec?.printAreaWidth || 12}" wide)
 2. THREE-QUARTER VIEW: Same design, same size, visible at an angle (appears slightly compressed due to perspective)
 3. SIDE VIEW: Design may be partially visible from the side, but same physical size
 4. CLOSE-UP VIEW: Zoomed in on the design, so it appears larger (this is expected)` : `===== AOP PATTERN CONSISTENCY LOCK (CRITICAL) =====
@@ -763,7 +708,7 @@ DTG PRINT METHOD:
 [THIS IS NOT ALL-OVER PRINT - THE DESIGN HAS STRICT BOUNDARIES]
 
 MAXIMUM PRINT AREA DIMENSIONS:
-- Width: ${scaledPrintArea.width} inches maximum (scaled for ${sizeForBody} size)
+- Width: ${printSpec?.printAreaWidth || 12} inches maximum
 - Height: ${printSpec?.printAreaHeight || 16} inches maximum
 - The design MUST NOT exceed these dimensions under any circumstances
 
@@ -788,36 +733,6 @@ DO NOT GENERATE:
 - Design extending beyond the chest/front torso area
 - Design that touches the collar, armholes, or hem
 ===== END PRINT AREA BOUNDARIES =====
-
-===== SIZE-SPECIFIC DESIGN SCALING (CRITICAL) =====
-[MANDATORY - DESIGN MUST BE PROPORTIONAL TO BODY SIZE]
-
-For ${sizeForBody} size garment:
-- Design width: ${scaledPrintArea.width} inches (height: ${scaledPrintArea.height} inches)
-- The design must fill approximately 35-45% of the chest width
-- The design must look PROPORTIONAL to the ${sizeForBody} body - neither too small nor too large
-${sizeForBody === 'XS' || sizeForBody === 'S' ? 
-  `- For ${sizeForBody} (petite/slim), the design is ${Math.round((1 - scaledPrintArea.width / basePrintWidth) * 100)}% smaller than baseline to match smaller frame` :
-sizeForBody === '2XL' || sizeForBody === '3XL' || sizeForBody === '4XL' || sizeForBody === '5XL' ?
-  `- For ${sizeForBody} (plus-size), the design MUST be ${Math.round((scaledPrintArea.width / basePrintWidth - 1) * 100)}% LARGER than baseline
-   - DO NOT use the same small design size as you would for M/L sizes
-   - The ${scaledPrintArea.width}" design should appear substantial on the ${sizeForBody} body
-   - If the design looks too small or "child-sized" on this ${sizeForBody} body, that is a CRITICAL FAILURE` :
-  `- For ${sizeForBody} (standard), the design uses baseline proportional sizing`
-}
-
-⚠️ CRITICAL SIZE PROPORTION RULES:
-- A ${sizeForBody} body requires a ${scaledPrintArea.width}" wide design (NOT the baseline 12" size)
-- The design must maintain consistent visual proportion across ALL sizes
-- Larger bodies need proportionally larger designs to look professional
-- The same 12" design on both M and 5XL bodies = CRITICAL FAILURE
-
-PROPORTION FAILURE EXAMPLES (DO NOT DO THESE):
-- Tiny design on 2XL/3XL/4XL/5XL body (looks like children's sizing) = CRITICAL FAILURE
-- Using 12" design on 48"+ chest (design covers <25% of chest) = FAILURE
-- Design looking like a "pocket logo" when it should be a full chest print = FAILURE
-- Same visual design size on XS and 5XL bodies = FAILURE
-===== END SIZE-SPECIFIC SCALING =====
 
 CRITICAL PLACEMENT RULES FOR DTG:
 - The design/graphic MUST be placed CENTERED on the chest area
@@ -1649,75 +1564,13 @@ IGNORE the background and lighting of this photo - use only for identity matchin
     }
 
     if (previousMockupReference) {
-      // Extract product name from renderSpec for explicit product type warning
-      const productMatch = renderSpec.productDescription?.match(/Product:\s*([^|]+)/);
-      const productName = productMatch ? productMatch[1].trim() : "garment";
-      
-      // Extract camera description from renderSpec to determine framing instructions
-      const cameraDescription = renderSpec.cameraDescription || "front view";
-      
-      // Determine framing instructions based on angle to prevent reference copying
-      let framingInstructions = "";
-      if (cameraDescription.toLowerCase().includes("closeup")) {
-        framingInstructions = `
-
-🎥 CRITICAL CAMERA FRAMING LOCK:
-- This is a CLOSEUP shot, NOT a medium shot like the reference
-- Camera distance: 3-4 feet (much closer than the reference image)
-- Framing: Crop from JUST BELOW THE CHIN to MID-TORSO
-- The model's face may be PARTIALLY or FULLY out of frame
-- Focus on the DESIGN and FABRIC TEXTURE in detail
-- This is a TIGHT shot - do NOT use the medium shot framing from the reference
-- The reference shows COLOR/STYLE, but FRAMING must be CLOSEUP as specified`;
-      } else if (cameraDescription.toLowerCase().includes("side")) {
-        framingInstructions = `
-
-🎥 CRITICAL CAMERA ANGLE LOCK:
-- This is a SIDE PROFILE shot, NOT a front view like the reference
-- Camera position: 90° perpendicular to the subject (pure profile)
-- Only ONE side of the face is visible
-- Shoulder, hip, and ear should align vertically
-- The design on the chest will be visible from the side angle
-- Do NOT use the front-facing angle from the reference`;
-      } else if (cameraDescription.toLowerCase().includes("three-quarter")) {
-        framingInstructions = `
-
-🎥 CRITICAL CAMERA ANGLE LOCK:
-- This is a THREE-QUARTER view (30-45° angle), NOT a straight front view
-- Model is turned 30-45° relative to the camera
-- Both front and side of the garment are visible
-- Shows 3D depth and fit
-- Do NOT use the straight-on front angle from the reference`;
-      } else {
-        // Front view - reference framing is okay
-        framingInstructions = `
-
-🎥 CAMERA ANGLE: Front view (similar framing to reference is acceptable for this angle)`;
-      }
-      
       parts.push({
         inlineData: { data: previousMockupReference, mimeType: "image/png" }
       });
       parts.push({
-        text: `[IMAGE 2] - STYLE/ENVIRONMENT + COLOR REFERENCE
-Match the following from this reference image:
-1. GARMENT COLOR (CRITICAL): Sample and match the EXACT RGB color of the garment
-2. Background, lighting, and photography style
-3. Model identity and pose (if visible)
-
-🔴 CRITICAL PRODUCT TYPE LOCK:
-- The garment MUST be a: ${productName}
-- DO NOT change the product type (e.g., DO NOT convert long-sleeve to short-sleeve, t-shirt to tank, etc.)
-- If you see sleeves in the reference, generate the SAME sleeve type
-- The reference shows the STYLE, but product type MUST match the specification: ${productName}
-${framingInstructions}
-
-⚠️ IMPORTANT INSTRUCTIONS:
-- The garment in this reference has artwork - generate a BLANK version without any design
-- Keep the EXACT SAME garment color as shown in the reference
-- Keep the EXACT SAME product type (${productName})
-- DO NOT copy the camera angle or framing from the reference - use the angle/framing specified in the prompt below
-- Match ONLY the color, lighting, and model identity - the camera angle, framing, and product type are specified separately`
+        text: `[IMAGE 2] - STYLE/ENVIRONMENT REFERENCE
+Match the background, lighting, camera angle, and photography style from this reference image exactly.
+IMPORTANT: The garment in this reference has artwork - generate a BLANK version without any design.`
       });
     }
 
@@ -1729,8 +1582,7 @@ ${framingInstructions}
       environmentDescription: renderSpec.environmentDescription,
       cameraDescription: renderSpec.cameraDescription,
       humanRealismDescription: renderSpec.humanRealismDescription,
-      negativePrompts: renderSpec.negativePrompts,
-      hasColorReference: !!previousMockupReference
+      negativePrompts: renderSpec.negativePrompts
     });
 
     parts.push({ text: blankGarmentPrompt });
@@ -1738,9 +1590,7 @@ ${framingInstructions}
     logger.info("Calling Gemini API for BLANK garment generation", { 
       source: "eliteMockupGenerator", 
       model: MODELS.IMAGE_GENERATION,
-      mode: "blank_garment",
-      hasColorReference: !!previousMockupReference,
-      hasPersonaHeadshot: !!personaHeadshot
+      mode: "blank_garment"
     });
     
     const response = await genAI.models.generateContent({
@@ -1763,11 +1613,7 @@ ${framingInstructions}
 
     for (const part of content.parts) {
       if (part.inlineData && part.inlineData.data) {
-        logger.info("Blank garment generated successfully", { 
-          source: "eliteMockupGenerator",
-          hasReference: !!previousMockupReference,
-          productDescription: renderSpec.productDescription?.substring(0, 100)
-        });
+        logger.info("Blank garment generated successfully", { source: "eliteMockupGenerator" });
         return {
           imageData: part.inlineData.data,
           mimeType: part.inlineData.mimeType || "image/png",
@@ -1787,170 +1633,6 @@ ${framingInstructions}
   }
 }
 
-/**
- * STAGE 3: Gemini Refinement Pass for Hybrid Mockup Generation
- * Takes a composited mockup and adds photorealistic fabric behavior WITHOUT regenerating the design
- * This is the KEY to solving design reinterpretation - Gemini ONLY enhances, doesn't recreate
- */
-async function refineCompositedMockupWithGemini(
-  compositedBase64: string,
-  renderSpec: RenderSpecification,
-  productName: string,
-  cameraAngle: string
-): Promise<GeneratedMockup | null> {
-  
-  const refinementPrompt = `You are a photorealistic rendering engine specializing in fabric physics and material integration.
-
-[IMAGE 1] shows a ${productName} mockup with a pre-printed design.
-
-🎯 TASK: Add photorealistic fabric behavior WITHOUT changing the design.
-
-The design is ALREADY PRINTED on this garment. Your ONLY job is to add realistic fabric physics:
-
-1. **Add Fabric Folds (CRITICAL)**: Create 7-10 natural wrinkles that affect BOTH the fabric AND the design
-   - Folds MUST interrupt the design (break through text/graphics)
-   - Design folds WITH the fabric (they are ONE unified material)
-   - NO flat design on wrinkled fabric
-   - Example: If text says "HELLO", a fold through the middle makes it look like "HE | LLO"
-
-2. **Unify Lighting**: Ensure ONE consistent light source illuminates the entire garment
-   - NO separate lighting for design vs. fabric
-   - Shadows from folds darken BOTH design and fabric equally
-   - NO glowing or backlit design
-   - The design and fabric share the SAME surface, therefore SAME lighting
-
-3. **Add Fabric Texture**: Make cotton weave visible through the printed ink
-   - Subtle micro-texture over the design area
-   - Design looks absorbed into fibers (not sitting on top)
-   - Slightly muted colors from fabric absorption (not digital-perfect)
-
-4. **Maintain 3D Curvature**: Design follows body contour
-   - Torso is cylindrical, design curves with it
-   - Horizontal text/lines curve following chest roundness
-   - Sides recede naturally (perspective)
-
-🔴 UNBREAKABLE RULES - CRITICAL FOR SUCCESS:
-- Do NOT redraw or recreate the design
-- Do NOT change fonts, colors, text, or graphics  
-- Do NOT reposition the design
-- Do NOT "improve" or "enhance" the design content
-- The design is ALREADY on the garment - ONLY add fabric physics
-
-✅ WHAT TO KEEP EXACTLY (100% PRESERVATION):
-- Design content (every letter, graphic, photo)
-- Design position (center chest placement)
-- Design colors (exact RGB values)
-- Design layout (spacing, alignment, proportions)
-- Font choices (if text)
-- Model identity and pose
-- Camera angle and framing
-
-➕ WHAT TO ADD (Fabric Realism Only):
-- Realistic fabric folds affecting the design
-- Unified lighting across entire garment
-- Cotton texture overlay on design
-- Natural fabric physics and wear
-- Integration of design INTO fabric surface
-
-Think of this as enhancing a photograph of a real printed garment, NOT creating a new design.
-
-Render the enhanced mockup with photorealistic fabric physics but pixel-perfect design preservation.`;
-
-  try {
-    logger.info("Starting Gemini refinement pass (Stage 3 - Hybrid)", {
-      source: "eliteMockupGenerator",
-      productName,
-      cameraAngle,
-      compositedSize: compositedBase64.length
-    });
-
-    const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [
-      {
-        inlineData: { data: compositedBase64, mimeType: "image/png" }
-      },
-      {
-        text: refinementPrompt
-      }
-    ];
-
-    const response = await genAI.models.generateContent({
-      model: MODELS.IMAGE_GENERATION,
-      contents: [{
-        role: "user",
-        parts
-      }],
-      generationConfig: {
-        temperature: 0.4, // Low temp for consistency, high enough for realism
-        topP: 0.95,
-        topK: 40
-      },
-      config: { responseModalities: [Modality.TEXT, Modality.IMAGE] }
-    });
-
-    logger.info("Gemini refinement response received", {
-      source: "eliteMockupGenerator",
-      hasCandidates: !!response.candidates,
-      candidateCount: response.candidates?.length || 0
-    });
-
-    const candidates = response.candidates;
-    if (!candidates || candidates.length === 0) {
-      const finishReason = (response as { promptFeedback?: { blockReason?: string } }).promptFeedback?.blockReason;
-      logger.error("No candidates in refinement response", {
-        source: "eliteMockupGenerator",
-        finishReason
-      });
-      return null;
-    }
-
-    const content = candidates[0].content;
-    const finishReason = candidates[0].finishReason;
-
-    if (!content || !content.parts) {
-      logger.error("No content parts in refinement response", {
-        source: "eliteMockupGenerator",
-        finishReason
-      });
-      return null;
-    }
-
-    // Extract image from response
-    for (const part of content.parts) {
-      if (part.inlineData && part.inlineData.data) {
-        logger.info("Gemini refinement completed successfully (Stage 3)", {
-          source: "eliteMockupGenerator",
-          refinedSize: part.inlineData.data.length
-        });
-        return {
-          imageData: part.inlineData.data,
-          mimeType: part.inlineData.mimeType || "image/png",
-          jobId: "",
-          color: "",
-          angle: cameraAngle as MockupAngle
-        };
-      }
-    }
-
-    // Log text content if any (usually contains error/refusal message)
-    const textContent = content.parts.find(p => p.text)?.text;
-    logger.error("No image data in refinement response", {
-      source: "eliteMockupGenerator",
-      finishReason,
-      textResponse: textContent?.substring(0, 500)
-    });
-
-    return null;
-
-  } catch (error) {
-    logger.error("Gemini refinement failed (Stage 3)", error, {
-      source: "eliteMockupGenerator",
-      productName,
-      cameraAngle
-    });
-    return null;
-  }
-}
-
 export async function generateTwoStageMockup(
   designBase64: string,
   renderSpec: RenderSpecification,
@@ -1959,37 +1641,20 @@ export async function generateTwoStageMockup(
   personaHeadshot?: string,
   previousMockupReference?: string
 ): Promise<GeneratedMockup | null> {
-  const useHybridRefinement = GENERATION_CONFIG.USE_HYBRID_REFINEMENT;
-  const mode = useHybridRefinement ? "three_stage_hybrid" : "two_stage_composite";
-  
-  logger.info(`Starting ${useHybridRefinement ? 'three-stage hybrid' : 'two-stage'} mockup generation`, { 
+  logger.info("Starting two-stage mockup generation", { 
     source: "eliteMockupGenerator", 
     productName, 
     cameraAngle,
-    mode,
-    useHybridRefinement
+    mode: "two_stage_composite"
   });
 
-  // STAGE 1: Generate blank garment
-  // CRITICAL: Do NOT pass previousMockupReference to blank garment generation
-  // If we pass a reference with design, Gemini copies the design position
-  // Only use personaHeadshot for identity consistency
-  logger.info("Stage 1: Generating blank garment", { source: "eliteMockupGenerator", cameraAngle });
-  const blankGarment = await generateBlankGarment(renderSpec, personaHeadshot, undefined);
+  const blankGarment = await generateBlankGarment(renderSpec, personaHeadshot, previousMockupReference);
   
   if (!blankGarment) {
-    logger.error("Stage 1 failed: Blank garment generation failed", { source: "eliteMockupGenerator" });
+    logger.error("Two-stage pipeline: Blank garment generation failed", { source: "eliteMockupGenerator" });
     return null;
   }
 
-  logger.info("Stage 1 complete: Blank garment generated", { 
-    source: "eliteMockupGenerator",
-    cameraAngle,
-    blankGarmentSize: blankGarment.imageData.length
-  });
-
-  // STAGE 2: Composite design using image processing
-  logger.info("Stage 2: Starting design composition", { source: "eliteMockupGenerator", cameraAngle });
   const compositeResult = await compositeDesignOntoGarment({
     designBase64,
     blankGarmentBase64: blankGarment.imageData,
@@ -1998,56 +1663,14 @@ export async function generateTwoStageMockup(
   });
 
   if (!compositeResult.success) {
-    logger.error("Stage 2 failed: Design composition failed", { 
+    logger.error("Two-stage pipeline: Design composition failed", { 
       source: "eliteMockupGenerator", 
-      error: compositeResult.error,
-      cameraAngle
+      error: compositeResult.error 
     });
     return null;
   }
 
-  logger.info("Stage 2 complete: Design composited", { 
-    source: "eliteMockupGenerator",
-    cameraAngle,
-    compositedSize: compositeResult.composited.length
-  });
-
-  // STAGE 3: Gemini refinement pass (Hybrid mode only)
-  if (useHybridRefinement) {
-    logger.info("Stage 3: Starting Gemini refinement for fabric realism", {
-      source: "eliteMockupGenerator",
-      cameraAngle
-    });
-
-    const refinedMockup = await refineCompositedMockupWithGemini(
-      compositeResult.composited,
-      renderSpec,
-      productName,
-      cameraAngle
-    );
-
-    if (refinedMockup) {
-      logger.info("Stage 3 complete: Hybrid mockup generation successful", {
-        source: "eliteMockupGenerator",
-        cameraAngle,
-        refinedSize: refinedMockup.imageData.length
-      });
-      return refinedMockup;
-    } else {
-      logger.warn("Stage 3 failed: Gemini refinement failed, falling back to Stage 2 composited result", {
-        source: "eliteMockupGenerator",
-        cameraAngle
-      });
-      // Fallback to unrefined composited mockup
-    }
-  }
-
-  // Return Stage 2 result (either hybrid disabled or refinement failed)
-  logger.info(`${useHybridRefinement ? 'Fallback to Stage 2' : 'Two-stage'} mockup generation completed`, { 
-    source: "eliteMockupGenerator",
-    cameraAngle,
-    compositedSize: compositeResult.composited.length
-  });
+  logger.info("Two-stage mockup generation completed successfully", { source: "eliteMockupGenerator" });
   
   return {
     imageData: compositeResult.composited,
@@ -2438,16 +2061,7 @@ export async function generateMockupBatch(
       completedCount++;
       if (onProgress) onProgress(completedCount, totalJobs, editJob);
     }
-  } else if (request.product.isWearable && personaLocksBySize.size > 0) {
-    // CRITICAL: Force sequential processing for ALL wearables with persona locks
-    // This ensures the first mockup becomes a visual reference for subsequent angles
-    // Parallel processing breaks consistency (different persona/color interpretations)
-    logger.info("Using sequential processing for persona consistency", { 
-      source: "eliteMockupGenerator",
-      hasPreStoredHeadshots,
-      reason: "Reference-based consistency required for wearables"
-    });
-    
+  } else if (request.product.isWearable && personaLocksBySize.size > 0 && !hasPreStoredHeadshots) {
     let firstSuccessfulMockup: string | undefined;
     for (const job of jobs) {
       await processJobWithReference(job, firstSuccessfulMockup);
@@ -2456,9 +2070,6 @@ export async function generateMockupBatch(
         firstSuccessfulMockup = job.result.imageData;
         logger.info("First mockup captured for cross-angle consistency reference", { source: "eliteMockupGenerator" });
       }
-      
-      // Progress tracking is handled inside processJobWithReference
-      // Don't duplicate it here
     }
   } else {
     const batchSize = GENERATION_CONFIG.MAX_CONCURRENT_JOBS;
@@ -2526,20 +2137,9 @@ export async function generateMockupBatch(
       request.outputQuality
     );
 
-    // Re-enable two-stage pipeline for EXACT design preservation
-    // Two-stage ensures pixel-perfect design copying via compositor
-    // Stage 1: Generate blank garment (no reference to avoid design copying)
-    // Stage 2: Compositor pastes exact design with proper placement
-    const useTwoStagePipeline = request.useTwoStagePipeline ?? true;
-    
-    logger.debug("Pipeline decision check", { 
-      source: "eliteMockupGenerator",
-      jobId: job.id,
-      useTwoStagePipeline,
-      productIsWearable: request.product.isWearable,
-      willUseHybrid: useTwoStagePipeline && request.product.isWearable,
-      USE_HYBRID_REFINEMENT: GENERATION_CONFIG.USE_HYBRID_REFINEMENT
-    });
+    // Use two-stage pipeline for exact design preservation
+    // Stage 1: Generate blank garment, Stage 2: Composite exact design
+    const useTwoStagePipeline = request.useTwoStagePipeline ?? false;
     
     let result: GeneratedMockup | null = null;
     

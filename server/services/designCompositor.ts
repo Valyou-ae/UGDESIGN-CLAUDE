@@ -791,7 +791,6 @@ export function getBlankGarmentPrompt(renderSpec: {
   cameraDescription?: string;
   humanRealismDescription?: string;
   negativePrompts?: string;
-  hasColorReference?: boolean;
 }): string {
   const productInfo = renderSpec.productDescription || "t-shirt";
   const personaInfo = renderSpec.personaDescription || "";
@@ -801,110 +800,20 @@ export function getBlankGarmentPrompt(renderSpec: {
   const cameraInfo = renderSpec.cameraDescription || "front view";
   const humanRealism = renderSpec.humanRealismDescription || "";
   const negatives = renderSpec.negativePrompts || "";
-  const hasColorRef = renderSpec.hasColorReference || false;
-  
-  // Extract color info from productDescription for color matching
-  const colorMatch = productInfo.match(/Color:\s*([^(]+)\s*\(([^)]+)\)/);
-  const colorName = colorMatch ? colorMatch[1].trim() : "";
-  const colorHex = colorMatch ? colorMatch[2].trim() : "";
-  
-  // Extract product type from productDescription for explicit lock
-  const productMatch = productInfo.match(/Product:\s*([^|]+)/);
-  const productType = productMatch ? productMatch[1].trim() : "t-shirt";
-  
-  const productTypeLockBlock = hasColorRef ? `
-
-🔴 PRODUCT TYPE LOCK (MANDATORY):
-- Garment type: ${productType}
-- This product type is NON-NEGOTIABLE
-- If a reference image is provided, it shows COLOR and STYLE only
-- DO NOT copy the garment type from the reference if it differs
-- DO NOT substitute (e.g., short-sleeve for long-sleeve, tank for t-shirt)
-- The product type MUST be: ${productType}
-` : "";
-  
-  const colorReferenceBlock = hasColorRef ? `
-
-===== COLOR CONSISTENCY REQUIREMENT (CRITICAL) =====
-[MANDATORY - EXACT COLOR MATCH REQUIRED]
-
-A reference image has been provided that shows the EXACT target garment color.
-
-⚠️ STRICT COLOR MATCHING PROTOCOL:
-1. VISUAL REFERENCE PRIORITY: The reference image shows the EXACT ${colorName} color you must match
-2. SAMPLE RGB VALUES: Extract the garment color RGB values from the reference image
-3. REPRODUCE EXACTLY: The garment in this render must use the SAME RGB values as the reference
-4. MATCH ALL ASPECTS:
-   - Base color (RGB values)
-   - Color temperature (warm/cool undertones)
-   - Saturation level
-   - Brightness/value
-   - Fabric texture appearance under lighting
-
-⚠️ CRITICAL RULES:
-- DO NOT interpret "${colorName}" as text - use the VISUAL REFERENCE ONLY
-- DO NOT create a different shade (lighter, darker, or different hue)
-- DO NOT introduce color drift or variation
-- The color must be PIXEL-IDENTICAL to the reference garment color
-- Lighting effects (shadows/highlights) are OK, but base color must match exactly
-
-⚠️ WHAT TO AVOID (NEGATIVE PROMPTS FOR COLOR):
-- Different shade than reference image
-- Lighter or darker base color than reference
-- Different hue (e.g., blue-gray when reference is warm-gray)
-- Inconsistent color temperature
-- Color drift or color variation
-- Reinterpreting the color name instead of matching the visual
-
-✅ SUCCESS CRITERIA:
-The garment color in this image must be INDISTINGUISHABLE from the reference image color.
-When placed side-by-side, the colors should appear identical.
-
-===== END COLOR CONSISTENCY REQUIREMENT =====` : "";
   
   return `TASK: PHOTOREALISTIC BLANK GARMENT RENDER FOR DESIGN COMPOSITING
 
 You are a photorealistic rendering engine. Generate a mockup photograph of a model wearing a BLANK, UNPRINTED garment.
 
 ===== CRITICAL REQUIREMENT =====
-${hasColorRef ? `🔴🔴🔴 EXTREMELY IMPORTANT - READ CAREFULLY 🔴🔴🔴
-
-You are being shown a REFERENCE IMAGE that has artwork/design on the garment.
-YOUR TASK: Generate the SAME garment but COMPLETELY BLANK (no design).
-
-⚠️ DO NOT COPY THE DESIGN FROM THE REFERENCE:
-- The reference image shows artwork/text/graphics on the chest
-- You MUST generate the SAME garment WITHOUT any artwork/text/graphics
-- The garment must be SOLID COLOR with NO design whatsoever
-- This is a BLANK TEMPLATE that will have design added later
-
-🚫 CRITICAL VIOLATIONS TO AVOID:
-- Copying the design/text/artwork from the reference image
-- Generating ANY text, graphics, or patterns on the garment
-- Adding decorations, logos, or designs of any kind
-
-✅ WHAT TO COPY FROM REFERENCE:
-- Garment color (exact RGB match)
-- Model identity (same person)
-- Lighting and background style
-- Camera angle and photography style
-
-✅ WHAT NOT TO COPY FROM REFERENCE:
-- The design/artwork/text on the chest ← DO NOT COPY THIS
-- Any graphics or patterns on the garment ← DO NOT COPY THIS
-
-The garment MUST be COMPLETELY BLANK - just solid colored fabric with no designs.
-
-===== END CRITICAL REQUIREMENT =====` : `The garment must be COMPLETELY BLANK - NO design, NO artwork, NO graphics, NO text, NO patterns.
-Just a solid-colored garment with realistic fabric folds, creases, and lighting.`}
+The garment must be COMPLETELY BLANK - NO design, NO artwork, NO graphics, NO text, NO patterns.
+Just a solid-colored garment with realistic fabric folds, creases, and lighting.
 
 IMPORTANT: The chest/print area should be clearly visible and well-lit for design compositing.
 
 ===== GARMENT SPECIFICATION =====
 ${productInfo}
 ${materialInfo ? `Material: ${materialInfo}` : ''}
-${productTypeLockBlock}
-${colorReferenceBlock}
 
 The garment should show:
 - Natural fabric folds and creases from wear
@@ -922,11 +831,6 @@ Environment: ${environmentInfo}
 Lighting: ${lightingInfo}
 Camera: ${cameraInfo}
 
-${hasColorRef ? `⚠️ CAMERA ANGLE PRIORITY:
-If a reference image was provided, you MUST use the camera angle specified above (${cameraInfo}).
-DO NOT copy the camera angle from the reference image - it may be different.
-The reference is ONLY for color, lighting, and model identity matching.
-` : ''}
 Ensure the lighting clearly defines:
 - The curvature of the torso/chest area
 - Natural shadows in fabric folds
