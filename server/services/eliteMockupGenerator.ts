@@ -79,6 +79,9 @@ const GENERATION_CONFIG = {
   // USE_STREAMLINED_PROMPT: true = V2 (new 3-section structure), false = V1 (legacy verbose)
   // Set env var USE_STREAMLINED_PROMPT=false to disable V2
   USE_STREAMLINED_PROMPT: process.env.USE_STREAMLINED_PROMPT !== 'false', // Default to V2 unless explicitly disabled
+  // USE_HYBRID_REFINEMENT: Enable 3-stage hybrid mockup generation (blank + compositor + Gemini refinement)
+  // Stage 3 adds fabric realism WITHOUT regenerating the design
+  USE_HYBRID_REFINEMENT: process.env.USE_HYBRID_REFINEMENT !== 'false', // Default to enabled
 };
 
 let currentJobCount = 0;
@@ -1784,6 +1787,170 @@ ${framingInstructions}
   }
 }
 
+/**
+ * STAGE 3: Gemini Refinement Pass for Hybrid Mockup Generation
+ * Takes a composited mockup and adds photorealistic fabric behavior WITHOUT regenerating the design
+ * This is the KEY to solving design reinterpretation - Gemini ONLY enhances, doesn't recreate
+ */
+async function refineCompositedMockupWithGemini(
+  compositedBase64: string,
+  renderSpec: RenderSpecification,
+  productName: string,
+  cameraAngle: string
+): Promise<GeneratedMockup | null> {
+  
+  const refinementPrompt = `You are a photorealistic rendering engine specializing in fabric physics and material integration.
+
+[IMAGE 1] shows a ${productName} mockup with a pre-printed design.
+
+🎯 TASK: Add photorealistic fabric behavior WITHOUT changing the design.
+
+The design is ALREADY PRINTED on this garment. Your ONLY job is to add realistic fabric physics:
+
+1. **Add Fabric Folds (CRITICAL)**: Create 7-10 natural wrinkles that affect BOTH the fabric AND the design
+   - Folds MUST interrupt the design (break through text/graphics)
+   - Design folds WITH the fabric (they are ONE unified material)
+   - NO flat design on wrinkled fabric
+   - Example: If text says "HELLO", a fold through the middle makes it look like "HE | LLO"
+
+2. **Unify Lighting**: Ensure ONE consistent light source illuminates the entire garment
+   - NO separate lighting for design vs. fabric
+   - Shadows from folds darken BOTH design and fabric equally
+   - NO glowing or backlit design
+   - The design and fabric share the SAME surface, therefore SAME lighting
+
+3. **Add Fabric Texture**: Make cotton weave visible through the printed ink
+   - Subtle micro-texture over the design area
+   - Design looks absorbed into fibers (not sitting on top)
+   - Slightly muted colors from fabric absorption (not digital-perfect)
+
+4. **Maintain 3D Curvature**: Design follows body contour
+   - Torso is cylindrical, design curves with it
+   - Horizontal text/lines curve following chest roundness
+   - Sides recede naturally (perspective)
+
+🔴 UNBREAKABLE RULES - CRITICAL FOR SUCCESS:
+- Do NOT redraw or recreate the design
+- Do NOT change fonts, colors, text, or graphics  
+- Do NOT reposition the design
+- Do NOT "improve" or "enhance" the design content
+- The design is ALREADY on the garment - ONLY add fabric physics
+
+✅ WHAT TO KEEP EXACTLY (100% PRESERVATION):
+- Design content (every letter, graphic, photo)
+- Design position (center chest placement)
+- Design colors (exact RGB values)
+- Design layout (spacing, alignment, proportions)
+- Font choices (if text)
+- Model identity and pose
+- Camera angle and framing
+
+➕ WHAT TO ADD (Fabric Realism Only):
+- Realistic fabric folds affecting the design
+- Unified lighting across entire garment
+- Cotton texture overlay on design
+- Natural fabric physics and wear
+- Integration of design INTO fabric surface
+
+Think of this as enhancing a photograph of a real printed garment, NOT creating a new design.
+
+Render the enhanced mockup with photorealistic fabric physics but pixel-perfect design preservation.`;
+
+  try {
+    logger.info("Starting Gemini refinement pass (Stage 3 - Hybrid)", {
+      source: "eliteMockupGenerator",
+      productName,
+      cameraAngle,
+      compositedSize: compositedBase64.length
+    });
+
+    const parts: Array<{ text?: string; inlineData?: { data: string; mimeType: string } }> = [
+      {
+        inlineData: { data: compositedBase64, mimeType: "image/png" }
+      },
+      {
+        text: refinementPrompt
+      }
+    ];
+
+    const response = await genAI.models.generateContent({
+      model: MODELS.IMAGE_GENERATION,
+      contents: [{
+        role: "user",
+        parts
+      }],
+      generationConfig: {
+        temperature: 0.4, // Low temp for consistency, high enough for realism
+        topP: 0.95,
+        topK: 40
+      },
+      config: { responseModalities: [Modality.TEXT, Modality.IMAGE] }
+    });
+
+    logger.info("Gemini refinement response received", {
+      source: "eliteMockupGenerator",
+      hasCandidates: !!response.candidates,
+      candidateCount: response.candidates?.length || 0
+    });
+
+    const candidates = response.candidates;
+    if (!candidates || candidates.length === 0) {
+      const finishReason = (response as { promptFeedback?: { blockReason?: string } }).promptFeedback?.blockReason;
+      logger.error("No candidates in refinement response", {
+        source: "eliteMockupGenerator",
+        finishReason
+      });
+      return null;
+    }
+
+    const content = candidates[0].content;
+    const finishReason = candidates[0].finishReason;
+
+    if (!content || !content.parts) {
+      logger.error("No content parts in refinement response", {
+        source: "eliteMockupGenerator",
+        finishReason
+      });
+      return null;
+    }
+
+    // Extract image from response
+    for (const part of content.parts) {
+      if (part.inlineData && part.inlineData.data) {
+        logger.info("Gemini refinement completed successfully (Stage 3)", {
+          source: "eliteMockupGenerator",
+          refinedSize: part.inlineData.data.length
+        });
+        return {
+          imageData: part.inlineData.data,
+          mimeType: part.inlineData.mimeType || "image/png",
+          jobId: "",
+          color: "",
+          angle: cameraAngle as MockupAngle
+        };
+      }
+    }
+
+    // Log text content if any (usually contains error/refusal message)
+    const textContent = content.parts.find(p => p.text)?.text;
+    logger.error("No image data in refinement response", {
+      source: "eliteMockupGenerator",
+      finishReason,
+      textResponse: textContent?.substring(0, 500)
+    });
+
+    return null;
+
+  } catch (error) {
+    logger.error("Gemini refinement failed (Stage 3)", error, {
+      source: "eliteMockupGenerator",
+      productName,
+      cameraAngle
+    });
+    return null;
+  }
+}
+
 export async function generateTwoStageMockup(
   designBase64: string,
   renderSpec: RenderSpecification,
@@ -1792,29 +1959,37 @@ export async function generateTwoStageMockup(
   personaHeadshot?: string,
   previousMockupReference?: string
 ): Promise<GeneratedMockup | null> {
-  logger.info("Starting two-stage mockup generation", { 
+  const useHybridRefinement = GENERATION_CONFIG.USE_HYBRID_REFINEMENT;
+  const mode = useHybridRefinement ? "three_stage_hybrid" : "two_stage_composite";
+  
+  logger.info(`Starting ${useHybridRefinement ? 'three-stage hybrid' : 'two-stage'} mockup generation`, { 
     source: "eliteMockupGenerator", 
     productName, 
     cameraAngle,
-    mode: "two_stage_composite"
+    mode,
+    useHybridRefinement
   });
 
+  // STAGE 1: Generate blank garment
   // CRITICAL: Do NOT pass previousMockupReference to blank garment generation
   // If we pass a reference with design, Gemini copies the design position
   // Only use personaHeadshot for identity consistency
+  logger.info("Stage 1: Generating blank garment", { source: "eliteMockupGenerator", cameraAngle });
   const blankGarment = await generateBlankGarment(renderSpec, personaHeadshot, undefined);
   
   if (!blankGarment) {
-    logger.error("Two-stage pipeline: Blank garment generation failed", { source: "eliteMockupGenerator" });
+    logger.error("Stage 1 failed: Blank garment generation failed", { source: "eliteMockupGenerator" });
     return null;
   }
 
-  logger.info("Blank garment generated, starting design composition", { 
+  logger.info("Stage 1 complete: Blank garment generated", { 
     source: "eliteMockupGenerator",
     cameraAngle,
     blankGarmentSize: blankGarment.imageData.length
   });
 
+  // STAGE 2: Composite design using image processing
+  logger.info("Stage 2: Starting design composition", { source: "eliteMockupGenerator", cameraAngle });
   const compositeResult = await compositeDesignOntoGarment({
     designBase64,
     blankGarmentBase64: blankGarment.imageData,
@@ -1823,7 +1998,7 @@ export async function generateTwoStageMockup(
   });
 
   if (!compositeResult.success) {
-    logger.error("Two-stage pipeline: Design composition failed, will retry with fallback", { 
+    logger.error("Stage 2 failed: Design composition failed", { 
       source: "eliteMockupGenerator", 
       error: compositeResult.error,
       cameraAngle
@@ -1831,7 +2006,44 @@ export async function generateTwoStageMockup(
     return null;
   }
 
-  logger.info("Two-stage mockup generation completed successfully", { 
+  logger.info("Stage 2 complete: Design composited", { 
+    source: "eliteMockupGenerator",
+    cameraAngle,
+    compositedSize: compositeResult.composited.length
+  });
+
+  // STAGE 3: Gemini refinement pass (Hybrid mode only)
+  if (useHybridRefinement) {
+    logger.info("Stage 3: Starting Gemini refinement for fabric realism", {
+      source: "eliteMockupGenerator",
+      cameraAngle
+    });
+
+    const refinedMockup = await refineCompositedMockupWithGemini(
+      compositeResult.composited,
+      renderSpec,
+      productName,
+      cameraAngle
+    );
+
+    if (refinedMockup) {
+      logger.info("Stage 3 complete: Hybrid mockup generation successful", {
+        source: "eliteMockupGenerator",
+        cameraAngle,
+        refinedSize: refinedMockup.imageData.length
+      });
+      return refinedMockup;
+    } else {
+      logger.warn("Stage 3 failed: Gemini refinement failed, falling back to Stage 2 composited result", {
+        source: "eliteMockupGenerator",
+        cameraAngle
+      });
+      // Fallback to unrefined composited mockup
+    }
+  }
+
+  // Return Stage 2 result (either hybrid disabled or refinement failed)
+  logger.info(`${useHybridRefinement ? 'Fallback to Stage 2' : 'Two-stage'} mockup generation completed`, { 
     source: "eliteMockupGenerator",
     cameraAngle,
     compositedSize: compositeResult.composited.length
@@ -2314,10 +2526,11 @@ export async function generateMockupBatch(
       request.outputQuality
     );
 
-    // CRITICAL: DISABLE two-stage pipeline - it's causing design placement issues
-    // Two-stage was causing Gemini to copy design positions from reference images
-    // Single-stage generation works better for design placement accuracy
-    const useTwoStagePipeline = false; // FORCE DISABLED
+    // Re-enable two-stage pipeline for EXACT design preservation
+    // Two-stage ensures pixel-perfect design copying via compositor
+    // Stage 1: Generate blank garment (no reference to avoid design copying)
+    // Stage 2: Compositor pastes exact design with proper placement
+    const useTwoStagePipeline = request.useTwoStagePipeline ?? true;
     
     let result: GeneratedMockup | null = null;
     
